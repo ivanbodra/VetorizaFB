@@ -1,0 +1,484 @@
+{
+  "scope": "Grouping performance only; timings are environment-specific. Legacy and modern numeric grouping rules are not identical.",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "source_commit": "e41353dc2e29e62f8bcadb1bac75f5f5d0e3fa2a",
+  "source_sha256": {
+    "legacy/v3_1/ocr_segmented.py": "c4b75982ddafbfc6cb74319aaab5659063df5804cf26d5a915ba0e8656ca00ef",
+    "src/vetorizafb/core.py": "b538acd3ea0c588d29cf8125275b52c76928580ff1cd5fb5a2867cf6ae04aa1f"
+  },
+  "repeats": 3,
+  "runs": [
+    {
+      "case": "21300plano.digits.json",
+      "digits": 411,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {
+        "input_sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+        "digits_json_sha256": "30412840437a4af7c0e12b5104619bda0a3afc215c3baf90030d520f99c30eb6"
+      },
+      "modern": {
+        "median_seconds": 0.002170935999856738,
+        "seconds": [
+          0.002170935999856738,
+          0.0020960540005035,
+          0.002188712999668496
+        ],
+        "groups": 163
+      },
+      "legacy": {
+        "median_seconds": 0.0092224919999353,
+        "seconds": [
+          0.011295370999505394,
+          0.0092224919999353,
+          0.008783123000284832
+        ],
+        "groups": 272
+      }
+    },
+    {
+      "case": "1410geotiff.digits.json",
+      "digits": 9556,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 300.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {
+        "input_sha256": "c222eb9dad7e616e659d8fe588987ca4836b530a681154bef168c605439a4107",
+        "digits_json_sha256": "c26730ca79b11a194fa47612cd6ee228722c6c90490bab2c629f466e078c0c7d"
+      },
+      "modern": {
+        "median_seconds": 0.06165732499994192,
+        "seconds": [
+          0.058191295999677095,
+          0.06165732499994192,
+          0.061666847999731544
+        ],
+        "groups": 3077
+      },
+      "legacy": {
+        "median_seconds": 0.11528046000057657,
+        "seconds": [
+          0.11528046000057657,
+          0.1122074810000413,
+          0.11784308300047996
+        ],
+        "groups": 3801
+      }
+    },
+    {
+      "case": "1822geotiff.digits.json",
+      "digits": 9973,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 300.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {
+        "input_sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+        "digits_json_sha256": "6cb73c860421be83c5a874e81a1a9a45a165da185f5839b149218106f0d69693"
+      },
+      "modern": {
+        "median_seconds": 0.05381904899968504,
+        "seconds": [
+          0.05381904899968504,
+          0.05257772700042551,
+          0.0630686410004273
+        ],
+        "groups": 2826
+      },
+      "legacy": {
+        "median_seconds": 0.13441611899997952,
+        "seconds": [
+          0.13441611899997952,
+          0.127032615000644,
+          0.13581742199949076
+        ],
+        "groups": 4214
+      }
+    },
+    {
+      "case": "synthetic_sparse_pairs",
+      "digits": 500,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.0035614309999800753,
+        "seconds": [
+          0.0038860590002514073,
+          0.0032096040004034876,
+          0.0035614309999800753
+        ],
+        "groups": 250
+      },
+      "legacy": {
+        "median_seconds": 0.01035693399990123,
+        "seconds": [
+          0.01035693399990123,
+          0.009400558000379533,
+          0.011659947999760334
+        ],
+        "groups": 250
+      }
+    },
+    {
+      "case": "synthetic_same_x_distinct_y",
+      "digits": 500,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.07738539399997535,
+        "seconds": [
+          0.07738539399997535,
+          0.07608314100070857,
+          0.09040234200074337
+        ],
+        "groups": 500
+      },
+      "legacy": {
+        "median_seconds": 0.05521655499978806,
+        "seconds": [
+          0.07310873000005813,
+          0.05521655499978806,
+          0.054630315999929735
+        ],
+        "groups": 500
+      }
+    },
+    {
+      "case": "synthetic_sparse_pairs",
+      "digits": 1000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.006410154000150214,
+        "seconds": [
+          0.007093127999723947,
+          0.006259727999349707,
+          0.006410154000150214
+        ],
+        "groups": 500
+      },
+      "legacy": {
+        "median_seconds": 0.015547126999990724,
+        "seconds": [
+          0.015547126999990724,
+          0.016842901000018173,
+          0.015501539000069897
+        ],
+        "groups": 500
+      }
+    },
+    {
+      "case": "synthetic_same_x_distinct_y",
+      "digits": 1000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.3192387299995971,
+        "seconds": [
+          0.2956339370002752,
+          0.3192387299995971,
+          0.34571552899978997
+        ],
+        "groups": 1000
+      },
+      "legacy": {
+        "median_seconds": 0.18271245500000077,
+        "seconds": [
+          0.18271245500000077,
+          0.18848640600026556,
+          0.18115685300017503
+        ],
+        "groups": 1000
+      }
+    },
+    {
+      "case": "synthetic_sparse_pairs",
+      "digits": 2000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.013193780000619881,
+        "seconds": [
+          0.013664584999787621,
+          0.013193780000619881,
+          0.01317614199979289
+        ],
+        "groups": 1000
+      },
+      "legacy": {
+        "median_seconds": 0.02859996500046691,
+        "seconds": [
+          0.029217002000223147,
+          0.02859996500046691,
+          0.027481127999635646
+        ],
+        "groups": 1000
+      }
+    },
+    {
+      "case": "synthetic_same_x_distinct_y",
+      "digits": 2000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 1.3299872309999046,
+        "seconds": [
+          1.341546358999949,
+          1.3299872309999046,
+          1.1620490860004793
+        ],
+        "groups": 2000
+      },
+      "legacy": {
+        "median_seconds": 0.6523439929997039,
+        "seconds": [
+          0.6461426920004669,
+          0.6523439929997039,
+          0.6805153909999717
+        ],
+        "groups": 2000
+      }
+    },
+    {
+      "case": "synthetic_sparse_pairs",
+      "digits": 4000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.02958794799997122,
+        "seconds": [
+          0.030598184000155015,
+          0.029005885000515264,
+          0.02958794799997122
+        ],
+        "groups": 2000
+      },
+      "legacy": {
+        "median_seconds": 0.06069943100010278,
+        "seconds": [
+          0.06069943100010278,
+          0.05832753400045476,
+          0.06411146000027657
+        ],
+        "groups": 2000
+      }
+    },
+    {
+      "case": "synthetic_same_x_distinct_y",
+      "digits": 4000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 5.042275858000721,
+        "seconds": [
+          4.8481662660005895,
+          5.042275858000721,
+          5.1722071889998915
+        ],
+        "groups": 4000
+      },
+      "legacy": {
+        "median_seconds": 2.452620614000807,
+        "seconds": [
+          2.635180756000409,
+          2.4146193460001086,
+          2.452620614000807
+        ],
+        "groups": 4000
+      }
+    }
+  ]
+}

@@ -12,6 +12,10 @@ See [baseline and scope](docs/BASELINE.md) and [source checksums](docs/source_ma
 
 Input rasters and downloaded model weights remain external to Git.
 
+Read the [current user guide](docs/USER_GUIDE.md) for complete operating
+instructions and the [grouping performance audit](docs/GROUPING_AUDIT.md) for
+confirmation of the sequential optimization and its remaining worst-case limit.
+
 ## Experimental OCR update
 
 The `ocr-modernization` branch adds a standalone extraction core, a command-line
