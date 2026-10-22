@@ -1,0 +1,37 @@
+[
+  {
+    "original_upload": "01-main.py",
+    "repository_path": "legacy/v4_prototype/main.py",
+    "sha256": "7dec5a033a7dee9e1356984844e3af5987e451b3a8ccc628b8dbac304eb3313d"
+  },
+  {
+    "original_upload": "02-main-3_1.py",
+    "repository_path": "legacy/v3_1/main.py",
+    "sha256": "4adf1618c75d51d9d2de2f67a16dd84167c52b2252b035211ddfea2e3f159a19"
+  },
+  {
+    "original_upload": "03-create_rectangles.py",
+    "repository_path": "legacy/tools/create_rectangles.py",
+    "sha256": "4ed5307dc3e1da511423ae60932d4a82de78823f121ce071b26f6cfbda0940d9"
+  },
+  {
+    "original_upload": "04-debug_utils.py",
+    "repository_path": "legacy/v3_1/debug_utils.py",
+    "sha256": "a0b5b951be54ecfba8d83f39cf63c980f24df1e68700efc371218c8c2e9b84bf"
+  },
+  {
+    "original_upload": "05-geo_utils.py",
+    "repository_path": "legacy/v3_1/geo_utils.py",
+    "sha256": "9cfae1d60ac3f80d41f174ada1a9273cdb0adb18e5134288338105b2b7ddccd4"
+  },
+  {
+    "original_upload": "06-export_utils.py",
+    "repository_path": "legacy/v3_1/export_utils.py",
+    "sha256": "7e96cbe679e28cb199cc3bb832d367cda15eace6a96bd7574c361bf16d67bbb2"
+  },
+  {
+    "original_upload": "07-ocr_segmented.py",
+    "repository_path": "legacy/v3_1/ocr_segmented.py",
+    "sha256": "c4b75982ddafbfc6cb74319aaab5659063df5804cf26d5a915ba0e8656ca00ef"
+  }
+]
