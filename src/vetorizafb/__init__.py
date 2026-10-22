@@ -1,3 +1,3 @@
 """Experimental VetorizaFB core. Original sources are preserved under legacy/."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

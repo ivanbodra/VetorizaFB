@@ -1,5 +1,8 @@
 """Chart segmentation and geometric grouping, independent of the GUI/OCR model."""
-from dataclasses import asdict, dataclass
+from bisect import bisect_right
+from dataclasses import dataclass, field
+from heapq import merge
+from itertools import islice
 import math
 
 import cv2
@@ -13,6 +16,10 @@ class Box:
     w: int
     h: int
 
+    def __post_init__(self):
+        if any(not isinstance(v,int) or isinstance(v,bool) for v in (self.x,self.y,self.w,self.h)) or min(self.x,self.y)<0 or min(self.w,self.h)<1:
+            raise ValueError("Invalid character box")
+
     @property
     def center(self):
         return self.x + self.w / 2, self.y + self.h / 2
@@ -24,12 +31,27 @@ class Digit:
     raw_text: str
     confidence: float
     index: int
+    alternatives: list = field(default_factory=list)
+    selected_text: str | None = None
+    selected_confidence: float | None = None
+    method: str = "ocr"
+
+    def __post_init__(self):
+        for value in (self.confidence,self.selected_confidence):
+            if value is not None and (not math.isfinite(float(value)) or not 0<=value<=1):
+                raise ValueError("Invalid OCR confidence")
+        if not isinstance(self.raw_text,str) or (self.selected_text is not None and (len(self.selected_text)!=1 or self.selected_text not in '0123456789')):
+            raise ValueError("Invalid OCR text/selection")
 
     @property
     def text(self):
         # A multi-character crop is ambiguous: never silently truncate it.
-        t = self.raw_text.strip()
+        t = (self.selected_text if self.selected_text is not None else self.raw_text).strip()
         return t if len(t) == 1 and t in "0123456789" else None
+
+    @property
+    def score(self):
+        return self.confidence if self.selected_confidence is None else self.selected_confidence
 
 
 @dataclass
@@ -42,6 +64,7 @@ class Sounding:
     digit_ids: list
     interpretation: str
     review_status: str = "unreviewed"
+    flags: list = field(default_factory=list)
 
 
 @dataclass
@@ -64,11 +87,17 @@ class Config:
     decimal_drop: float = .10
     decimal_max_integer: float = 31
     min_confidence: float = .35
+    ocr_batch_size: int = 64
+    crop_padding: int = 3
+    retry_ambiguous: bool = False
 
     def __post_init__(self):
         numeric = [self.reference_dpi, self.dpi, self.tol_x, self.tol_y,
                    self.decimal_height_ratio, self.decimal_drop,
-                   self.decimal_max_integer, self.min_confidence]
+                   self.decimal_max_integer, self.min_confidence,
+                   self.threshold, self.blur_size, self.kernel_size,
+                   self.min_w, self.max_w, self.min_h, self.max_h,
+                   self.ocr_batch_size, self.crop_padding]
         if not all(math.isfinite(float(v)) for v in numeric):
             raise ValueError("Configuration values must be finite")
         if self.reference_dpi <= 0 or self.dpi <= 0:
@@ -85,14 +114,22 @@ class Config:
             raise ValueError("segmentation must be legacy or black")
         if self.grouping not in {"fixed", "relative"}:
             raise ValueError("grouping must be fixed or relative")
+        for key in ("threshold", "blur_size", "kernel_size", "min_w", "max_w",
+                    "min_h", "max_h", "ocr_batch_size", "crop_padding"):
+            if not isinstance(getattr(self, key), int) or isinstance(getattr(self, key), bool):
+                raise ValueError(f"{key} must be an integer")
+        if not 1 <= self.ocr_batch_size <= 1024 or not 0 <= self.crop_padding <= 100:
+            raise ValueError("Invalid OCR batch size/padding")
+        if not isinstance(self.retry_ambiguous, bool):
+            raise ValueError("retry_ambiguous must be boolean")
 
     @property
     def scale(self):
         return self.dpi / self.reference_dpi
 
 
-def segment(rgb, config):
-    """Return boxes in ORIGINAL raster coordinates; never resize the whole chart."""
+def segmentation_mask(rgb, config):
+    """Foreground mask shared by processing and the parameter inspector."""
     if rgb.dtype != np.uint8 or rgb.ndim != 3 or rgb.shape[2] != 3:
         raise ValueError("Expected an RGB uint8 image")
     s = config.scale
@@ -107,19 +144,41 @@ def segment(rgb, config):
     else:
         # Supplemental black-ink mask; original color crops still feed the OCR.
         mask = (rgb.max(axis=2) < config.threshold).astype(np.uint8) * 255
+    return mask
+
+
+def segment_details(rgb, config):
+    mask = segmentation_mask(rgb, config)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    boxes = [Box(*cv2.boundingRect(c)) for c in contours]
-    boxes = [b for b in boxes if config.min_w*s < b.w < config.max_w*s
+    all_boxes = [Box(*cv2.boundingRect(c)) for c in contours]
+    s = config.scale
+    boxes = [b for b in all_boxes if config.min_w*s < b.w < config.max_w*s
              and config.min_h*s < b.h < config.max_h*s]
-    return sorted(boxes, key=lambda b: (b.x, b.y))
+    return mask, all_boxes, sorted(boxes, key=lambda b: (b.x, b.y))
 
 
-def recognize(rgb, boxes, engine, batch_size=64, pad=3):
+def segment(rgb, config):
+    """Return boxes in ORIGINAL raster coordinates; never resize the chart."""
+    return segment_details(rgb, config)[2]
+
+
+class ProcessingCancelled(RuntimeError):
+    pass
+
+
+def check_cancel(cancel):
+    if cancel is not None and cancel.is_set():
+        raise ProcessingCancelled("Processing cancelled between batches/stages")
+
+
+def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False,
+              min_confidence=.35, progress=None, cancel=None):
     if batch_size < 1 or pad < 0:
         raise ValueError("Invalid batch size or padding")
     out = []
     h, w = rgb.shape[:2]
     for start in range(0, len(boxes), batch_size):
+        check_cancel(cancel)
         subset = boxes[start:start+batch_size]
         crops = [rgb[max(0,b.y-pad):min(h,b.y+b.h+pad),
                      max(0,b.x-pad):min(w,b.x+b.w+pad)].copy() for b in subset]
@@ -133,6 +192,39 @@ def recognize(rgb, boxes, engine, batch_size=64, pad=3):
             if not math.isfinite(conf) or not 0 <= conf <= 1:
                 raise ValueError("Invalid OCR confidence")
             out.append(Digit(box, str(raw), conf, start+i))
+        if progress:
+            progress(min(start+len(subset), len(boxes)), len(boxes), "OCR")
+    if retry:
+        # Recover difficult crops with a second *real* model reading, not a
+        # guessed character or fabricated confidence. Keep both readings.
+        ambiguous = [d for d in out if d.text is None or d.score < min_confidence]
+        for start in range(0, len(ambiguous), batch_size):
+            check_cancel(cancel)
+            subset = ambiguous[start:start+batch_size]
+            crops = []
+            for d in subset:
+                b = d.box
+                crop = rgb[max(0,b.y-pad):min(h,b.y+b.h+pad),
+                           max(0,b.x-pad):min(w,b.x+b.w+pad)]
+                gray = cv2.cvtColor(crop, cv2.COLOR_RGB2GRAY)
+                _, bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+                bw = cv2.copyMakeBorder(bw, 6, 6, 6, 6, cv2.BORDER_CONSTANT, value=255)
+                bw = cv2.resize(bw, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+                crops.append(cv2.cvtColor(bw, cv2.COLOR_GRAY2RGB))
+            readings = engine.predict(crops)
+            if len(readings) != len(subset):
+                raise RuntimeError("Retry OCR result count does not match crop count")
+            for d, (raw, conf) in zip(subset, readings):
+                raw, conf = str(raw), float(conf)
+                if not math.isfinite(conf) or not 0 <= conf <= 1:
+                    raise ValueError("Invalid retry OCR confidence")
+                d.alternatives.append(dict(text=raw, confidence=conf, method="binary_padded_2x"))
+                if len(raw.strip()) == 1 and raw.strip() in "0123456789" and conf >= min_confidence:
+                    if d.text is None or conf > d.score:
+                        d.selected_text, d.selected_confidence, d.method = raw.strip(), conf, "ocr_retry"
+            if progress:
+                progress(min(start+len(subset),len(ambiguous)),len(ambiguous),"OCR retry")
+    check_cancel(cancel)
     return out
 
 
@@ -143,8 +235,15 @@ def group(digits, config):
     Contour labels and hazard annotations still require review.
     """
     ds = sorted([d for d in digits if d.text is not None
-                 and d.confidence >= config.min_confidence],
+                 and d.score >= config.min_confidence],
                 key=lambda d: (d.box.center[0], d.box.center[1]))
+    # Y buckets avoid scanning a full vertical column. Merge candidates by their
+    # original X-sorted index so the existing greedy grouping decisions survive.
+    bin_size = max(config.tol_y*config.scale,
+                   float(np.median([d.box.h for d in ds]))*.6 if ds and config.grouping == 'relative' else 1, 1)
+    bins = {}
+    for i, d in enumerate(ds):
+        bins.setdefault(math.floor(d.box.center[1]/bin_size), []).append(i)
     used, out = set(), []
     for i, first in enumerate(ds):
         if i in used:
@@ -152,16 +251,19 @@ def group(digits, config):
         members = [first]
         used.add(i)
         last_x, first_y = first.box.center
-        for j in range(i+1, len(ds)):
+        x_limit=config.tol_x*config.scale
+        y_limit=config.tol_y*config.scale
+        if config.grouping == 'relative':
+            x_limit=max(x_limit,1.4*first.box.h)
+            y_limit=max(y_limit,.6*first.box.h)
+        streams = []
+        for bucket in range(math.floor((first_y-y_limit)/bin_size),
+                            math.floor((first_y+y_limit)/bin_size)+1):
+            indices = bins.get(bucket, [])
+            streams.append(islice(indices, bisect_right(indices, i), None))
+        for j in merge(*streams):
             candidate = ds[j]
             x, y = candidate.box.center
-            x_limit=config.tol_x*config.scale
-            y_limit=config.tol_y*config.scale
-            if config.grouping == 'relative':
-                # Decimetre centres are lower than the integer baseline. A fixed
-                # six-pixel Y limit rejected valid decimals even on the test chart.
-                x_limit=max(x_limit,1.4*first.box.h)
-                y_limit=max(y_limit,.6*first.box.h)
             if x-last_x > x_limit:
                 break
             if j not in used and abs(y-first_y) <= y_limit:
@@ -184,8 +286,9 @@ def group(digits, config):
         xmax = max(d.box.x+d.box.w for d in members)
         ymin = min(d.box.y for d in members)
         ymax = max(d.box.y+d.box.h for d in members)
+        flags = ["ocr_retry"] if any(d.method != "ocr" for d in members) else []
         out.append(Sounding((xmin+xmax)/2, (ymin+ymax)/2, depth,
-                            min(d.confidence for d in members),
+                            min(d.score for d in members),
                             (xmin,ymin,xmax,ymax), [d.index for d in members],
-                            "subscript_decimal" if is_decimal else "integer"))
+                            "subscript_decimal" if is_decimal else "integer", flags=flags))
     return out

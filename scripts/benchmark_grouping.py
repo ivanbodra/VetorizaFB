@@ -98,7 +98,7 @@ def main():
     report = {'scope': 'Grouping performance only; timings are environment-specific. '
                        'Legacy and modern numeric grouping rules are not identical.',
               'python': platform.python_version(), 'platform': platform.platform(),
-              'source_commit': 'e41353dc2e29e62f8bcadb1bac75f5f5d0e3fa2a',
+              'source_commit': 'working tree; identify processing code by source_sha256',
               'source_sha256': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
                                 for p in [legacy_path, modern_path]},
               'repeats': args.repeats, 'runs': runs}

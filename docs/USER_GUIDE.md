@@ -1,44 +1,33 @@
-# VetorizaFB user guide
+# VetorizaFB 0.2 user guide
 
-Updated 2026-10-22. Scope: package **0.1.0**, experimental `ocr-modernization`
-branch / [PR #1](https://github.com/ivanbodra/VetorizaFB/pull/1). Processing
-implementation audited at commit `e41353dc2e29e62f8bcadb1bac75f5f5d0e3fa2a`.
+Updated 2026-10-22. Development branch: `ocr-modernization`, PR #1.
+The [0.1 guide](USER_GUIDE_0_1.md) is retained for historical reference.
 
-This guide describes the current standalone runner. It supersedes operating
-instructions for the earlier 3.0.1 EasyOCR application and the v4 interface
-prototype; it does not claim that the experimental runner replaces a validated
-historical release. The original seven files remain in `legacy/`.
+This version retains PaddleOCR 3.x and restores staged calibration and image
+inspection. It also introduces explicit point review. It is an experimental
+raster-chart extraction tool; approval of points is an operator decision, not
+an automatic accuracy certification. Historical handwritten FB extraction is
+still a later module.
 
-## 1. Purpose and supported inputs
+## Install or update
 
-VetorizaFB reads a georeferenced nautical chart raster, detects character boxes,
-recognizes digits, groups candidate sounding depths and exports XYZ. Outputs
-are unreviewed candidates. It does not interpolate a seabed surface or read a
-chart raster as if it were a depth-valued DEM.
-
-Use an 8-bit GeoTIFF with a correct CRS and geotransform. RGB, grayscale and
-palette images have reading paths; real experiments used the supplied RGB
-charts. DPI metadata controls scale-dependent character filters. If DPI is
-missing or incorrect, use a JSON configuration through the CLI. DPI does not
-define geographic coordinates; those come from the geotransform and CRS.
-
-Historical photographed/orthorectified handwritten field sheets are a separate
-future module. The current decimal heuristics and whole-image loading are not
-validated for them. TIFF compression/file size does not indicate peak RAM use.
-
-## 2. Install on Windows
-
-Use a separate 64-bit Python 3.12 installation and Git. Do not install into the
-QGIS Python environment. There is no packaged Windows installer or validated
-current `.exe` distribution in this update; the commands below install Python
-entry points into a virtual environment.
-
-Open PowerShell in a working folder:
+Run from the repository root, the directory containing `pyproject.toml`, rather
+than `legacy/v3_1`. On Windows use a separate 64-bit Python 3.12 environment.
+Do not use the QGIS Python installation.
 
 ```powershell
-git clone --branch ocr-modernization `
-  https://github.com/ivanbodra/VetorizaFB.git
-cd VetorizaFB
+cd "D:\Bathy\Estudos\Programas\VetorizaFB"
+git status
+git switch ocr-modernization
+git pull --ff-only
+Test-Path .\pyproject.toml
+```
+
+The last command must return `True`. Preserve any local changes before updating.
+For a first installation, clone the branch or download/extract its branch ZIP,
+then create the environment in that root:
+
+```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -e ".[ocr,test]"
@@ -46,264 +35,206 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\vetorizafb-gui.exe
 ```
 
-The backtick at a continued PowerShell line's end must be its last character.
-No activation command or execution-policy change is needed. If Git is not
-available, download the `ocr-modernization` branch ZIP from GitHub, extract it,
-open PowerShell inside the extracted folder and start at the virtual-environment
-command. Do not inadvertently download `main`, which contains the archived
-baseline rather than the new runner.
+On an existing installation, reuse the root `.venv` and rerun the editable
+installation after updating. Confirm that the window title shows **0.2.0**.
+Linux equivalents are `.venv/bin/python`, `.venv/bin/vetorizafb-gui` and
+`.venv/bin/vetorizafb`; Tkinter and a display are required for the GUI tests.
+Use `xvfb-run -a python -m pytest -q` in a headless Linux test environment.
 
-The experiment used PaddleOCR 3.7.0 and PaddlePaddle 3.3.1 on CPU. These and
-OpenCV are pinned; supporting dependencies have ranges. The default CPU install
-is not a GPU setup. First use can download model weights. On a restricted
-network, use a local official inference model as described below; the new GUI
-does not have the old proxy username/password fields.
-
-Linux: use `python3 -m venv .venv`, then `.venv/bin/python`,
-`.venv/bin/vetorizafb` and `.venv/bin/vetorizafb-gui`. Install your distribution's
-Tkinter package if needed. Extraction/tests were exercised on Linux/Python 3.12;
-Windows installation and the desktop window are not yet validated.
-
-## 3. Run through the desktop window
-
-1. Run `vetorizafb-gui` from the environment above.
-2. In **Carta**, select the GeoTIFF.
-3. In **Pasta de saída**, select a new result directory. If empty when choosing
-   a chart, it is populated as `results/<chart-stem>` beside the input.
-4. Choose **Modelo OCR**. Start with `PP-OCRv6_small_rec`.
-5. Leave **Modelo local (opcional)** empty for automatic model retrieval, or
-   select a compatible extracted inference-model folder.
-6. Click **Extrair candidatos e gerar XYZ** and wait. The progress bar indicates
-   activity; it does not show percentage complete. Do not start another run or
-   close the window while processing.
-7. Read the candidate and numeric-box counts. The preview displays the complete
-   chart with orange candidate boxes and red depth labels. Open the saved
-   full-resolution JPG externally for detailed inspection.
-
-The current GUI has no parameter editor, target-CRS selector, manual candidate
-correction, approval action, preview zoom/pan or cancellation. Use the CLI for
-configuration and target CRS. Editing the GUI paths during a run does not alter
-the captured input for that run. A repeated run using the same input stem and
-output directory overwrites the corresponding files; use separate folders for
-each model/configuration.
-
-The old staged buttons and parameter inspector belong to archived interfaces;
-their presence in old screenshots does not describe this window.
-
-## 4. Command line, models and coordinates
-
-From the repository root in PowerShell:
+Standalone CLI/GUI entry points ignore inherited `PROJ_LIB`, `PROJ_DATA` and
+`GDAL_DATA` when Rasterio supplies its own wheel data. Changes affect only the
+application process, not PostgreSQL/QGIS installations or persistent settings.
+Set `VETORIZAFB_KEEP_GIS_ENV=1` only when deliberately using a compatible custom
+GIS-data environment. In a terminal running pytest directly with an old PostGIS
+PROJ environment, use the session-only workaround before testing:
 
 ```powershell
-$vf = ".\.venv\Scripts\vetorizafb.exe"
-& $vf "C:\cartas\1410geotiff.tif" `
-  --output-dir "C:\cartas\results\1410-small" `
-  --model PP-OCRv6_small_rec
-```
-
-The default device is `cpu`. Supported tested recognizers are
-`PP-OCRv6_small_rec`, `PP-OCRv6_medium_rec` and `PP-OCRv5_server_rec`.
-The model name and any local model directory must refer to the same model.
-For offline use, obtain an official **inference** archive, extract it, and pass
-the directory directly containing `inference.json`, `inference.pdiparams` and
-`inference.yml`, rather than its parent or an unextracted archive:
-
-```powershell
-& $vf "C:\cartas\1410geotiff.tif" `
-  --output-dir "C:\cartas\results\1410-offline" `
-  --model PP-OCRv6_small_rec `
-  --model-dir "C:\modelos\PP-OCRv6_small_rec_infer"
-```
-
-The default target CRS is EPSG:4326: **X = longitude, Y = latitude**, in decimal
-degrees. Select a suitable projected target CRS with `--target-crs` when metre
-XY coordinates are required. For example, `--target-crs EPSG:31984` requests
-SIRGAS 2000 / UTM 24S; use it only for an appropriate area/workflow, not as a
-universal default. Source datums are transformed with pyproj; the software
-does not assume that all GeoTIFFs are WGS84.
-
-Z is depth in metres, positive down, with the source chart's vertical reference
-unchanged. No vertical datum conversion is performed. The point anchor is the
-detected text group's bounding-box centre, not a validated hydrographic anchor.
-
-## 5. Configuration and calibration
-
-Without `--config`, the software reads TIFF DPI and uses `Config` defaults.
-With `--config`, values come from the JSON and unspecified values use defaults,
-including **600 dpi**; automatic TIFF DPI is not merged into a supplied config.
-Always set the actual DPI explicitly in custom files.
-
-For a 300 dpi chart, save this as `configs/chart_300dpi.json`:
-
-```json
-{
-  "dpi": 300,
-  "segmentation": "legacy",
-  "grouping": "relative",
-  "threshold": 120,
-  "min_confidence": 0.35
-}
-```
-
-```powershell
-& $vf "C:\cartas\1410geotiff.tif" `
-  --output-dir "C:\cartas\results\1410-config" `
-  --config configs/chart_300dpi.json
-```
-
-| Setting | Default | Meaning |
-|---|---:|---|
-| `reference_dpi`, `dpi` | 600, 600 | Scale = actual DPI / reference DPI |
-| `segmentation` | `legacy` | Grayscale/blur/threshold/dilation; `black` is an alternative black-ink mask |
-| `threshold` | 120 | Dark foreground threshold, 0 to 255 |
-| `blur_size`, `kernel_size` | 5, 2 | Scaled blur/dilation sizes in legacy mode; blur becomes odd |
-| `min_w`, `max_w` | 3, 80 | Strict character-width limits at reference DPI |
-| `min_h`, `max_h` | 10, 100 | Strict character-height limits at reference DPI |
-| `grouping` | `relative` | `fixed` uses only scaled tolerances |
-| `tol_x`, `tol_y` | 30, 6 | Reference-pixel horizontal and vertical tolerances |
-| `decimal_height_ratio` | 0.95 | Last digit height relative to the integer digits |
-| `decimal_drop` | 0.10 | Last-digit vertical drop as a fraction of integer height |
-| `decimal_max_integer` | 31 | Maximum integer part eligible for subscript decimal interpretation |
-| `min_confidence` | 0.35 | Minimum character OCR score for grouping |
-
-In relative mode X tolerance is at least 1.4 times the first character height;
-Y tolerance is at least 0.6 times that height. Groups contain one to four digits.
-Decimal interpretation applies to groups of two or three digits and only to
-the last digit. The integer-part limit 31 is a configurable legacy heuristic,
-not a universal cartographic standard, and must not be copied to FB workflows.
-
-Larger tolerances can merge adjacent soundings. Lower confidence thresholds can
-admit more spurious characters. Higher confidence thresholds can drop a digit
-and leave an incorrect partial depth. DPI scaling does not solve all typography,
-rotation, touching-line or symbol-classification problems. Change one setting at
-a time, retain outputs in a new directory and review the resulting points.
-
-## 6. Output files and GIS inspection
-
-For `1410geotiff.tif`, the output directory contains:
-
-| File | Content |
-|---|---|
-| `1410geotiff.xyz` | Headerless, space-delimited X Y depth; decimal point `.` |
-| `1410geotiff.csv` | Candidate geometry, depth, confidence, IDs, interpretation, status and XY |
-| `1410geotiff.digits.json` | All raw OCR readings and character boxes, including rejected readings |
-| `1410geotiff.metadata.json` | Input SHA-256, CRS, model, configuration, package versions, counts and time |
-| `1410geotiff.preview.jpg` | Complete chart with candidate boxes and interpreted values |
-
-XYZ has exactly three columns and no CRS declaration. Preserve its metadata
-alongside it. The CSV contains `pixel_x`, `pixel_y`, `depth`, `confidence`,
-`bounds`, `digit_ids`, `interpretation`, `review_status`, `x`, `y`. Pixel values
-are continuous raster coordinates; XY values use the requested target CRS.
-`bounds` and `digit_ids` are structured values serialized in quoted CSV fields;
-use a real CSV reader rather than splitting every comma manually.
-
-For GIS inspection, import the CSV as delimited text, use `x`/`y` as coordinates
-and assign the CRS from the metadata. Keep `depth` as an attribute and overlay
-the source raster. With the default target, choose EPSG:4326; do not assign the
-input raster's projected CRS to longitude/latitude output. Importing XYZ as
-points is also possible with a whitespace delimiter and the same declared CRS.
-
-All candidates have `review_status=unreviewed`. The program has no approval or
-write-back editor. Correct/filter points in a separate reviewed GIS dataset,
-retain their provenance, then export your reviewed XYZ under a new filename.
-Confirm XY order, units and the required Z sign in the receiving application.
-No raster resampling, interpolation or depth-surface generation occurs here.
-
-## 7. Review before using XYZ
-
-Inspect complete sounding groups, especially zero, lowered decimetres, slanted
-digits, digits touching contours, crowded areas, chart borders, coordinates and
-hazard labels. Check for missing soundings as well as incorrect and extra points.
-Contour labels are a demonstrated false-positive class, not a hypothetical risk.
-
-Confidence is the minimum score of the accepted characters; it is not a
-calibrated probability that the sounding is correct. A high-scoring `87` can
-still need the cartographic interpretation 8.7. Rejected characters are retained
-in the digits JSON but can leave a wrong partial depth in the candidate set.
-
-Validate point location against the original sounding mark/text convention.
-Coordinate round-trip consistency tests only verify the transformation math;
-they do not establish the correct cartographic anchor or source-raster accuracy.
-Define separate acceptance criteria for detection precision/recall, exact depth,
-decimal interpretation, XY error and vertical-reference compatibility.
-
-The 19 positive development crops produced 16 correct complete depths with
-PP-OCRv5 server and 17 with each PP-OCRv6 variant. All three models incorrectly
-accepted both contour-label negatives. The annotations were manually read by
-the assistant, not independently reviewed, and were used during development.
-These are not full-chart accuracy percentages or a held-out generalization test.
-
-Full runs produced 163, 3,077 and 2,826 unreviewed candidates on 21300, 1410 and
-1822 respectively. The author's earlier 100% result on 21300 is not independently
-reproduced by these runs. See `docs/EXPERIMENTS.md` for the recorded evidence.
-
-## 8. Grouping optimization and processing time
-
-The efficient sequential search strategy is present in the registered legacy
-`group_digits_by_position` function and current `core.group`: sort by X, scan a
-bounded horizontal window, mark used characters, and stop at four accepted
-digits. There is no global enumeration of digit combinations.
-
-On the stored OCR readings, grouping alone took median 0.0022 s / 0.0617 s /
-0.0538 s on the three charts (three repetitions). Complete extraction previously
-took 16.9 s / 244.8 s / 259.4 s. These are different timing sessions on one CPU
-environment; the full runs overlapped. They are not hardware requirements or
-guaranteed execution times. Box count, pixel count, model/device, memory and
-downloads all affect perceived duration.
-
-The algorithm has O(n log n) sorting and a density-dependent scan. Its worst
-case is still O(n²), not exponential: many same-X characters at different Y
-positions can force repeated scans. A synthetic 1,000/2,000/4,000-character
-vertical-column case took 0.319/1.330/5.042 s. A future two-dimensional index
-could address this, but none is implemented in the audited version.
-
-Historical discussion mentioned both Union-Find and sequential variants. The
-received files contain the sequential variant. The earlier stable 3.0.1/EasyOCR
-release/executable is not fully represented by this seven-file snapshot; exact
-identity with that historical version cannot be certified. See
-`docs/GROUPING_AUDIT.md` and its raw benchmark report.
-
-## 9. Troubleshooting and updating
-
-| Symptom | Action |
-|---|---|
-| `py` or Python 3.12 not found | Install Python 3.12 for the operating system and retry in a new terminal |
-| `ModuleNotFoundError` | Run pip and the application from the same `.venv`; rerun the editable install |
-| QGIS/PyQt import error | Run standalone outside QGIS; this application uses Tkinter |
-| Model download fails | Use the matching official local inference-model directory; no model weights are committed |
-| `Input has no DPI metadata` | Supply `--config` with the actual DPI through the CLI |
-| `The input has no CRS` | Correct/establish the raster georeferencing in a GIS before extraction |
-| `Only 8-bit chart imagery` | Prepare an appropriate 8-bit cartographic copy preserving georeferencing; do not treat elevation samples as chart colours |
-| Too many/few candidates | Inspect boxes/raw readings and calibrate; count alone is not an accuracy metric |
-| Preview too small | Open the saved full-resolution JPG externally; the current canvas only fits the image |
-| Very slow or memory failure | Start with one chart/CPU job, verify available RAM and box count; whole-image processing has no tiling yet |
-
-The GPU package/device configuration is outside this tested CPU setup.
-If a model directory is present but inference fails, confirm its model name,
-files, dependency versions and the exact terminal message; a training checkpoint
-is not necessarily an inference directory.
-
-If the repository was cloned with Git, preserve local changes before updating:
-
-```powershell
-git status
-git switch ocr-modernization
-git pull --ff-only
-.\.venv\Scripts\python.exe -m pip install -e ".[ocr,test]"
+Remove-Item Env:PROJ_LIB -ErrorAction SilentlyContinue
+Remove-Item Env:PROJ_DATA -ErrorAction SilentlyContinue
 .\.venv\Scripts\python.exe -m pytest -q
-git rev-parse HEAD
 ```
 
-Keep the commit ID, input checksum, metadata, configuration and reviewed
-reference points for each comparison. Core tests need no model download; they
-do not validate the desktop window or establish real-chart accuracy. Crop
-experiments can be reproduced with `scripts/benchmark_crops.py`; grouping-only
-timings use `scripts/benchmark_grouping.py` and pandas.
+## 1. Open the chart
 
-## References
+Select **Selecionar / abrir**, or enter a path and choose **Abrir caminho**.
+Use a correctly georeferenced 8-bit GeoTIFF. The real experiments use RGB charts;
+grayscale and palette reading paths also exist. CRS/geotransform control XY;
+DPI controls only character dimensions and is not a geographic scale.
 
-- [Current development branch](https://github.com/ivanbodra/VetorizaFB/tree/ocr-modernization)
-- [Original baseline and scope](BASELINE.md)
-- [Measured OCR/full-chart experiments](EXPERIMENTS.md)
-- [Grouping algorithm audit](GROUPING_AUDIT.md)
-- [Official PaddleOCR inference model catalogue](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/module_usage/text_recognition.en.md)
+The effective TIFF DPI populates the field. If it is missing, the GUI asks for
+it; a cancelled answer leaves an invalid/empty field until you supply a value.
+The whole image is decoded into RAM. Region processing reduces OCR work, but
+it is not a windowed reader for a 135 MB historical FB.
+
+## 2. Inspect and segment
+
+In **1. Segmentar**, adjust effective/reference DPI, segmentation mode, threshold,
+blur, dilation and character width/height limits. Dimensions are defined at
+`reference_dpi=600` and multiplied by effective DPI/reference DPI. Width/height
+limits are strict. The inspector reports actual-pixel dimensions and P98-clipped
+histograms with the applied minimum/maximum limits. Larger outliers are not all
+shown on the histogram axis.
+
+Choose **Executar etapa 1**. **Inspecionar dimensões / histogramas** opens the
+calibration inspector. The chart can be displayed as **Original**, **Máscara** or
+**Caixas**. Change parameters and rerun segmentation to apply a new calibration.
+Later stages are marked pending; old reads cannot be exported under new settings.
+
+For a local experiment, choose **Selecionar área** above the chart and drag a
+rectangle, then rerun stage 1. **Usar carta inteira** removes this restriction.
+All character boxes and exported XY retain the original full-image coordinate
+system. Cutting through a character at an ROI boundary can change its contour;
+leave a margin around soundings. A new ROI replaces the working region; it does
+not accumulate results from several ROIs into one project.
+
+## 3. OCR and character inspection
+
+In **2. OCR**, select PP-OCRv6 small/medium or PP-OCRv5 server. Small remains the
+provisional default. Optional local model folders must match the selected model
+and contain the extracted inference files, not a training checkpoint or archive.
+With an empty folder field, PaddleOCR may retrieve weights on first use.
+The installed setup and GUI use CPU; GPU configuration is outside this setup.
+
+Set batch size (1-1024), crop padding (0-100 actual pixels) and minimum confidence.
+**Reler ambíguos** optionally makes a second model reading after binarization,
+white padding and 2x enlargement. It is off by default: it can recover a digit,
+but may also recognize line fragments as numbers. Both raw readings and actual
+scores remain recorded, and affected groups receive `ocr_retry`. No character
+is guessed and no synthetic confidence is inserted.
+
+Choose **Executar etapa 2**. Progress reports batches; model loading and individual
+batches cannot be interrupted midway. Cancellation is checked between batches
+and stages, preserving the last fully completed stage. A recognizer is reused
+for subsequent runs with the same model specification.
+
+Select **OCR** above the chart, zoom in and click a character box to view its
+crop, original text/score, selected reading, method and alternatives. Green
+character boxes have numeric readings; orange boxes are unresolved/unread.
+A numeric reading below the grouping confidence threshold can still be excluded
+from a sounding. A high score does not establish correct cartographic meaning.
+
+## 4. Group without repeating OCR
+
+In **3. Agrupar**, adjust fixed/relative spacing, horizontal and vertical tolerances,
+subscript height/drop, maximum integer eligible for decimal interpretation and
+confidence. Choose **Executar etapa 3 / reagrupar**. When only grouping settings
+change, valid digit reads are reused. Changing minimum confidence requires new
+OCR when optional retry is enabled, because it controls which crops are retried.
+
+**Executar etapas pendentes (1 → 3)** computes only invalid/missing stages. Explicit
+stage buttons rerun that stage. Re-segmenting, re-reading or regrouping replaces
+downstream results/review, so save the project first. Unsaved review decisions
+trigger a confirmation before replacement. Export stays disabled while the UI
+configuration, model or ROI differs from the last complete processing state.
+
+The algorithm retains greedy X order, horizontal-window stopping and a maximum
+of four digits per group. Y buckets reduce scans through vertically aligned
+characters without changing the earlier grouping decisions on the regression
+corpus. Groups of two/three digits may interpret their last digit as a decimal.
+The default integer limit 31 is a configurable heuristic, not a universal CN/FB
+rule. Raw OCR can still confuse contour labels and sounding text.
+
+## 5. Navigate and review
+
+Mouse wheel zooms around the pointer. **Ajustar**, **100%**, plus and minus control
+scale. In **Inspecionar** mode, drag to pan. **Sondagens** displays point anchors,
+boxes and interpreted depths: orange pending, green accepted, red rejected,
+blue selected. Labels are suppressed at small scales for legibility; zoom in.
+Double-click a table row or choose **Ampliar ponto** to focus its position.
+
+The table supports multiple selection and Ctrl+A on the table. Filter pending,
+accepted or rejected points. Add an optional **Nota da revisão** before an action.
+
+- **Corrigir valor** changes one selected depth, preserving its original value.
+  Enter a finite value with at most one decimal; it becomes pending again.
+- **Aprovar** explicitly accepts selected points. It is not an automatic check.
+- **Excluir** rejects selected spurious points; original data and history remain.
+- **Pendente** reopens an accepted/rejected decision.
+- **Inserir ponto** mode lets you click a missed sounding and enter its depth.
+  Manual points have no model confidence and remain pending until accepted.
+- **Mover selecionado** mode changes the anchor of one selected point by clicking
+  the chart. The original detection box stays in the audit; the new XY is pending.
+
+Review complete values and decimal typography, including zeros, narrow/slanted
+ones, touching lines, dense groups, contour labels, land annotations, tables,
+coordinates and chart boundaries. Find omissions as well as incorrect/excess
+points. The default automatic anchor remains the text bounding-box centre,
+which is not a validated cartographic sounding anchor.
+
+## 6. Save and resume
+
+Use **Salvar projeto de revisão** or Ctrl+S to save `.vfproject.json`. It contains
+source path/SHA-256, applied configuration, ROI, model specification, character
+boxes/readings, point decisions, original values and dated review actions.
+Pixels and model weights are not embedded. Save parameters separately through
+the **Arquivo** menu to reuse a calibration on another chart.
+
+**Abrir projeto** restores valid cached stages without model inference; the mask
+and dimension inspector are reconstructed from the source. If the source moved,
+select its new location. A different source hash is rejected. Source modification
+also blocks export. Save the applied state before changing settings; unsaved
+UI parameter edits are not recorded as processed results. A source must remain
+available for project loading and geographic export.
+
+## 7. Export candidates or accepted points
+
+In **4. Exportar**, choose an output directory and target CRS. Default EPSG:4326
+means X=longitude, Y=latitude in decimal degrees. For projected XY in metres,
+choose the appropriate CRS for your area. Z remains metres, positive down,
+with the chart's vertical reference unchanged. Manual positions use the same
+full-image coordinate transform. No interpolation or vertical datum conversion
+is performed.
+
+**Exportar candidatos** excludes rejected points and writes a `.candidates`
+bundle, containing both pending and accepted points. **Exportar somente aprovados**
+writes a `.reviewed` bundle and refuses an empty approved set. Pending and
+rejected points never enter reviewed XYZ. Check the reviewed count against your
+intended coverage; approving a subset does not establish chart completeness.
+Existing files with the same stem trigger an overwrite confirmation.
+
+Each bundle has:
+
+| Suffix | Content |
+|---|---|
+| `.xyz` | Headerless, space-separated X Y depth with decimal point `.` |
+| `.csv` | Pixel/target XY, depth, confidence, bounds, character IDs, flags and status |
+| `.digits.json` | Original and alternative character OCR readings |
+| `.review.json` | Complete review history, including rejected and omitted-from-export records |
+| `.preview.jpg` | Complete chart with exported points |
+| `.metadata.json` | Input/configuration/model/CRS, stage times, counts and output hashes |
+
+Files are validated and written in a temporary staging directory before publish.
+Metadata is published last as a completion marker with SHA-256 hashes. A multi-file
+rename is not a filesystem transaction; an interrupted publish can be detected
+by checking hashes. Keep metadata beside XYZ, which has no CRS declaration.
+
+Import CSV in your GIS with `x` and `y` and the declared target CRS; keep `depth`
+as an attribute and overlay the source chart. Do not assign the source projected
+CRS to longitude/latitude values. Structured CSV fields are quoted: use a proper
+CSV reader. Compare point positions with actual chart conventions before approval.
+
+## CLI compatibility and remaining limits
+
+The existing command remains available and produces an unreviewed bundle with
+the original stem. It does not approve points:
+
+```powershell
+.\.venv\Scripts\vetorizafb.exe "C:\cartas\1822geotiff.tif" `
+  --output-dir "C:\cartas\results\1822" `
+  --model PP-OCRv6_small_rec `
+  --config configs/chart_300dpi_retry.json
+```
+
+The retry profile is experimental, not a universal calibration. With `--config`,
+unspecified fields use defaults, including DPI=600; always set effective DPI in
+a custom file. Without it, CLI uses TIFF DPI and rejects missing DPI metadata.
+
+The chart-frame/sounding classifier, automatic contour-label rejection, trained
+sounding detector, automatic skew/line separation and whole-image tiled reading
+are not implemented. The UI is a restoration/extension of functional tools, not
+a reproduction of the old branding/assets or an independently reproduced copy
+of the historical EasyOCR 3.0.1 executable. Neither automated tests nor the small
+crop experiment establish 100% full-chart extraction accuracy.
+
+See [restoration validation](RESTORATION.md), [initial experiments](EXPERIMENTS.md)
+and the [official model catalogue](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/module_usage/text_recognition.en.md).

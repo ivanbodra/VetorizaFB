@@ -2,6 +2,9 @@ import argparse
 from dataclasses import fields
 import json
 
+from .runtime import configure_gis_runtime
+configure_gis_runtime()
+
 from .core import Config
 from .pipeline import extract
 

@@ -1,0 +1,87 @@
+{
+  "scope": "Complete raster execution and export consistency; no full-chart reference accuracy",
+  "runtime_note": "0.2 development source via PYTHONPATH; installed metadata still 0.1.0 during this run; recorded unchanged",
+  "run_metadata": {
+    "input_name": "1822geotiff.tif",
+    "input_sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+    "source_crs_wkt": "PROJCS[\"WG84 / MERCATOR\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",-25.4733333333333],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",2633814.86758589],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+    "target_crs": "EPSG:4326",
+    "z_convention": "metres, positive down, source chart vertical reference unchanged",
+    "pixel_convention": "continuous pixel-edge coordinates; bbox centre; no extra 0.5",
+    "model": "PP-OCRv6_small_rec",
+    "config": {
+      "reference_dpi": 600,
+      "dpi": 300,
+      "segmentation": "legacy",
+      "grouping": "relative",
+      "threshold": 120,
+      "blur_size": 5,
+      "kernel_size": 2,
+      "min_w": 3,
+      "max_w": 80,
+      "min_h": 10,
+      "max_h": 100,
+      "tol_x": 30,
+      "tol_y": 6,
+      "decimal_height_ratio": 0.95,
+      "decimal_drop": 0.1,
+      "decimal_max_integer": 31,
+      "min_confidence": 0.35,
+      "ocr_batch_size": 64,
+      "crop_padding": 3,
+      "retry_ambiguous": true
+    },
+    "packages": {
+      "vetorizafb": "0.1.0",
+      "paddleocr": "3.7.0",
+      "paddlepaddle": "3.3.1",
+      "numpy": "2.3.5",
+      "rasterio": "1.5.2",
+      "pyproj": "3.8.0",
+      "opencv-contrib-python": "4.10.0.84"
+    },
+    "timestamp_utc": "2026-10-22T19:56:11.605400+00:00",
+    "boxes": 9973,
+    "recognized_digits": 5535,
+    "soundings": 3244,
+    "elapsed_seconds": 235.83813001900126,
+    "status": "unreviewed candidates; not a complete cartographic classification",
+    "complete": true,
+    "output_sha256": {
+      "1822geotiff.csv": "eee9a0d851b9e7c810a695b2269b97f9a0410ce8dda4d8f219f5c0d7c1f56ca5",
+      "1822geotiff.digits.json": "4558e2bdde79e236ca99d45595658da846745ee54fffca14d3000bd06d6a6905",
+      "1822geotiff.preview.jpg": "2fc5cb84159991342765e8d0df698d08c780d6a1648c0d9520ac107d21e97800",
+      "1822geotiff.xyz": "d3a08f3fa156f20a7b7bec16cc5d7612c568255a92a4913c739c2bc53eec3e6e"
+    }
+  },
+  "comparison": {
+    "same_boxes": true,
+    "primary_text_changes": 0,
+    "retry_attempts": 5447,
+    "selected_retry_readings": 947,
+    "previous_candidate_count": 2826,
+    "new_candidate_count": 3244
+  },
+  "export_checks": {
+    "three_columns": true,
+    "all_finite": true,
+    "csv_rows_and_depth_match": true,
+    "all_hashes_match": true,
+    "max_xy_roundtrip_error_pixels": 2.617579411889892e-06
+  },
+  "s16_neighborhood_rows": [
+    {
+      "pixel_x": "5565.5",
+      "pixel_y": "3895.5",
+      "depth": "1.8",
+      "confidence": "0.9938626289367676",
+      "bounds": "(5556, 3884, 5575, 3907)",
+      "digit_ids": "[3343, 3348]",
+      "interpretation": "subscript_decimal",
+      "review_status": "unreviewed",
+      "flags": "['ocr_retry']",
+      "x": "-48.60285754898543",
+      "y": "-25.474454614332714"
+    }
+  ]
+}

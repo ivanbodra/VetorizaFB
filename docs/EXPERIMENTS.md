@@ -1,5 +1,8 @@
 # Raster chart OCR experiment — 2026-10-22
 
+This report records the initial 0.1 runner. Version 0.2 restores staged controls,
+adds point review and an optional OCR retry; see [restoration validation](RESTORATION.md).
+
 The original seven source files are preserved in `legacy/`, with their original
 line endings and checksums. This experiment evaluates the new modular runner;
 it does not independently reproduce the author's reported 100% baseline result.
@@ -66,9 +69,12 @@ readings, including rejected characters and full-crop OCR, are available in:
 - [PP-OCRv6 small](experiments/ppocrv6-small-crops.json)
 - [PP-OCRv6 medium](experiments/ppocrv6-medium-crops.json)
 
-Examples explain the remaining failures. The `1` in crop s16 (depth 1.8) touches
-a line and is lost during segmentation, leaving an incorrect candidate 8.0
-with every tested model. Small produces an extra 7.0 alongside the correct
+Examples explain the remaining failures. In crop s16 (depth 1.8), the small
+recognizer originally returns `I` for the first character; the strict numeric
+filter removes it, leaving 8.0. The earlier diagnosis that segmentation lost
+this character was incorrect: its box is present. The 0.2 optional second OCR
+reading recovers `1` with the original and alternative readings retained.
+Small produces an extra 7.0 alongside the correct
 26.5 in s11. Medium misses the 3 in depth 32 in s07. Full-crop OCR frequently
 returns `87`, `235` or `08`, without the decimal implied by chart typography;
 plain string-to-number conversion would therefore also produce wrong depths.

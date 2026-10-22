@@ -7,7 +7,8 @@ def transform_points(points, affine, source_crs, target_crs="EPSG:4326"):
     if source_crs is None:
         raise ValueError("A valid source CRS is required for geographic export")
     source, target = CRS.from_user_input(source_crs), CRS.from_user_input(target_crs)
-    xy = [affine * (float(x), float(y)) for x,y in points]
+    xy = [(affine.a*float(x)+affine.b*float(y)+affine.c,
+           affine.d*float(x)+affine.e*float(y)+affine.f) for x,y in points]
     if not xy:
         return []
     tr = Transformer.from_crs(source, target, always_xy=True)

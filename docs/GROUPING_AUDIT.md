@@ -1,5 +1,8 @@
 # Grouping performance audit
 
+This is the historical 0.1 audit. Version 0.2 adds Y-bucket indexing while
+preserving the greedy grouping decisions; see [restoration validation](RESTORATION.md).
+
 Audit date: 2026-10-22. Audited OCR branch commit:
 `e41353dc2e29e62f8bcadb1bac75f5f5d0e3fa2a`.
 
