@@ -12,7 +12,7 @@ pytestmark=pytest.mark.skipif(sys.platform!='win32' and not os.environ.get('DISP
 
 
 @pytest.fixture
-def app(tmp_path,monkeypatch):
+def app(tmp_path,monkeypatch,tk_root):
     import tkinter as tk
     from vetorizafb.gui import Application
     from vetorizafb.workflow import ChartSession
@@ -20,7 +20,7 @@ def app(tmp_path,monkeypatch):
     path=tmp_path/'chart.tif'
     rgb=np.full((3,120,200),255,np.uint8);rgb[:,20:45,20:30]=0
     with rasterio.open(path,'w',driver='GTiff',width=200,height=120,count=3,dtype='uint8',crs='EPSG:3857',transform=from_origin(100,200,2,2)) as ds:ds.write(rgb)
-    root=tk.Tk();errors=[];root.report_callback_exception=lambda *args:errors.append(args)
+    root=tk_root;errors=[];root.report_callback_exception=lambda *args:errors.append(args)
     instance=Application(root);root.geometry('1200x850')
     instance.session=ChartSession(path);instance.set_config(Config(segmentation='black'))
     instance.viewer.set_session(instance.session);root.update()
@@ -32,8 +32,22 @@ def app(tmp_path,monkeypatch):
     monkeypatch.setattr('vetorizafb.workflow.PaddleRecognizer',Reader)
     yield instance
     root.update()
-    root.destroy()
+    instance._closed=True
+    root.after_cancel(instance._poll_id)
+    for widget in root.winfo_children():widget.destroy()
+    root.update_idletasks()
     assert not errors,errors
+
+
+@pytest.fixture(scope='module')
+def tk_root():
+    # The application has one Tcl/Tk interpreter for its entire lifetime.
+    # Reuse that lifecycle in tests instead of repeatedly destroying/recreating
+    # Tcl interpreters, which was intermittent on the Windows runner.
+    import tkinter as tk
+    root=tk.Tk()
+    yield root
+    root.destroy()
 
 
 def finish(app):
