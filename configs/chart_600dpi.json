@@ -1,0 +1,14 @@
+{
+  "dpi": 600,
+  "reference_dpi": 600,
+  "segmentation": "legacy",
+  "threshold": 120,
+  "blur_size": 5,
+  "kernel_size": 2,
+  "min_w": 3,
+  "max_w": 80,
+  "min_h": 10,
+  "max_h": 100,
+  "tol_x": 30,
+  "tol_y": 6
+}

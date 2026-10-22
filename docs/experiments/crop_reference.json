@@ -1,0 +1,257 @@
+{
+  "scope": "crop-level diagnostic set, manually read by assistant, not independently reviewed; not full-chart ground truth",
+  "samples": [
+    {
+      "id": "s01",
+      "image": "21300plano.tif",
+      "box": [
+        2420,
+        1450,
+        2510,
+        1520
+      ],
+      "expected_depth": 8.7,
+      "kind": "sounding"
+    },
+    {
+      "id": "s02",
+      "image": "21300plano.tif",
+      "box": [
+        1980,
+        1670,
+        2070,
+        1750
+      ],
+      "expected_depth": 8.4,
+      "kind": "sounding"
+    },
+    {
+      "id": "s03",
+      "image": "21300plano.tif",
+      "box": [
+        2630,
+        1960,
+        2725,
+        2025
+      ],
+      "expected_depth": 8.9,
+      "kind": "sounding"
+    },
+    {
+      "id": "s04",
+      "image": "21300plano.tif",
+      "box": [
+        2960,
+        1990,
+        3050,
+        2070
+      ],
+      "expected_depth": 8.7,
+      "kind": "sounding"
+    },
+    {
+      "id": "s05",
+      "image": "21300plano.tif",
+      "box": [
+        2600,
+        2300,
+        2690,
+        2370
+      ],
+      "expected_depth": 9,
+      "kind": "sounding"
+    },
+    {
+      "id": "s06",
+      "image": "1410geotiff.tif",
+      "box": [
+        6270,
+        5510,
+        6350,
+        5570
+      ],
+      "expected_depth": 23.5,
+      "kind": "sounding"
+    },
+    {
+      "id": "s07",
+      "image": "1410geotiff.tif",
+      "box": [
+        5870,
+        5690,
+        5930,
+        5750
+      ],
+      "expected_depth": 32,
+      "kind": "sounding"
+    },
+    {
+      "id": "s08",
+      "image": "1410geotiff.tif",
+      "box": [
+        5685,
+        5800,
+        5750,
+        5850
+      ],
+      "expected_depth": 34,
+      "kind": "sounding"
+    },
+    {
+      "id": "s09",
+      "image": "1410geotiff.tif",
+      "box": [
+        6255,
+        5990,
+        6315,
+        6040
+      ],
+      "expected_depth": 31,
+      "kind": "sounding"
+    },
+    {
+      "id": "s10",
+      "image": "1410geotiff.tif",
+      "box": [
+        6620,
+        6100,
+        6700,
+        6160
+      ],
+      "expected_depth": 26.5,
+      "kind": "sounding"
+    },
+    {
+      "id": "s11",
+      "image": "1410geotiff.tif",
+      "box": [
+        6390,
+        6300,
+        6480,
+        6360
+      ],
+      "expected_depth": 26.5,
+      "kind": "sounding"
+    },
+    {
+      "id": "s12",
+      "image": "1822geotiff.tif",
+      "box": [
+        5550,
+        3655,
+        5610,
+        3705
+      ],
+      "expected_depth": 0.8,
+      "kind": "sounding"
+    },
+    {
+      "id": "s13",
+      "image": "1822geotiff.tif",
+      "box": [
+        5585,
+        3780,
+        5640,
+        3830
+      ],
+      "expected_depth": 2.9,
+      "kind": "sounding"
+    },
+    {
+      "id": "s14",
+      "image": "1822geotiff.tif",
+      "box": [
+        5720,
+        3770,
+        5765,
+        3810
+      ],
+      "expected_depth": 3,
+      "kind": "sounding"
+    },
+    {
+      "id": "s15",
+      "image": "1822geotiff.tif",
+      "box": [
+        5840,
+        3770,
+        5905,
+        3820
+      ],
+      "expected_depth": 3.2,
+      "kind": "sounding"
+    },
+    {
+      "id": "s16",
+      "image": "1822geotiff.tif",
+      "box": [
+        5535,
+        3875,
+        5590,
+        3920
+      ],
+      "expected_depth": 1.8,
+      "kind": "sounding"
+    },
+    {
+      "id": "s17",
+      "image": "1822geotiff.tif",
+      "box": [
+        5665,
+        3935,
+        5725,
+        3985
+      ],
+      "expected_depth": 2.8,
+      "kind": "sounding"
+    },
+    {
+      "id": "s18",
+      "image": "1822geotiff.tif",
+      "box": [
+        5545,
+        4090,
+        5600,
+        4140
+      ],
+      "expected_depth": 4.7,
+      "kind": "sounding"
+    },
+    {
+      "id": "s19",
+      "image": "1822geotiff.tif",
+      "box": [
+        6025,
+        4305,
+        6080,
+        4360
+      ],
+      "expected_depth": 3.9,
+      "kind": "sounding"
+    },
+    {
+      "id": "s20",
+      "image": "1822geotiff.tif",
+      "box": [
+        5595,
+        3900,
+        5635,
+        3940
+      ],
+      "expected_depth": null,
+      "kind": "contour_label"
+    },
+    {
+      "id": "s21",
+      "image": "1822geotiff.tif",
+      "box": [
+        9515,
+        4460,
+        9570,
+        4510
+      ],
+      "expected_depth": null,
+      "kind": "contour_label"
+    }
+  ]
+}

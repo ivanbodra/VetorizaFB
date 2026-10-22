@@ -1,0 +1,168 @@
+{
+  "scope": "Complete raster execution and export structure only; no full-chart accuracy ground truth",
+  "model_weights_sha256_reference": "ppocrv6-small-crops.json",
+  "runs": [
+    {
+      "metadata": {
+        "input_name": "1410geotiff.tif",
+        "input_sha256": "c222eb9dad7e616e659d8fe588987ca4836b530a681154bef168c605439a4107",
+        "source_crs_wkt": "PROJCS[\"WG84 / MERCATOR\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",-20.3166666666667],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",2153799.2306679],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+        "target_crs": "EPSG:4326",
+        "z_convention": "metres, positive down, source chart vertical reference unchanged",
+        "pixel_convention": "continuous pixel-edge coordinates; bbox centre; no extra 0.5",
+        "model": "PP-OCRv6_small_rec",
+        "config": {
+          "reference_dpi": 600,
+          "dpi": 300.0,
+          "segmentation": "legacy",
+          "grouping": "relative",
+          "threshold": 120,
+          "blur_size": 5,
+          "kernel_size": 2,
+          "min_w": 3,
+          "max_w": 80,
+          "min_h": 10,
+          "max_h": 100,
+          "tol_x": 30,
+          "tol_y": 6,
+          "decimal_height_ratio": 0.95,
+          "decimal_drop": 0.1,
+          "decimal_max_integer": 31,
+          "min_confidence": 0.35
+        },
+        "packages": {
+          "paddleocr": "3.7.0",
+          "paddlepaddle": "3.3.1",
+          "numpy": "2.3.5",
+          "rasterio": "1.5.2",
+          "pyproj": "3.8.0",
+          "opencv-contrib-python": "4.10.0.84"
+        },
+        "timestamp_utc": "2026-10-22T18:54:18.150067+00:00",
+        "boxes": 9556,
+        "recognized_digits": 4631,
+        "soundings": 3077,
+        "elapsed_seconds": 244.82880515899978,
+        "status": "unreviewed candidates; not a complete cartographic classification"
+      },
+      "export_checks": {
+        "xyz_columns": 3,
+        "xyz_rows": 3077,
+        "all_values_finite": true,
+        "csv_rows_match": true,
+        "all_candidates_unreviewed": true,
+        "depth_columns_match": true,
+        "max_xy_roundtrip_error_pixels": 1.3065819075563923e-06,
+        "xyz_sha256": "58482d52a836bbfd2f1fcc6f87656a7e84c7ad8ce44ed18e45a795315efb2675"
+      }
+    },
+    {
+      "metadata": {
+        "input_name": "1822geotiff.tif",
+        "input_sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+        "source_crs_wkt": "PROJCS[\"WG84 / MERCATOR\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",-25.4733333333333],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",2633814.86758589],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+        "target_crs": "EPSG:4326",
+        "z_convention": "metres, positive down, source chart vertical reference unchanged",
+        "pixel_convention": "continuous pixel-edge coordinates; bbox centre; no extra 0.5",
+        "model": "PP-OCRv6_small_rec",
+        "config": {
+          "reference_dpi": 600,
+          "dpi": 300.0,
+          "segmentation": "legacy",
+          "grouping": "relative",
+          "threshold": 120,
+          "blur_size": 5,
+          "kernel_size": 2,
+          "min_w": 3,
+          "max_w": 80,
+          "min_h": 10,
+          "max_h": 100,
+          "tol_x": 30,
+          "tol_y": 6,
+          "decimal_height_ratio": 0.95,
+          "decimal_drop": 0.1,
+          "decimal_max_integer": 31,
+          "min_confidence": 0.35
+        },
+        "packages": {
+          "paddleocr": "3.7.0",
+          "paddlepaddle": "3.3.1",
+          "numpy": "2.3.5",
+          "rasterio": "1.5.2",
+          "pyproj": "3.8.0",
+          "opencv-contrib-python": "4.10.0.84"
+        },
+        "timestamp_utc": "2026-10-22T18:54:32.771695+00:00",
+        "boxes": 9973,
+        "recognized_digits": 4615,
+        "soundings": 2826,
+        "elapsed_seconds": 259.4432795800003,
+        "status": "unreviewed candidates; not a complete cartographic classification"
+      },
+      "export_checks": {
+        "xyz_columns": 3,
+        "xyz_rows": 2826,
+        "all_values_finite": true,
+        "csv_rows_match": true,
+        "all_candidates_unreviewed": true,
+        "depth_columns_match": true,
+        "max_xy_roundtrip_error_pixels": 2.617579411889892e-06,
+        "xyz_sha256": "b88378c807310160bce12387a1450d38790245c1798212ceec6e7fe012b058a0"
+      }
+    },
+    {
+      "metadata": {
+        "input_name": "21300plano.tif",
+        "input_sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+        "source_crs_wkt": "PROJCS[\"WG84 / MERCATOR\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",-1.44555555555556],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",159807.911105364],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+        "target_crs": "EPSG:4326",
+        "z_convention": "metres, positive down, source chart vertical reference unchanged",
+        "pixel_convention": "continuous pixel-edge coordinates; bbox centre; no extra 0.5",
+        "model": "PP-OCRv6_small_rec",
+        "config": {
+          "reference_dpi": 600,
+          "dpi": 600.0,
+          "segmentation": "legacy",
+          "grouping": "relative",
+          "threshold": 120,
+          "blur_size": 5,
+          "kernel_size": 2,
+          "min_w": 3,
+          "max_w": 80,
+          "min_h": 10,
+          "max_h": 100,
+          "tol_x": 30,
+          "tol_y": 6,
+          "decimal_height_ratio": 0.95,
+          "decimal_drop": 0.1,
+          "decimal_max_integer": 31,
+          "min_confidence": 0.35
+        },
+        "packages": {
+          "paddleocr": "3.7.0",
+          "paddlepaddle": "3.3.1",
+          "numpy": "2.3.5",
+          "rasterio": "1.5.2",
+          "pyproj": "3.8.0",
+          "opencv-contrib-python": "4.10.0.84"
+        },
+        "timestamp_utc": "2026-10-22T18:49:19.788423+00:00",
+        "boxes": 411,
+        "recognized_digits": 292,
+        "soundings": 163,
+        "elapsed_seconds": 16.874895398000263,
+        "status": "unreviewed candidates; not a complete cartographic classification"
+      },
+      "export_checks": {
+        "xyz_columns": 3,
+        "xyz_rows": 163,
+        "all_values_finite": true,
+        "csv_rows_match": true,
+        "all_candidates_unreviewed": true,
+        "depth_columns_match": true,
+        "max_xy_roundtrip_error_pixels": 6.499467417597771e-07,
+        "xyz_sha256": "e833934fc9208f35c30fa7d8aef10d649af01dce424e10efc16a523fd61a917c"
+      }
+    }
+  ]
+}
