@@ -13,7 +13,7 @@ def icon_candidates():
         name=selected.read_text(encoding='utf-8').strip()
         if name in {'logo_vetorizafb.ico','logo_vetorizafb.png'}:yield user/name
     for folder in (user, Path(__file__).parent / 'assets', root, root / 'legacy/v3_1'):
-        for name in ('logo_vetorizaFB.ico', 'logo_vetorizafb.ico', 'logo_vetorizafb.png', 'logo_vetorizaFB.png'):
+        for name in ('logo_vetorizafb.ico', 'logo_vetorizaFB.ico', 'logo_vetorizafb.png', 'logo_vetorizaFB.png'):
             yield folder / name
 
 
