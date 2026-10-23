@@ -36,7 +36,7 @@ py -3.12 -m venv .venv
 ```
 
 On an existing installation, reuse the root `.venv` and rerun the editable
-installation after updating. Confirm that the window title shows **0.3.0**.
+installation after updating. Confirm that the window title shows **0.3.1**.
 Linux equivalents are `.venv/bin/python`, `.venv/bin/vetorizafb-gui` and
 `.venv/bin/vetorizafb`; Tkinter and a display are required for the GUI tests.
 Use `xvfb-run -a python -m pytest -q` in a headless Linux test environment.
@@ -87,6 +87,13 @@ system. Cutting through a character at an ROI boundary can change its contour;
 leave a margin around soundings. A new ROI replaces the working region; it does
 not accumulate results from several ROIs into one project.
 
+When excluding marginal coordinates, select the useful chart area inside the
+frame before processing. This also omits any legitimate soundings outside that
+rectangle, so check the intended coverage. There is no automatic margin mask.
+Rotation alone is insufficient: the example contains both vertical and
+horizontal coordinate labels, while italic sounding digits have slanted strokes.
+Contour labels use the same digits as soundings and remain subject to review.
+
 ## 3. OCR and character inspection
 
 In **2. OCR**, select PP-OCRv6 small/medium or PP-OCRv5 server. Small remains the
@@ -102,7 +109,13 @@ white padding and 2x enlargement. A local letter-neighbour check suppresses
 apparent word contexts. Only an actual model output of exactly `1` with a score
 at least `max(0.80, minimum confidence)` is selected. Recognized zeros and
 multi-character readings are never replaced by this directed pass. A failed
-retry stays unresolved; this is not a forced `I` → `1` substitution.
+retry gets one final attempt in 0.3.1: isolate the dominant ink component that
+overlaps the original character box, remove disconnected neighbouring fragments,
+then reread that crop with white padding and 2x enlargement. A model result such
+as `1.` is preserved; it is never shortened into a digit. The isolated reading
+must independently return exactly `1` above the same confidence threshold.
+Blank crops or components failing the overlap/size checks are skipped. A failed
+final retry stays unresolved; this is not a forced `I` → `1` substitution.
 
 **Reler todos os demais ambíguos** enables the broader retry and is off by default.
 It accepts any single numeric alternative above the configured minimum. When
@@ -115,7 +128,9 @@ Both raw readings and real scores remain recorded. Affected groups receive
 `ocr_retry`; directed recoveries also receive `ocr_one_retry` and the table shows
 **Releitura dirigida: 1**. Every generated point starts pending. No synthetic
 confidence is inserted and a model score is not a probability of a correct
-sounding. See the [diagnostic results](REVIEW_AND_ONES.md).
+sounding. An isolated recovery has digit method `ocr_one_isolated` and alternative
+method `isolated_component_padded_2x`. See the [follow-up diagnostic results](REMAINING_ONES.md)
+and [original directed-retry results](REVIEW_AND_ONES.md).
 
 Choose **Executar etapa 2**. Progress reports batches; model loading and individual
 batches cannot be interrupted midway. Cancellation is checked between batches
@@ -229,6 +244,11 @@ their cached OCR and review are preserved under the behaviour actually used.
 Enable the new option and rerun OCR/grouping when you want directed retry;
 save the existing project first if it contains review decisions to retain.
 
+To apply the 0.3.1 crop-isolation fix to a cached 0.3.0 project, explicitly rerun
+**Executar etapa 2**, then **Executar etapa 3 / reagrupar**, with **Reler possíveis
+“1”** enabled. Opening a saved project restores its cached readings; the pending-
+stages button can reuse them. Save the original review before replacing it.
+
 ## 7. Export candidates or accepted points
 
 In **4. Exportar**, choose an output directory and target CRS. Default EPSG:4326
@@ -289,6 +309,7 @@ a reproduction of the old branding/assets or an independently reproduced copy
 of the historical EasyOCR 3.0.1 executable. Neither automated tests nor the small
 crop experiment establish 100% full-chart extraction accuracy.
 
-See [keyboard/one-retry validation](REVIEW_AND_ONES.md),
+See [remaining-one/crop-isolation validation](REMAINING_ONES.md),
+[keyboard/one-retry validation](REVIEW_AND_ONES.md),
 [0.2 restoration validation](RESTORATION.md), [initial experiments](EXPERIMENTS.md)
 and the [official model catalogue](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/module_usage/text_recognition.en.md).

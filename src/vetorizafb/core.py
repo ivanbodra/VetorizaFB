@@ -202,6 +202,32 @@ def one_retry_candidates(digits):
     return candidates
 
 
+def isolated_one_crop(rgb, box, pad):
+    """Remove disconnected neighbouring ink before a final directed OCR read.
+
+    Keep the dominant component overlapping this character's original box.
+    No digit value is inferred from the component and the box is not changed.
+    """
+    h,w=rgb.shape[:2];b=box
+    x,y=max(0,b.x-pad),max(0,b.y-pad)
+    patch=rgb[y:min(h,b.y+b.h+pad),x:min(w,b.x+b.w+pad)]
+    gray=cv2.cvtColor(patch,cv2.COLOR_RGB2GRAY)
+    _,ink=cv2.threshold(gray,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    count,labels,stats,_=cv2.connectedComponentsWithStats(ink,connectivity=8)
+    inside=labels[b.y-y:b.y-y+b.h,b.x-x:b.x-x+b.w]
+    overlap=np.bincount(inside.ravel(),minlength=count);overlap[0]=0
+    label=int(overlap.argmax())
+    if label==0:return None
+    left,top,width,height,area=map(int,stats[label])
+    if (not .65*b.h<=height<=1.3*b.h or width>1.3*b.w
+        or overlap[label]<max(5,.8*overlap.sum()) or overlap[label]<.6*area):
+        return None
+    bw=np.where(labels[top:top+height,left:left+width]==label,0,255).astype(np.uint8)
+    bw=cv2.copyMakeBorder(bw,8,8,8,8,cv2.BORDER_CONSTANT,value=255)
+    bw=cv2.resize(bw,None,fx=2,fy=2,interpolation=cv2.INTER_CUBIC)
+    return cv2.cvtColor(bw,cv2.COLOR_GRAY2RGB)
+
+
 def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False, retry_one=False,
               min_confidence=.35, progress=None, cancel=None):
     if batch_size < 1 or pad < 0:
@@ -261,6 +287,25 @@ def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False, retry_on
                         d.selected_text, d.selected_confidence, d.method = raw.strip(), conf, "ocr_one_retry" if is_one else "ocr_retry"
             if progress:
                 progress(min(start+len(subset),len(ambiguous)),len(ambiguous),"OCR retry" if retry else "OCR: reler possíveis 1")
+        # A neighbour's small detached fragment can turn a true one into '1.'.
+        # Re-read its isolated ink instead of stripping/truncating model text.
+        remaining=[d for d in ones if d.text is None]
+        for start in range(0,len(remaining),batch_size):
+            check_cancel(cancel)
+            subset=[];crops=[]
+            for d in remaining[start:start+batch_size]:
+                crop=isolated_one_crop(rgb,d.box,pad)
+                if crop is not None:subset.append(d);crops.append(crop)
+            if not crops:continue
+            readings=engine.predict(crops)
+            if len(readings)!=len(subset):raise RuntimeError('Isolated OCR result count does not match crop count')
+            for d,(raw,conf) in zip(subset,readings):
+                raw,conf=str(raw),float(conf)
+                if not math.isfinite(conf) or not 0<=conf<=1:raise ValueError('Invalid isolated OCR confidence')
+                d.alternatives.append(dict(text=raw,confidence=conf,method='isolated_component_padded_2x'))
+                if raw.strip()=='1' and conf>=max(.8,min_confidence):
+                    d.selected_text,d.selected_confidence,d.method='1',conf,'ocr_one_isolated'
+            if progress:progress(min(start+batch_size,len(remaining)),len(remaining),'OCR: isolar possíveis 1')
     check_cancel(cancel)
     return out
 
@@ -324,7 +369,7 @@ def group(digits, config):
         ymin = min(d.box.y for d in members)
         ymax = max(d.box.y+d.box.h for d in members)
         flags = ["ocr_retry"] if any(d.method != "ocr" for d in members) else []
-        if any(d.method=='ocr_one_retry' for d in members):flags.append('ocr_one_retry')
+        if any(d.method in {'ocr_one_retry','ocr_one_isolated'} for d in members):flags.append('ocr_one_retry')
         out.append(Sounding((xmin+xmax)/2, (ymin+ymax)/2, depth,
                             min(d.score for d in members),
                             (xmin,ymin,xmax,ymax), [d.index for d in members],

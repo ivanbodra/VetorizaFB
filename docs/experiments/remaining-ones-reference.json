@@ -1,0 +1,13 @@
+{
+  "scope": "Diagnostic native-pixel locations for the four soundings in image(4).png, one additional missed 11.1, and word/marginal-coordinate negatives. Labels read by the assistant, not independently reviewed; no full-chart accuracy claim.",
+  "samples": [
+    {"id":"remaining01","image":"21300plano.tif","box":[977,3871,1039,3938],"expected_depth":11.1,"kind":"sounding","set":"current_screenshot"},
+    {"id":"remaining02","image":"21300plano.tif","box":[199,4049,273,4116],"expected_depth":11.9,"kind":"sounding","set":"current_screenshot"},
+    {"id":"remaining03","image":"21300plano.tif","box":[642,4288,716,4356],"expected_depth":11.9,"kind":"sounding","set":"current_screenshot"},
+    {"id":"remaining04","image":"21300plano.tif","box":[1436,4271,1484,4325],"expected_depth":11.0,"kind":"sounding","set":"current_screenshot"},
+    {"id":"remaining05","image":"21300plano.tif","box":[7208,1609,7270,1676],"expected_depth":11.1,"kind":"sounding","set":"additional_one"},
+    {"id":"remaining06","image":"21300plano.tif","box":[3535,750,3740,840],"expected_depth":null,"kind":"printed_word","set":"negative"},
+    {"id":"remaining07","image":"21300plano.tif","box":[13,4049,69,4330],"expected_depth":null,"kind":"rotated_coordinate","set":"negative"},
+    {"id":"remaining08","image":"21300plano.tif","box":[84,4335,314,4401],"expected_depth":null,"kind":"horizontal_coordinate","set":"negative"}
+  ]
+}

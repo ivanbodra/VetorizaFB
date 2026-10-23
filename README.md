@@ -4,7 +4,7 @@ Extract georeferenced sounding candidates from raster nautical charts and review
 them before XYZ export. Historical handwritten hydrographic field sheets are a
 separate future module.
 
-## Current development version: 0.3.0
+## Current development version: 0.3.1
 
 Branch `ocr-modernization` / [PR #1](https://github.com/ivanbodra/VetorizaFB/pull/1).
 The original seven uploaded files remain byte-for-byte preserved under `legacy/`
@@ -21,7 +21,8 @@ Version 0.3 retains the PaddleOCR 3.x core and staged tools:
 - Original/mask/boxes/OCR/soundings layers, zoom, pan, ROI selection, contour-size
   histograms and character-crop inspection.
 - Directed rereading of possible narrow `1` glyphs, enabled by default, plus an
-  optional broader retry. Both preserve original text and real model scores.
+  optional broader retry. Failed directed reads get a final isolated-component
+  crop to remove neighbouring ink. All readings preserve real model scores.
 - Arrow navigation with following/size-based zoom, Shift range selection,
   Ctrl+click toggles, visible-row selection and batch approval/exclusion.
   In the chart/table, Ctrl+A approves, Ctrl+X rejects and Ctrl+E edits one value;
@@ -34,10 +35,10 @@ Version 0.3 retains the PaddleOCR 3.x core and staged tools:
   corpus while reducing repeated scans through vertical columns.
 
 Read the [current user guide](docs/USER_GUIDE.md) and
-[keyboard/one-retry validation](docs/REVIEW_AND_ONES.md).
-The [0.2 restoration report](docs/RESTORATION.md) and historical reports remain
-in [initial OCR experiments](docs/EXPERIMENTS.md),
-[0.1 grouping audit](docs/GROUPING_AUDIT.md) and [baseline scope](docs/BASELINE.md).
+[remaining-one/crop-isolation validation](docs/REMAINING_ONES.md).
+Earlier reports cover [0.3 keyboard/one-retry validation](docs/REVIEW_AND_ONES.md),
+[0.2 restoration](docs/RESTORATION.md), [initial OCR experiments](docs/EXPERIMENTS.md),
+[0.1 grouping](docs/GROUPING_AUDIT.md) and [baseline scope](docs/BASELINE.md).
 
 ## Windows quick start
 
@@ -56,7 +57,7 @@ py -3.12 -m venv .venv
 
 For an existing clone, preserve local changes, switch to `ocr-modernization`,
 run `git pull --ff-only` and repeat installation into the root `.venv`. The window
-must show **0.3.0**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
+must show **0.3.1**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
 and a Tk display; use `xvfb-run -a python -m pytest -q` for headless GUI tests.
 CPU PaddleOCR 3.7.0/PaddlePaddle 3.3.1 and OpenCV versions are pinned; supporting
 dependencies have ranges. First use may retrieve weights, or select a matching
@@ -97,6 +98,12 @@ when processing the whole chart. On the earlier, separate development set it
 matches 18/19 positive crops; both contour-label negatives remain false positives.
 These are diagnostic samples, not a full-chart accuracy reference. Read the
 [validation report](docs/REVIEW_AND_ONES.md) for scope and reproducible results.
+
+The 0.3.1 isolated-component retry also restores an 11.9 previously read as 1.9
+and an 11.1 read as 1.1. The four soundings in the follow-up screenshot match
+their expected values in the native GeoTIFF tests. Marginal coordinate labels
+and contour labels remain candidates for operator review; use a useful-area ROI
+to omit margins when appropriate. See the [follow-up evidence](docs/REMAINING_ONES.md).
 
 The automatic point anchor is the text-box centre and remains unverified against
 cartographic anchors; a reviewer can reposition it. There is no trained sounding
