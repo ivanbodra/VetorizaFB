@@ -1,0 +1,4360 @@
+{
+  "scope": "Assistant-read diagnostic comparisons, not independent full-chart ground truth. Marginal-coordinate and contour-label negatives remain false positives; no automatic exclusion is added.",
+  "application_version": "0.3.1",
+  "baseline_commit": "6b66bd521da23da6cdd5e7c294a0e0f1187ff49b",
+  "baseline_core_git_blob": "e82216a38077fa26291c2400e68b818d0f436bb1",
+  "current_core_sha256": "af33eb6d223c8b305a5289613991b7189abbde6ba596a2759ea8090bea1ce17c",
+  "model": "PP-OCRv6_small_rec",
+  "device": "cpu",
+  "config": {
+    "reference_dpi": 600,
+    "dpi": 600,
+    "segmentation": "legacy",
+    "grouping": "relative",
+    "threshold": 120,
+    "blur_size": 5,
+    "kernel_size": 2,
+    "min_w": 3,
+    "max_w": 80,
+    "min_h": 10,
+    "max_h": 100,
+    "tol_x": 30,
+    "tol_y": 6,
+    "decimal_height_ratio": 0.95,
+    "decimal_drop": 0.1,
+    "decimal_max_integer": 31,
+    "min_confidence": 0.35,
+    "ocr_batch_size": 64,
+    "crop_padding": 3,
+    "retry_ambiguous": false,
+    "retry_one": true
+  },
+  "packages": {
+    "paddleocr": "3.7.0",
+    "paddlepaddle": "3.3.1",
+    "paddlex": "3.7.2"
+  },
+  "model_files_sha256": {
+    "inference.pdiparams": "406e1e689c9a7fbb04178007a3fe10cf852afe7bf8bb3bc6dbb9d532b13bd907",
+    "inference.json": "f0bf53c853937a917affdd74467472167727f8ab0f0f7bded01c4a16c27e46e6",
+    "inference.yml": "ab078671bb49f06228eadccd34f1bb501e157f7a047095ffb943ba81512c77d1"
+  },
+  "input_files": {
+    "21300plano.tif": {
+      "sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+      "bytes": 2160982
+    },
+    "1410geotiff.tif": {
+      "sha256": "c222eb9dad7e616e659d8fe588987ca4836b530a681154bef168c605439a4107",
+      "bytes": 13290263
+    },
+    "1822geotiff.tif": {
+      "sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+      "bytes": 20128269
+    }
+  },
+  "elapsed_seconds_excluding_model_load": 34.647980897000025,
+  "summary": {
+    "current_screenshot": {
+      "samples": 4,
+      "before_correct": 3,
+      "after_correct": 4
+    },
+    "additional_one": {
+      "samples": 1,
+      "before_correct": 0,
+      "after_correct": 1
+    },
+    "previous_five": {
+      "samples": 5,
+      "before_correct": 5,
+      "after_correct": 5
+    },
+    "previous_19_positive": {
+      "samples": 19,
+      "before_correct": 18,
+      "after_correct": 18
+    },
+    "previous_contour_negatives": {
+      "samples": 2,
+      "before_correct": 0,
+      "after_correct": 0
+    },
+    "marginal_coordinate_negatives": {
+      "samples": 2,
+      "before_correct": 0,
+      "after_correct": 0
+    },
+    "word_negative": {
+      "samples": 1,
+      "before_correct": 1,
+      "after_correct": 1
+    }
+  },
+  "full_chart": {
+    "before": {
+      "boxes": 411,
+      "candidate_count": 166,
+      "checks": [
+        {
+          "id": "remaining01",
+          "expected_depth": 11.1,
+          "values": [
+            11.1
+          ]
+        },
+        {
+          "id": "remaining02",
+          "expected_depth": 11.9,
+          "values": [
+            11.9
+          ]
+        },
+        {
+          "id": "remaining03",
+          "expected_depth": 11.9,
+          "values": [
+            1.9
+          ]
+        },
+        {
+          "id": "remaining04",
+          "expected_depth": 11.0,
+          "values": [
+            11.0
+          ]
+        },
+        {
+          "id": "remaining05",
+          "expected_depth": 11.1,
+          "values": [
+            1.1
+          ]
+        },
+        {
+          "id": "remaining06",
+          "expected_depth": null,
+          "values": []
+        },
+        {
+          "id": "remaining07",
+          "expected_depth": null,
+          "values": [
+            2.0,
+            4.0,
+            0.0,
+            6.0,
+            9.0,
+            9.0
+          ]
+        },
+        {
+          "id": "remaining08",
+          "expected_depth": null,
+          "values": [
+            116.0,
+            60.0
+          ]
+        }
+      ]
+    },
+    "after": {
+      "boxes": 411,
+      "candidate_count": 166,
+      "checks": [
+        {
+          "id": "remaining01",
+          "expected_depth": 11.1,
+          "values": [
+            11.1
+          ]
+        },
+        {
+          "id": "remaining02",
+          "expected_depth": 11.9,
+          "values": [
+            11.9
+          ]
+        },
+        {
+          "id": "remaining03",
+          "expected_depth": 11.9,
+          "values": [
+            11.9
+          ]
+        },
+        {
+          "id": "remaining04",
+          "expected_depth": 11.0,
+          "values": [
+            11.0
+          ]
+        },
+        {
+          "id": "remaining05",
+          "expected_depth": 11.1,
+          "values": [
+            11.1
+          ]
+        },
+        {
+          "id": "remaining06",
+          "expected_depth": null,
+          "values": []
+        },
+        {
+          "id": "remaining07",
+          "expected_depth": null,
+          "values": [
+            2.0,
+            4.0,
+            0.0,
+            6.0,
+            9.0,
+            9.0
+          ]
+        },
+        {
+          "id": "remaining08",
+          "expected_depth": null,
+          "values": [
+            116.0,
+            60.0
+          ]
+        }
+      ]
+    },
+    "changed_readings": [
+      {
+        "index": 42,
+        "box": {
+          "x": 652,
+          "y": 4298,
+          "w": 14,
+          "h": 35
+        },
+        "before_text": null,
+        "after_text": "1",
+        "raw_text": "I",
+        "raw_confidence": 0.4667684733867645,
+        "alternatives": [
+          {
+            "text": "1.",
+            "confidence": 0.7884448766708374,
+            "method": "binary_padded_2x"
+          },
+          {
+            "text": "1",
+            "confidence": 0.9885610938072205,
+            "method": "isolated_component_padded_2x"
+          }
+        ],
+        "selected_confidence": 0.9885610938072205,
+        "method": "ocr_one_isolated"
+      },
+      {
+        "index": 378,
+        "box": {
+          "x": 7218,
+          "y": 1619,
+          "w": 13,
+          "h": 35
+        },
+        "before_text": null,
+        "after_text": "1",
+        "raw_text": "I",
+        "raw_confidence": 0.47850096225738525,
+        "alternatives": [
+          {
+            "text": "1.",
+            "confidence": 0.8619166612625122,
+            "method": "binary_padded_2x"
+          },
+          {
+            "text": "1",
+            "confidence": 0.9832888245582581,
+            "method": "isolated_component_padded_2x"
+          }
+        ],
+        "selected_confidence": 0.9832888245582581,
+        "method": "ocr_one_isolated"
+      }
+    ],
+    "punctuation_control": [
+      {
+        "box": {
+          "x": 7357,
+          "y": 23,
+          "w": 4,
+          "h": 13
+        },
+        "raw_text": "I",
+        "confidence": 0.9197326898574829,
+        "index": 393,
+        "alternatives": [
+          {
+            "text": "1",
+            "confidence": 0.7879719734191895,
+            "method": "binary_padded_2x"
+          },
+          {
+            "text": "1",
+            "confidence": 0.6394446492195129,
+            "method": "isolated_component_padded_2x"
+          }
+        ],
+        "selected_text": null,
+        "selected_confidence": null,
+        "method": "ocr"
+      }
+    ]
+  },
+  "records": [
+    {
+      "id": "remaining01",
+      "image": "21300plano.tif",
+      "box": [
+        977,
+        3871,
+        1039,
+        3938
+      ],
+      "expected_depth": 11.1,
+      "kind": "sounding",
+      "set": "current_screenshot",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [
+            11.1
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.4569011330604553,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 11,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5165935158729553,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9856385588645935,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9856385588645935,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.5348531603813171,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9910939335823059,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9910939335823059,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            11.1
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.4569011330604553,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 11,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5165935158729553,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9856385588645935,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9856385588645935,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.5348531603813171,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9910939335823059,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9910939335823059,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "remaining02",
+      "image": "21300plano.tif",
+      "box": [
+        199,
+        4049,
+        273,
+        4116
+      ],
+      "expected_depth": 11.9,
+      "kind": "sounding",
+      "set": "current_screenshot",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [
+            11.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5090804100036621,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9959710240364075,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9959710240364075,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5584310293197632,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9883975386619568,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9883975386619568,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 28,
+                "w": 24,
+                "h": 29
+              },
+              "raw_text": "9",
+              "confidence": 0.9988530874252319,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            11.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5090804100036621,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9959710240364075,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9959710240364075,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5584310293197632,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9883975386619568,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9883975386619568,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 28,
+                "w": 24,
+                "h": 29
+              },
+              "raw_text": "9",
+              "confidence": 0.9988530874252319,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "remaining03",
+      "image": "21300plano.tif",
+      "box": [
+        642,
+        4288,
+        716,
+        4356
+      ],
+      "expected_depth": 11.9,
+      "kind": "sounding",
+      "set": "current_screenshot",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [
+            1.9
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.4667684733867645,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1.",
+                  "confidence": 0.7884448766708374,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5993919372558594,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.97041916847229,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.97041916847229,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 41,
+                "y": 28,
+                "w": 23,
+                "h": 30
+              },
+              "raw_text": "9",
+              "confidence": 0.9995618462562561,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            11.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.4667684733867645,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1.",
+                  "confidence": 0.7884448766708374,
+                  "method": "binary_padded_2x"
+                },
+                {
+                  "text": "1",
+                  "confidence": 0.9885610938072205,
+                  "method": "isolated_component_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9885610938072205,
+              "method": "ocr_one_isolated"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5993919372558594,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.97041916847229,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.97041916847229,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 41,
+                "y": 28,
+                "w": 23,
+                "h": 30
+              },
+              "raw_text": "9",
+              "confidence": 0.9995618462562561,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "remaining04",
+      "image": "21300plano.tif",
+      "box": [
+        1436,
+        4271,
+        1484,
+        4325
+      ],
+      "expected_depth": 11.0,
+      "kind": "sounding",
+      "set": "current_screenshot",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5772215127944946,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9802623987197876,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9802623987197876,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.6439592242240906,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9875934720039368,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9875934720039368,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5772215127944946,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9802623987197876,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9802623987197876,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.6439592242240906,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9875934720039368,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9875934720039368,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "remaining05",
+      "image": "21300plano.tif",
+      "box": [
+        7208,
+        1609,
+        7270,
+        1676
+      ],
+      "expected_depth": 11.1,
+      "kind": "sounding",
+      "set": "additional_one",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [
+            1.1
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.47850096225738525,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1.",
+                  "confidence": 0.8619166612625122,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.6038284301757812,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.98069828748703,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.98069828748703,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 28,
+                "w": 12,
+                "h": 29
+              },
+              "raw_text": "I",
+              "confidence": 0.6876670122146606,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.988620936870575,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.988620936870575,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            11.1
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.47850096225738525,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1.",
+                  "confidence": 0.8619166612625122,
+                  "method": "binary_padded_2x"
+                },
+                {
+                  "text": "1",
+                  "confidence": 0.9832888245582581,
+                  "method": "isolated_component_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9832888245582581,
+              "method": "ocr_one_isolated"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.6038284301757812,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.98069828748703,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.98069828748703,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 28,
+                "w": 12,
+                "h": 29
+              },
+              "raw_text": "I",
+              "confidence": 0.6876670122146606,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.988620936870575,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.988620936870575,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "remaining06",
+      "image": "21300plano.tif",
+      "box": [
+        3535,
+        750,
+        3740,
+        840
+      ],
+      "expected_depth": null,
+      "kind": "printed_word",
+      "set": "negative",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 26,
+                "y": 18,
+                "w": 36,
+                "h": 49
+              },
+              "raw_text": "T",
+              "confidence": 0.9989247918128967,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 18,
+                "w": 16,
+                "h": 49
+              },
+              "raw_text": "I",
+              "confidence": 0.7456814646720886,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 79,
+                "y": 18,
+                "w": 44,
+                "h": 49
+              },
+              "raw_text": "D",
+              "confidence": 0.9999134540557861,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 127,
+                "y": 18,
+                "w": 40,
+                "h": 49
+              },
+              "raw_text": "E",
+              "confidence": 0.5979722142219543,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 26,
+                "y": 18,
+                "w": 36,
+                "h": 49
+              },
+              "raw_text": "T",
+              "confidence": 0.9989247918128967,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 18,
+                "w": 16,
+                "h": 49
+              },
+              "raw_text": "I",
+              "confidence": 0.7456814646720886,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 79,
+                "y": 18,
+                "w": 44,
+                "h": 49
+              },
+              "raw_text": "D",
+              "confidence": 0.9999134540557861,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 127,
+                "y": 18,
+                "w": 40,
+                "h": 49
+              },
+              "raw_text": "E",
+              "confidence": 0.5979722142219543,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "remaining07",
+      "image": "21300plano.tif",
+      "box": [
+        13,
+        4049,
+        69,
+        4330
+      ],
+      "expected_depth": null,
+      "kind": "rotated_coordinate",
+      "set": "negative",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [
+            2.0,
+            4.0,
+            0.0,
+            6.0,
+            9.0,
+            9.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 36,
+                "h": 45
+              },
+              "raw_text": "W",
+              "confidence": 0.9835862517356873,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 63,
+                "w": 37,
+                "h": 25
+              },
+              "raw_text": "0",
+              "confidence": 0.9985995888710022,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 91,
+                "w": 37,
+                "h": 24
+              },
+              "raw_text": "6",
+              "confidence": 0.9913869500160217,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 142,
+                "w": 37,
+                "h": 25
+              },
+              "raw_text": "9",
+              "confidence": 0.9753050208091736,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 170,
+                "w": 36,
+                "h": 25
+              },
+              "raw_text": "2",
+              "confidence": 0.9999767541885376,
+              "index": 4,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 198,
+                "w": 15,
+                "h": 15
+              },
+              "raw_text": "o",
+              "confidence": 0.4711306691169739,
+              "index": 5,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 218,
+                "w": 37,
+                "h": 24
+              },
+              "raw_text": "9",
+              "confidence": 0.9766513705253601,
+              "index": 6,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 245,
+                "w": 36,
+                "h": 26
+              },
+              "raw_text": "4",
+              "confidence": 0.9997497200965881,
+              "index": 7,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            2.0,
+            4.0,
+            0.0,
+            6.0,
+            9.0,
+            9.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 36,
+                "h": 45
+              },
+              "raw_text": "W",
+              "confidence": 0.9835862517356873,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 63,
+                "w": 37,
+                "h": 25
+              },
+              "raw_text": "0",
+              "confidence": 0.9985995888710022,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 91,
+                "w": 37,
+                "h": 24
+              },
+              "raw_text": "6",
+              "confidence": 0.9913869500160217,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 142,
+                "w": 37,
+                "h": 25
+              },
+              "raw_text": "9",
+              "confidence": 0.9753050208091736,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 170,
+                "w": 36,
+                "h": 25
+              },
+              "raw_text": "2",
+              "confidence": 0.9999767541885376,
+              "index": 4,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 198,
+                "w": 15,
+                "h": 15
+              },
+              "raw_text": "o",
+              "confidence": 0.4711306691169739,
+              "index": 5,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 218,
+                "w": 37,
+                "h": 24
+              },
+              "raw_text": "9",
+              "confidence": 0.9766513705253601,
+              "index": 6,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 10,
+                "y": 245,
+                "w": 36,
+                "h": 26
+              },
+              "raw_text": "4",
+              "confidence": 0.9997497200965881,
+              "index": 7,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "remaining08",
+      "image": "21300plano.tif",
+      "box": [
+        84,
+        4335,
+        314,
+        4401
+      ],
+      "expected_depth": null,
+      "kind": "horizontal_coordinate",
+      "set": "negative",
+      "reference": "current",
+      "runs": {
+        "before": {
+          "values": [
+            116.0,
+            60.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 12,
+                "w": 13,
+                "h": 36
+              },
+              "raw_text": "1",
+              "confidence": 0.9996131062507629,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 12,
+                "w": 15,
+                "h": 15
+              },
+              "raw_text": "o",
+              "confidence": 0.47313597798347473,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 12,
+                "w": 14,
+                "h": 36
+              },
+              "raw_text": "1",
+              "confidence": 0.9991222023963928,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 82,
+                "y": 12,
+                "w": 25,
+                "h": 37
+              },
+              "raw_text": "6",
+              "confidence": 0.9999736547470093,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 111,
+                "y": 12,
+                "w": 4,
+                "h": 13
+              },
+              "raw_text": "\u00e9",
+              "confidence": 0.3526097238063812,
+              "index": 4,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 121,
+                "y": 42,
+                "w": 7,
+                "h": 12
+              },
+              "raw_text": "J",
+              "confidence": 0.36877205967903137,
+              "index": 5,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 133,
+                "y": 12,
+                "w": 25,
+                "h": 37
+              },
+              "raw_text": "6",
+              "confidence": 0.9999779462814331,
+              "index": 6,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 161,
+                "y": 12,
+                "w": 25,
+                "h": 37
+              },
+              "raw_text": "0",
+              "confidence": 0.9984405636787415,
+              "index": 7,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 191,
+                "y": 11,
+                "w": 29,
+                "h": 37
+              },
+              "raw_text": "N",
+              "confidence": 0.9996793270111084,
+              "index": 8,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            116.0,
+            60.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 12,
+                "w": 13,
+                "h": 36
+              },
+              "raw_text": "1",
+              "confidence": 0.9996131062507629,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 12,
+                "w": 15,
+                "h": 15
+              },
+              "raw_text": "o",
+              "confidence": 0.47313597798347473,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 12,
+                "w": 14,
+                "h": 36
+              },
+              "raw_text": "1",
+              "confidence": 0.9991222023963928,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 82,
+                "y": 12,
+                "w": 25,
+                "h": 37
+              },
+              "raw_text": "6",
+              "confidence": 0.9999736547470093,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 111,
+                "y": 12,
+                "w": 4,
+                "h": 13
+              },
+              "raw_text": "\u00e9",
+              "confidence": 0.3526097238063812,
+              "index": 4,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 121,
+                "y": 42,
+                "w": 7,
+                "h": 12
+              },
+              "raw_text": "J",
+              "confidence": 0.36877205967903137,
+              "index": 5,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 133,
+                "y": 12,
+                "w": 25,
+                "h": 37
+              },
+              "raw_text": "6",
+              "confidence": 0.9999779462814331,
+              "index": 6,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 161,
+                "y": 12,
+                "w": 25,
+                "h": 37
+              },
+              "raw_text": "0",
+              "confidence": 0.9984405636787415,
+              "index": 7,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 191,
+                "y": 11,
+                "w": 29,
+                "h": 37
+              },
+              "raw_text": "N",
+              "confidence": 0.9996793270111084,
+              "index": 8,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one01",
+      "image": "21300plano.tif",
+      "box": [
+        349,
+        3028,
+        440,
+        3096
+      ],
+      "expected_depth": 10.8,
+      "kind": "sounding",
+      "reference": "previous_five",
+      "runs": {
+        "before": {
+          "values": [
+            10.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.4963659346103668,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9988564252853394,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 28,
+                "w": 24,
+                "h": 30
+              },
+              "raw_text": "8",
+              "confidence": 0.9999861717224121,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            10.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.4963659346103668,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9988564252853394,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 28,
+                "w": 24,
+                "h": 30
+              },
+              "raw_text": "8",
+              "confidence": 0.9999861717224121,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one02",
+      "image": "21300plano.tif",
+      "box": [
+        1381,
+        3033,
+        1460,
+        3100
+      ],
+      "expected_depth": 10.1,
+      "kind": "sounding",
+      "reference": "previous_five",
+      "runs": {
+        "before": {
+          "values": [
+            10.1
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 11,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.6235936284065247,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 36
+              },
+              "raw_text": "0",
+              "confidence": 0.9992992877960205,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 29,
+                "w": 11,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.6422896981239319,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.993515133857727,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.993515133857727,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            10.1
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 11,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.6235936284065247,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 36
+              },
+              "raw_text": "0",
+              "confidence": 0.9992992877960205,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 29,
+                "w": 11,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.6422896981239319,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.993515133857727,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.993515133857727,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one03",
+      "image": "21300plano.tif",
+      "box": [
+        898,
+        3236,
+        946,
+        3291
+      ],
+      "expected_depth": 11.0,
+      "kind": "sounding",
+      "reference": "previous_five",
+      "runs": {
+        "before": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.7277413010597229,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9806576371192932,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9806576371192932,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5506049394607544,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9776629209518433,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9776629209518433,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.7277413010597229,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9806576371192932,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9806576371192932,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5506049394607544,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9776629209518433,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9776629209518433,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one04",
+      "image": "21300plano.tif",
+      "box": [
+        571,
+        3521,
+        634,
+        3588
+      ],
+      "expected_depth": 11.1,
+      "kind": "sounding",
+      "reference": "previous_five",
+      "runs": {
+        "before": {
+          "values": [
+            11.1
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.4514312744140625,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9943417310714722,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9943417310714722,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5018469095230103,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9960820078849792,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9960820078849792,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 41,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "1",
+              "confidence": 0.5545514822006226,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            11.1
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.4514312744140625,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9943417310714722,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9943417310714722,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5018469095230103,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9960820078849792,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9960820078849792,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 41,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "1",
+              "confidence": 0.5545514822006226,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one05",
+      "image": "21300plano.tif",
+      "box": [
+        1346,
+        3502,
+        1436,
+        3569
+      ],
+      "expected_depth": 10.5,
+      "kind": "sounding",
+      "reference": "previous_five",
+      "runs": {
+        "before": {
+          "values": [
+            10.5
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.43896183371543884,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 27,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9987549781799316,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 56,
+                "y": 28,
+                "w": 24,
+                "h": 29
+              },
+              "raw_text": "5",
+              "confidence": 0.9999908208847046,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            10.5
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.43896183371543884,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 27,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9987549781799316,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 56,
+                "y": 28,
+                "w": 24,
+                "h": 29
+              },
+              "raw_text": "5",
+              "confidence": 0.9999908208847046,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s01",
+      "image": "21300plano.tif",
+      "box": [
+        2420,
+        1450,
+        2510,
+        1520
+      ],
+      "expected_depth": 8.7,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 10,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.99998939037323,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 29,
+                "w": 21,
+                "h": 29
+              },
+              "raw_text": "7",
+              "confidence": 0.9996830224990845,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 10,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.99998939037323,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 29,
+                "w": 21,
+                "h": 29
+              },
+              "raw_text": "7",
+              "confidence": 0.9996830224990845,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s02",
+      "image": "21300plano.tif",
+      "box": [
+        1980,
+        1670,
+        2070,
+        1750
+      ],
+      "expected_depth": 8.4,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            8.4
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 18,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9999891519546509,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 36,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "4",
+              "confidence": 0.9999747276306152,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            8.4
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 18,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9999891519546509,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 36,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "4",
+              "confidence": 0.9999747276306152,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s03",
+      "image": "21300plano.tif",
+      "box": [
+        2630,
+        1960,
+        2725,
+        2025
+      ],
+      "expected_depth": 8.9,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            8.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 27,
+                "y": 12,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9999901056289673,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 31,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "9",
+              "confidence": 0.999286949634552,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            8.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 27,
+                "y": 12,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9999901056289673,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 31,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "9",
+              "confidence": 0.999286949634552,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s04",
+      "image": "21300plano.tif",
+      "box": [
+        2960,
+        1990,
+        3050,
+        2070
+      ],
+      "expected_depth": 8.7,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9999871253967285,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 44,
+                "y": 33,
+                "w": 21,
+                "h": 30
+              },
+              "raw_text": "7",
+              "confidence": 0.9998886585235596,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9999871253967285,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 44,
+                "y": 33,
+                "w": 21,
+                "h": 30
+              },
+              "raw_text": "7",
+              "confidence": 0.9998886585235596,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s05",
+      "image": "21300plano.tif",
+      "box": [
+        2600,
+        2300,
+        2690,
+        2370
+      ],
+      "expected_depth": 9,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            9.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 32,
+                "y": 8,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "9",
+              "confidence": 0.999468982219696,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            9.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 32,
+                "y": 8,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "9",
+              "confidence": 0.999468982219696,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s06",
+      "image": "1410geotiff.tif",
+      "box": [
+        6270,
+        5510,
+        6350,
+        5570
+      ],
+      "expected_depth": 23.5,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            23.5
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 22,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999897480010986,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 34,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.999981164932251,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 50,
+                "y": 32,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9999881982803345,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            23.5
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 22,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999897480010986,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 34,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.999981164932251,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 50,
+                "y": 32,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9999881982803345,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s07",
+      "image": "1410geotiff.tif",
+      "box": [
+        5870,
+        5690,
+        5930,
+        5750
+      ],
+      "expected_depth": 32,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            32.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 14,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999866485595703,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 29,
+                "y": 28,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999889135360718,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            32.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 14,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999866485595703,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 29,
+                "y": 28,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999889135360718,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s08",
+      "image": "1410geotiff.tif",
+      "box": [
+        5685,
+        5800,
+        5750,
+        5850
+      ],
+      "expected_depth": 34,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            34.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 20,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999817609786987,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 23,
+                "w": 13,
+                "h": 16
+              },
+              "raw_text": "4",
+              "confidence": 0.9999852180480957,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            34.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 20,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999817609786987,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 23,
+                "w": 13,
+                "h": 16
+              },
+              "raw_text": "4",
+              "confidence": 0.9999852180480957,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s09",
+      "image": "1410geotiff.tif",
+      "box": [
+        6255,
+        5990,
+        6315,
+        6040
+      ],
+      "expected_depth": 31,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            31.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 19,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999876022338867,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 20,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "1",
+              "confidence": 0.7088923454284668,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            31.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 19,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999876022338867,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 20,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "1",
+              "confidence": 0.7088923454284668,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s10",
+      "image": "1410geotiff.tif",
+      "box": [
+        6620,
+        6100,
+        6700,
+        6160
+      ],
+      "expected_depth": 26.5,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            26.5
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999910593032837,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9999911785125732,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 48,
+                "y": 24,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9999881982803345,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            26.5
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999910593032837,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9999911785125732,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 48,
+                "y": 24,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9999881982803345,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s11",
+      "image": "1410geotiff.tif",
+      "box": [
+        6390,
+        6300,
+        6480,
+        6360
+      ],
+      "expected_depth": 26.5,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            26.5,
+            7.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999910593032837,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9999911785125732,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 47,
+                "y": 36,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9999881982803345,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 73,
+                "y": 31,
+                "w": 17,
+                "h": 17
+              },
+              "raw_text": "7",
+              "confidence": 0.6061802506446838,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            26.5,
+            7.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999910593032837,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9999911785125732,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 47,
+                "y": 36,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9999881982803345,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 73,
+                "y": 31,
+                "w": 17,
+                "h": 17
+              },
+              "raw_text": "7",
+              "confidence": 0.6061802506446838,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s12",
+      "image": "1822geotiff.tif",
+      "box": [
+        5550,
+        3655,
+        5610,
+        3705
+      ],
+      "expected_depth": 0.8,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            0.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 17,
+                "w": 12,
+                "h": 18
+              },
+              "raw_text": "0",
+              "confidence": 0.9991831183433533,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.99996018409729,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            0.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 17,
+                "w": 12,
+                "h": 18
+              },
+              "raw_text": "0",
+              "confidence": 0.9991831183433533,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.99996018409729,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s13",
+      "image": "1822geotiff.tif",
+      "box": [
+        5585,
+        3780,
+        5640,
+        3830
+      ],
+      "expected_depth": 2.9,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            2.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999716281890869,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 21,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9976755976676941,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            2.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9999716281890869,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 21,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9976755976676941,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s14",
+      "image": "1822geotiff.tif",
+      "box": [
+        5720,
+        3770,
+        5765,
+        3810
+      ],
+      "expected_depth": 3,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            3.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999892711639404,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            3.0
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999892711639404,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s15",
+      "image": "1822geotiff.tif",
+      "box": [
+        5840,
+        3770,
+        5905,
+        3820
+      ],
+      "expected_depth": 3.2,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            3.2
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 16,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999760389328003,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 25,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "2",
+              "confidence": 0.9998142123222351,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            3.2
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 16,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999760389328003,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 25,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "2",
+              "confidence": 0.9998142123222351,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s16",
+      "image": "1822geotiff.tif",
+      "box": [
+        5535,
+        3875,
+        5590,
+        3920
+      ],
+      "expected_depth": 1.8,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            1.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 21,
+                "y": 9,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "I",
+              "confidence": 0.511219322681427,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9938626289367676,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9938626289367676,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 28,
+                "y": 18,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9999489784240723,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            1.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 21,
+                "y": 9,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "I",
+              "confidence": 0.511219322681427,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9938626289367676,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9938626289367676,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 28,
+                "y": 18,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9999489784240723,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s17",
+      "image": "1822geotiff.tif",
+      "box": [
+        5665,
+        3935,
+        5725,
+        3985
+      ],
+      "expected_depth": 2.8,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            2.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.99994957447052,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 30,
+                "y": 25,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9999439716339111,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            2.8
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.99994957447052,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 30,
+                "y": 25,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9999439716339111,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s18",
+      "image": "1822geotiff.tif",
+      "box": [
+        5545,
+        4090,
+        5600,
+        4140
+      ],
+      "expected_depth": 4.7,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            4.7
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 7,
+                "y": 10,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9999898672103882,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 23,
+                "y": 20,
+                "w": 10,
+                "h": 14
+              },
+              "raw_text": "7",
+              "confidence": 0.9999833106994629,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            4.7
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 7,
+                "y": 10,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9999898672103882,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 23,
+                "y": 20,
+                "w": 10,
+                "h": 14
+              },
+              "raw_text": "7",
+              "confidence": 0.9999833106994629,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s19",
+      "image": "1822geotiff.tif",
+      "box": [
+        6025,
+        4305,
+        6080,
+        4360
+      ],
+      "expected_depth": 3.9,
+      "kind": "sounding",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            3.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 21,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999892711639404,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 31,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9981276392936707,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            3.9
+          ],
+          "correct": true,
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 21,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9999892711639404,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 31,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9981276392936707,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s20",
+      "image": "1822geotiff.tif",
+      "box": [
+        5595,
+        3900,
+        5635,
+        3940
+      ],
+      "expected_depth": null,
+      "kind": "contour_label",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            2.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 11,
+                "y": 14,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "2",
+              "confidence": 0.999963641166687,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            2.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 11,
+                "y": 14,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "2",
+              "confidence": 0.999963641166687,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s21",
+      "image": "1822geotiff.tif",
+      "box": [
+        9515,
+        4460,
+        9570,
+        4510
+      ],
+      "expected_depth": null,
+      "kind": "contour_label",
+      "reference": "previous_19",
+      "runs": {
+        "before": {
+          "values": [
+            10.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 13,
+                "y": 16,
+                "w": 7,
+                "h": 16
+              },
+              "raw_text": "1",
+              "confidence": 0.9999631643295288,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 24,
+                "y": 15,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "0",
+              "confidence": 0.9998111128807068,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "after": {
+          "values": [
+            10.0
+          ],
+          "correct": false,
+          "digits": [
+            {
+              "box": {
+                "x": 13,
+                "y": 16,
+                "w": 7,
+                "h": 16
+              },
+              "raw_text": "1",
+              "confidence": 0.9999631643295288,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 24,
+                "y": 15,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "0",
+              "confidence": 0.9998111128807068,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

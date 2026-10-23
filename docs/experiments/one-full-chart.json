@@ -1,0 +1,170 @@
+{
+  "scope": "Full-chart processing smoke test; only the five screenshot soundings and printed-word negative are manually checked. Candidate counts do not measure full-chart accuracy.",
+  "input_sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+  "config": {
+    "reference_dpi": 600,
+    "dpi": 600,
+    "segmentation": "legacy",
+    "grouping": "relative",
+    "threshold": 120,
+    "blur_size": 5,
+    "kernel_size": 2,
+    "min_w": 3,
+    "max_w": 80,
+    "min_h": 10,
+    "max_h": 100,
+    "tol_x": 30,
+    "tol_y": 6,
+    "decimal_height_ratio": 0.95,
+    "decimal_drop": 0.1,
+    "decimal_max_integer": 31,
+    "min_confidence": 0.35,
+    "ocr_batch_size": 64,
+    "crop_padding": 3,
+    "retry_ambiguous": false,
+    "retry_one": true
+  },
+  "model": "PP-OCRv6_small_rec",
+  "packages": {
+    "paddleocr": "3.7.0",
+    "paddlepaddle": "3.3.1",
+    "paddlex": "3.7.2"
+  },
+  "model_files_sha256": {
+    "inference.pdiparams": "406e1e689c9a7fbb04178007a3fe10cf852afe7bf8bb3bc6dbb9d532b13bd907",
+    "inference.yml": "ab078671bb49f06228eadccd34f1bb501e157f7a047095ffb943ba81512c77d1",
+    "inference.json": "f0bf53c853937a917affdd74467472167727f8ab0f0f7bded01c4a16c27e46e6"
+  },
+  "stage_seconds": {
+    "segment": 0.04713099199989301,
+    "ocr": 8.275307456999599,
+    "group": 0.005255734999991546
+  },
+  "boxes": 411,
+  "directed_retries": 35,
+  "selected_directed_ones": 32,
+  "candidate_count_before": 163,
+  "candidate_count_after": 166,
+  "checked_cases": [
+    {
+      "id": "one01",
+      "image": "21300plano.tif",
+      "box": [
+        349,
+        3028,
+        440,
+        3096
+      ],
+      "expected_depth": 10.8,
+      "kind": "sounding",
+      "before": [
+        10.8
+      ],
+      "after": [
+        10.8
+      ]
+    },
+    {
+      "id": "one02",
+      "image": "21300plano.tif",
+      "box": [
+        1381,
+        3033,
+        1460,
+        3100
+      ],
+      "expected_depth": 10.1,
+      "kind": "sounding",
+      "before": [
+        10.0
+      ],
+      "after": [
+        10.1
+      ]
+    },
+    {
+      "id": "one03",
+      "image": "21300plano.tif",
+      "box": [
+        898,
+        3236,
+        946,
+        3291
+      ],
+      "expected_depth": 11.0,
+      "kind": "sounding",
+      "before": [],
+      "after": [
+        11.0
+      ]
+    },
+    {
+      "id": "one04",
+      "image": "21300plano.tif",
+      "box": [
+        571,
+        3521,
+        634,
+        3588
+      ],
+      "expected_depth": 11.1,
+      "kind": "sounding",
+      "before": [
+        1.0
+      ],
+      "after": [
+        11.1
+      ]
+    },
+    {
+      "id": "one05",
+      "image": "21300plano.tif",
+      "box": [
+        1346,
+        3502,
+        1436,
+        3569
+      ],
+      "expected_depth": 10.5,
+      "kind": "sounding",
+      "before": [
+        10.5
+      ],
+      "after": [
+        10.5
+      ]
+    },
+    {
+      "id": "one06",
+      "image": "21300plano.tif",
+      "box": [
+        3535,
+        750,
+        3740,
+        840
+      ],
+      "expected_depth": null,
+      "kind": "printed_word",
+      "before": [],
+      "after": []
+    }
+  ],
+  "word_I": [
+    {
+      "box": {
+        "x": 3595,
+        "y": 768,
+        "w": 16,
+        "h": 49
+      },
+      "raw_text": "I",
+      "confidence": 0.7456813454627991,
+      "index": 184,
+      "alternatives": [],
+      "selected_text": null,
+      "selected_confidence": null,
+      "method": "ocr",
+      "text": null
+    }
+  ]
+}

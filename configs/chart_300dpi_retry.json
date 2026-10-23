@@ -1,0 +1,9 @@
+{
+  "dpi": 300,
+  "segmentation": "legacy",
+  "grouping": "relative",
+  "retry_ambiguous": true,
+  "retry_one": true,
+  "ocr_batch_size": 64,
+  "crop_padding": 3
+}

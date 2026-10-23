@@ -1,0 +1,23 @@
+[
+  {
+    "input": "21300plano.tif",
+    "input_sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+    "old_count": 163,
+    "new_count": 163,
+    "values_positions_bounds_memberships_identical": true
+  },
+  {
+    "input": "1410geotiff.tif",
+    "input_sha256": "c222eb9dad7e616e659d8fe588987ca4836b530a681154bef168c605439a4107",
+    "old_count": 3077,
+    "new_count": 3077,
+    "values_positions_bounds_memberships_identical": true
+  },
+  {
+    "input": "1822geotiff.tif",
+    "input_sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+    "old_count": 2826,
+    "new_count": 2826,
+    "values_positions_bounds_memberships_identical": true
+  }
+]

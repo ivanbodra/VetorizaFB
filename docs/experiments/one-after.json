@@ -1,0 +1,2113 @@
+{
+  "model": "PP-OCRv6_small_rec",
+  "packages": {
+    "paddleocr": "3.7.0",
+    "paddlepaddle": "3.3.1",
+    "paddlex": "3.7.2"
+  },
+  "model_files_sha256": {
+    "inference.pdiparams": "406e1e689c9a7fbb04178007a3fe10cf852afe7bf8bb3bc6dbb9d532b13bd907",
+    "inference.yml": "ab078671bb49f06228eadccd34f1bb501e157f7a047095ffb943ba81512c77d1",
+    "inference.json": "f0bf53c853937a917affdd74467472167727f8ab0f0f7bded01c4a16c27e46e6"
+  },
+  "scope": "Diagnostic set locating the five soundings in the user's screenshot in the original 21300 GeoTIFF, plus a printed-word negative. Labels manually read by the assistant, not independently reviewed; not full-chart ground truth.",
+  "input_files": {
+    "21300plano.tif": {
+      "sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+      "size_bytes": 2160982
+    }
+  },
+  "summary": {
+    "legacy_fixed": {
+      "correct_positive_crops": 1,
+      "positive_crops": 5,
+      "false_positive_negative_crops": 0,
+      "negative_crops": 1
+    },
+    "legacy_relative": {
+      "correct_positive_crops": 5,
+      "positive_crops": 5,
+      "false_positive_negative_crops": 0,
+      "negative_crops": 1
+    },
+    "black_fixed": {
+      "correct_positive_crops": 1,
+      "positive_crops": 5,
+      "false_positive_negative_crops": 0,
+      "negative_crops": 1
+    },
+    "black_relative": {
+      "correct_positive_crops": 5,
+      "positive_crops": 5,
+      "false_positive_negative_crops": 0,
+      "negative_crops": 1
+    }
+  },
+  "elapsed_seconds_excluding_model_load": 1.3225061409998489,
+  "records": [
+    {
+      "id": "one01",
+      "image": "21300plano.tif",
+      "box": [
+        349,
+        3028,
+        440,
+        3096
+      ],
+      "expected_depth": 10.8,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "108",
+        "confidence": 0.86452716588974
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            10.0,
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.49636581540107727,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9988564252853394,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 28,
+                "w": 24,
+                "h": 30
+              },
+              "raw_text": "8",
+              "confidence": 0.9999861717224121,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            10.8
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.49636581540107727,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9988564252853394,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 28,
+                "w": 24,
+                "h": 30
+              },
+              "raw_text": "8",
+              "confidence": 0.9999861717224121,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            10.0,
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.4584362804889679,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "0",
+              "confidence": 0.9991523027420044,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 28,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "8",
+              "confidence": 0.9999861717224121,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            10.8
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 14,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.4584362804889679,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "0",
+              "confidence": 0.9991523027420044,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 28,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "8",
+              "confidence": 0.9999861717224121,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one02",
+      "image": "21300plano.tif",
+      "box": [
+        1381,
+        3033,
+        1460,
+        3100
+      ],
+      "expected_depth": 10.1,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "101",
+        "confidence": 0.8797085285186768
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            10.0,
+            1.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 11,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.6235936880111694,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 36
+              },
+              "raw_text": "0",
+              "confidence": 0.9992992877960205,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 29,
+                "w": 11,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.6422896981239319,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.993515133857727,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.993515133857727,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            10.1
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 11,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.6235936880111694,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 26,
+                "h": 36
+              },
+              "raw_text": "0",
+              "confidence": 0.9992992877960205,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 29,
+                "w": 11,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.6422896981239319,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.993515133857727,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.993515133857727,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            10.0,
+            1.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 11,
+                "w": 12,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.4510805606842041,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 11,
+                "w": 24,
+                "h": 34
+              },
+              "raw_text": "0",
+              "confidence": 0.9995177984237671,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 29,
+                "w": 10,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.6497384905815125,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9929516911506653,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9929516911506653,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            10.1
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 11,
+                "w": 12,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.4510805606842041,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 11,
+                "w": 24,
+                "h": 34
+              },
+              "raw_text": "0",
+              "confidence": 0.9995177984237671,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 58,
+                "y": 29,
+                "w": 10,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.6497384905815125,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9929516911506653,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9929516911506653,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one03",
+      "image": "21300plano.tif",
+      "box": [
+        898,
+        3236,
+        946,
+        3291
+      ],
+      "expected_depth": 11.0,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "II",
+        "confidence": 0.6978310942649841
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.727741003036499,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9806575179100037,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9806575179100037,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5506048202514648,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9776629209518433,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9776629209518433,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.727741003036499,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9806575179100037,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9806575179100037,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.5506048202514648,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9776629209518433,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9776629209518433,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 9,
+                "y": 10,
+                "w": 14,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5248953104019165,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9903117418289185,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9903117418289185,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 12,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5991565585136414,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9693781733512878,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9693781733512878,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            11.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 9,
+                "y": 10,
+                "w": 14,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5248953104019165,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9903117418289185,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9903117418289185,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 12,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5991565585136414,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9693781733512878,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9693781733512878,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one04",
+      "image": "21300plano.tif",
+      "box": [
+        571,
+        3521,
+        634,
+        3588
+      ],
+      "expected_depth": 11.1,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "111",
+        "confidence": 0.6331154704093933
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            11.0,
+            1.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.45143190026283264,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9943417310714722,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9943417310714722,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5018469095230103,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9960820078849792,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9960820078849792,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 41,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "1",
+              "confidence": 0.5545507073402405,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            11.1
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "I",
+              "confidence": 0.45143190026283264,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9943417310714722,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9943417310714722,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 10,
+                "w": 13,
+                "h": 34
+              },
+              "raw_text": "I",
+              "confidence": 0.5018469095230103,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9960820078849792,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9960820078849792,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 41,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "1",
+              "confidence": 0.5545507073402405,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            11.0,
+            1.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 9,
+                "w": 12,
+                "h": 36
+              },
+              "raw_text": "I",
+              "confidence": 0.4565281569957733,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9926855564117432,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9926855564117432,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 9,
+                "w": 12,
+                "h": 36
+              },
+              "raw_text": "I",
+              "confidence": 0.5268083214759827,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9945183396339417,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9945183396339417,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.510055422782898,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9926735758781433,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9926735758781433,
+              "method": "ocr_one_retry"
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            11.1
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 9,
+                "w": 12,
+                "h": 36
+              },
+              "raw_text": "I",
+              "confidence": 0.4565281569957733,
+              "index": 0,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9926855564117432,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9926855564117432,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 26,
+                "y": 9,
+                "w": 12,
+                "h": 36
+              },
+              "raw_text": "I",
+              "confidence": 0.5268083214759827,
+              "index": 1,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9945183396339417,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9945183396339417,
+              "method": "ocr_one_retry"
+            },
+            {
+              "box": {
+                "x": 40,
+                "y": 29,
+                "w": 12,
+                "h": 28
+              },
+              "raw_text": "I",
+              "confidence": 0.510055422782898,
+              "index": 2,
+              "alternatives": [
+                {
+                  "text": "1",
+                  "confidence": 0.9926735758781433,
+                  "method": "binary_padded_2x"
+                }
+              ],
+              "selected_text": "1",
+              "selected_confidence": 0.9926735758781433,
+              "method": "ocr_one_retry"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one05",
+      "image": "21300plano.tif",
+      "box": [
+        1346,
+        3502,
+        1436,
+        3569
+      ],
+      "expected_depth": 10.5,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "105",
+        "confidence": 0.9977450370788574
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            10.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.4389615058898926,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 27,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9987549781799316,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 56,
+                "y": 28,
+                "w": 24,
+                "h": 29
+              },
+              "raw_text": "5",
+              "confidence": 0.9999908208847046,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            10.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 10,
+                "w": 13,
+                "h": 35
+              },
+              "raw_text": "1",
+              "confidence": 0.4389615058898926,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 27,
+                "h": 35
+              },
+              "raw_text": "0",
+              "confidence": 0.9987549781799316,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 56,
+                "y": 28,
+                "w": 24,
+                "h": 29
+              },
+              "raw_text": "5",
+              "confidence": 0.9999908208847046,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            10.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 9,
+                "y": 10,
+                "w": 14,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.440995991230011,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "0",
+              "confidence": 0.9989903569221497,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 28,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "5",
+              "confidence": 0.9999908208847046,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            10.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 9,
+                "y": 10,
+                "w": 14,
+                "h": 34
+              },
+              "raw_text": "1",
+              "confidence": 0.440995991230011,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 25,
+                "y": 10,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "0",
+              "confidence": 0.9989903569221497,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 28,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "5",
+              "confidence": 0.9999908208847046,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "one06",
+      "image": "21300plano.tif",
+      "box": [
+        3535,
+        750,
+        3740,
+        840
+      ],
+      "expected_depth": null,
+      "kind": "printed_word",
+      "full_crop_ocr": {
+        "text": "TIDE",
+        "confidence": 0.9174591898918152
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 26,
+                "y": 18,
+                "w": 36,
+                "h": 49
+              },
+              "raw_text": "T",
+              "confidence": 0.9989247918128967,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 18,
+                "w": 16,
+                "h": 49
+              },
+              "raw_text": "I",
+              "confidence": 0.7456813454627991,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 79,
+                "y": 18,
+                "w": 44,
+                "h": 49
+              },
+              "raw_text": "D",
+              "confidence": 0.9999134540557861,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 127,
+                "y": 18,
+                "w": 40,
+                "h": 49
+              },
+              "raw_text": "E",
+              "confidence": 0.5979717969894409,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 26,
+                "y": 18,
+                "w": 36,
+                "h": 49
+              },
+              "raw_text": "T",
+              "confidence": 0.9989247918128967,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 18,
+                "w": 16,
+                "h": 49
+              },
+              "raw_text": "I",
+              "confidence": 0.7456813454627991,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 79,
+                "y": 18,
+                "w": 44,
+                "h": 49
+              },
+              "raw_text": "D",
+              "confidence": 0.9999134540557861,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 127,
+                "y": 18,
+                "w": 40,
+                "h": 49
+              },
+              "raw_text": "E",
+              "confidence": 0.5979717969894409,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 27,
+                "y": 17,
+                "w": 34,
+                "h": 48
+              },
+              "raw_text": "T",
+              "confidence": 0.9991164803504944,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 59,
+                "y": 17,
+                "w": 16,
+                "h": 48
+              },
+              "raw_text": "I",
+              "confidence": 0.599611222743988,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 79,
+                "y": 17,
+                "w": 44,
+                "h": 48
+              },
+              "raw_text": "D",
+              "confidence": 0.9999113082885742,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 127,
+                "y": 17,
+                "w": 40,
+                "h": 48
+              },
+              "raw_text": "E",
+              "confidence": 0.8358403444290161,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35,
+            "ocr_batch_size": 64,
+            "crop_padding": 3,
+            "retry_ambiguous": false,
+            "retry_one": true
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 27,
+                "y": 17,
+                "w": 34,
+                "h": 48
+              },
+              "raw_text": "T",
+              "confidence": 0.9991164803504944,
+              "index": 0,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 59,
+                "y": 17,
+                "w": 16,
+                "h": 48
+              },
+              "raw_text": "I",
+              "confidence": 0.599611222743988,
+              "index": 1,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 79,
+                "y": 17,
+                "w": 44,
+                "h": 48
+              },
+              "raw_text": "D",
+              "confidence": 0.9999113082885742,
+              "index": 2,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            },
+            {
+              "box": {
+                "x": 127,
+                "y": 17,
+                "w": 40,
+                "h": 48
+              },
+              "raw_text": "E",
+              "confidence": 0.8358403444290161,
+              "index": 3,
+              "alternatives": [],
+              "selected_text": null,
+              "selected_confidence": null,
+              "method": "ocr"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
