@@ -146,7 +146,7 @@ def extract(path, output_dir, config=None, model_name="PP-OCRv6_small_rec",
     boxes = segment(rgb, config)
     engine = engine or PaddleRecognizer(model_name, model_dir, device)
     digits = recognize(rgb,boxes,engine,config.ocr_batch_size,config.crop_padding,
-                       retry=config.retry_ambiguous,min_confidence=config.min_confidence)
+                       retry=config.retry_ambiguous,retry_one=config.retry_one,min_confidence=config.min_confidence)
     soundings = group(digits,config)
     if sha256(path) != input_hash:
         raise ValueError("Input changed while processing")

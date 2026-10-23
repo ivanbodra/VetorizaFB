@@ -37,6 +37,9 @@ class Application:
         self.roi_text = tk.StringVar(value='Área: carta inteira')
         self.filter = tk.StringVar(value='Todos')
         self.review_note = tk.StringVar()
+        self.follow_review = tk.BooleanVar(value=True)
+        self.selection_text = tk.StringVar(value='0 selecionados')
+        self._selection_anchor = self._last_followed = None
         self.fields = {k:tk.BooleanVar(value=v) if isinstance(v,bool) else tk.StringVar(value=str(v))
                        for k,v in asdict(Config()).items()}
         root.title(f'VetorizaFB {__version__} — processamento e revisão')
@@ -91,10 +94,11 @@ class Application:
         ttk.Entry(ocr,textvariable=self.model_dir).grid(row=3,column=0,columnspan=2,sticky='ew')
         ttk.Button(ocr,text='Selecionar pasta do modelo',command=self.choose_model).grid(row=4,column=0,columnspan=2,sticky='ew',pady=5)
         for row,(label,key) in enumerate([('Tamanho do lote','ocr_batch_size'),('Margem do recorte (px)','crop_padding'),('Confiança mínima','min_confidence')],6):setting(ocr,row,label,key)
-        ttk.Checkbutton(ocr,text='Reler ambíguos: binário + margem + 2×',variable=self.fields['retry_ambiguous']).grid(row=9,column=0,columnspan=2,sticky='w',pady=10)
-        ttk.Label(ocr,text='A releitura preserva o texto original e registra a alternativa. Continua exigindo revisão dos pontos.',wraplength=310).grid(row=10,column=0,columnspan=2,sticky='w',pady=8)
+        ttk.Checkbutton(ocr,text='Reler possíveis “1” (I / l / traço estreito)',variable=self.fields['retry_one']).grid(row=9,column=0,columnspan=2,sticky='w',pady=(8,2))
+        ttk.Checkbutton(ocr,text='Reler todos os demais ambíguos',variable=self.fields['retry_ambiguous']).grid(row=10,column=0,columnspan=2,sticky='w',pady=3)
+        ttk.Label(ocr,text='Releitura: binário + margem + 2×. O “1” dirigido exige escore ≥ 0,80. O texto original é preservado; os pontos continuam pendentes de revisão.',wraplength=310).grid(row=11,column=0,columnspan=2,sticky='w',pady=8)
         self.ocr_button=ttk.Button(ocr,text='Executar etapa 2',command=lambda:self.run_stage('ocr'))
-        self.ocr_button.grid(row=11,column=0,columnspan=2,sticky='ew',pady=8)
+        self.ocr_button.grid(row=12,column=0,columnspan=2,sticky='ew',pady=8)
         for row,(label,key,values) in enumerate([
             ('Modo','grouping',['relative','fixed']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
             ('Razão altura decimal','decimal_height_ratio',None),('Queda decimal','decimal_drop',None),
@@ -122,12 +126,21 @@ class Application:
         right=ttk.Panedwindow(split,orient='vertical');split.add(right,weight=1)
         self.viewer=ChartViewer(right,self.canvas_action);right.add(self.viewer,weight=3)
         bottom=ttk.Frame(right);right.add(bottom,weight=1)
-        bar=ttk.Frame(bottom);bar.pack(fill='x')
-        for label,cmd in [('Aprovar',lambda:self.review_action('accepted')),('Excluir',lambda:self.review_action('rejected')),
-                          ('Pendente',lambda:self.review_action('unreviewed')),('Corrigir valor',self.correct_depth),('Ampliar ponto',self.focus_selected)]:
-            ttk.Button(bar,text=label,command=cmd).pack(side='left',padx=2,pady=3)
-        filt=ttk.Combobox(bar,textvariable=self.filter,state='readonly',width=12,values=['Todos','Pendentes','Aprovados','Excluídos']);filt.pack(side='right',padx=4)
+        heading=ttk.Frame(bottom);heading.pack(fill='x')
+        ttk.Label(heading,text='Revisão de sondagens').pack(side='left',padx=4)
+        ttk.Label(heading,textvariable=self.selection_text).pack(side='left',padx=12)
+        filt=ttk.Combobox(heading,textvariable=self.filter,state='readonly',width=12,values=['Todos','Pendentes','Aprovados','Excluídos']);filt.pack(side='right',padx=4)
         filt.bind('<<ComboboxSelected>>',lambda e:self.refresh_points())
+        bar=ttk.Frame(bottom);bar.pack(fill='x')
+        self.review_buttons={}
+        for key,label,cmd in [('accepted','Aprovar seleção',lambda:self.review_action('accepted')),('rejected','Excluir seleção',lambda:self.review_action('rejected')),
+                              ('unreviewed','Pendente',lambda:self.review_action('unreviewed')),('edit','Editar valor',self.correct_depth),('focus','Ampliar ponto',self.focus_selected)]:
+            button=ttk.Button(bar,text=label,command=cmd);button.pack(side='left',padx=2,pady=3)
+            self.review_buttons[key]=button
+        select=ttk.Frame(bottom);select.pack(fill='x')
+        for label,cmd in [('Selecionar todos',self.select_all_points),('Limpar seleção',self.clear_point_selection),('Inverter seleção',self.invert_point_selection)]:
+            ttk.Button(select,text=label,command=cmd).pack(side='left',padx=2,pady=3)
+        ttk.Checkbutton(select,text='Acompanhar ponto / zoom',variable=self.follow_review,command=lambda:self.focus_selected() if self.follow_review.get() else None).pack(side='left',padx=8)
         self.tree=ttk.Treeview(bottom,columns=['id','depth','confidence','status','origin'],show='headings',selectmode='extended',height=7)
         for key,label,width in [('id','ID',45),('depth','Profundidade',100),('confidence','Confiança',85),('status','Revisão',100),('origin','Observações',240)]:
             self.tree.heading(key,text=label);self.tree.column(key,width=width,minwidth=35)
@@ -135,10 +148,24 @@ class Application:
         self.tree.pack(fill='both',expand=True)
         self.tree.bind('<<TreeviewSelect>>',lambda e:self.select_point())
         self.tree.bind('<Double-1>',lambda e:self.focus_selected())
-        self.tree.bind('<Control-a>',lambda e:self.tree.selection_set(self.tree.get_children()))
+        self.tree.bind('<ButtonPress-1>',self.review_click)
+        # Local bindings leave Ctrl+A/Ctrl+X and arrow editing native in entries.
+        for widget in (self.tree,self.viewer.canvas):
+            for key,step in [('Up',-1),('Left',-1),('Down',1),('Right',1)]:
+                widget.bind(f'<{key}>',lambda e,s=step:self.navigate_review(s))
+                widget.bind(f'<Shift-{key}>',lambda e,s=step:self.navigate_review(s,extend=True))
+            for key,command in [('Control-a',lambda:self.review_action('accepted')),
+                                ('Control-x',lambda:self.review_action('rejected')),
+                                ('Control-e',self.correct_depth),('Control-Shift-A',self.select_all_points),
+                                ('Escape',self.clear_point_selection),('Control-space',self.toggle_active_point)]:
+                widget.bind(f'<{key}>',lambda e,cmd=command:self.review_shortcut(cmd))
+        help_label=ttk.Label(bottom,text='Setas: navegar · Shift+setas: faixa · Ctrl+clique: alternar · Ctrl+A: aprovar · Ctrl+X: excluir · Ctrl+E: editar · Ctrl+Shift+A: todos · Esc: limpar',wraplength=1000)
+        help_label.pack(fill='x',padx=4,pady=3)
+        help_label.bind('<Configure>',lambda e:help_label.configure(wraplength=max(100,e.width-8)))
         notes=ttk.Frame(bottom);notes.pack(fill='x')
         ttk.Label(notes,text='Nota da revisão:').pack(side='left',padx=4)
-        ttk.Entry(notes,textvariable=self.review_note).pack(side='left',fill='x',expand=True,padx=4,pady=3)
+        self.note_entry=ttk.Entry(notes,textvariable=self.review_note)
+        self.note_entry.pack(side='left',fill='x',expand=True,padx=4,pady=3)
         ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=8).pack(fill='x')
 
     def config(self):
@@ -174,6 +201,7 @@ class Application:
                                (self.group_button,digits),(self.run_button,self.session is not None),
                                (self.export_button,groups),(self.reviewed_button,groups and self.session.review.counts['accepted']>0)]:
             button.configure(state='normal' if enabled and not self.busy else 'disabled')
+        self.refresh_review_controls()
 
     def start(self,task,done=lambda result:None,cancellable=True):
         if self.busy:return
@@ -262,20 +290,45 @@ class Application:
         self.start(task,done)
 
     def refresh_points(self):
-        selection=self.tree.selection();self.tree.delete(*self.tree.get_children())
-        if self.session is None:return
+        selection=self.tree.selection();active=self.tree.focus()
+        previous=list(self.tree.get_children())
+        previous_index=previous.index(active) if active in previous else None
+        self.tree.delete(*previous)
+        if self.session is None:
+            self.select_point();return
         session=self.session;counts=session.review.counts if session.review else {}
         timing_names={'segment':'Segmentação','ocr':'OCR','group':'Agrupamento'}
         self.counts.set(f"Caixas: {len(session.boxes or [])} | Dígitos: {sum(d.text is not None for d in session.digits or [])}\nPendentes: {counts.get('unreviewed',0)} | Aprovados: {counts.get('accepted',0)} | Excluídos: {counts.get('rejected',0)}\n"+', '.join(f'{timing_names[k]}: {v:.3f}s' for k,v in session.timings.items()))
-        if session.review is None:return
+        if session.review is None:
+            self.select_point();return
         selected_status={'Pendentes':'unreviewed','Aprovados':'accepted','Excluídos':'rejected'}.get(self.filter.get())
         labels={'unreviewed':'Pendente','accepted':'Aprovado','rejected':'Excluído'}
         for item in session.review.items:
             if selected_status and item['status']!=selected_status:continue
             s=item['current'];conf=s['confidence']
-            flags={'ocr_retry':'Releitura OCR','manual_depth':'Valor corrigido','manual_position':'Posição corrigida','manual_addition':'Ponto manual'}
-            self.tree.insert('','end',iid=str(item['id']),values=[item['id'],f"{s['depth']:g}",'' if conf is None else f'{conf:.3f}',labels[item['status']],', '.join(flags.get(f,f) for f in s['flags'])])
-        self.tree.selection_set([i for i in selection if self.tree.exists(i)])
+            flags={'ocr_retry':'Releitura OCR','ocr_one_retry':'Releitura dirigida: 1','manual_depth':'Valor corrigido','manual_position':'Posição corrigida','manual_addition':'Ponto manual'}
+            visible_flags=[f for f in s['flags'] if f!='ocr_retry' or 'ocr_one_retry' not in s['flags']]
+            self.tree.insert('','end',iid=str(item['id']),values=[item['id'],f"{s['depth']:g}",'' if conf is None else f'{conf:.3f}',labels[item['status']],', '.join(flags.get(f,f) for f in visible_flags)])
+        remaining=[i for i in selection if self.tree.exists(i)]
+        self.tree.selection_set(remaining)
+        rows=self.tree.get_children()
+        if active and self.tree.exists(active):self.tree.focus(active)
+        elif previous_index is not None and rows:
+            # In a Pending-only view, approving/excluding moves to the next row.
+            next_id=rows[min(previous_index,len(rows)-1)]
+            self.tree.focus(next_id)
+            if not remaining:self.tree.selection_set(next_id)
+            self.tree.see(next_id)
+            self._selection_anchor=next_id
+        self.select_point()
+
+    def refresh_review_controls(self):
+        if not hasattr(self,'tree'):return
+        selected=len(self.tree.selection());ready=self.review_ready()
+        self.selection_text.set(f'{selected} selecionados / {len(self.tree.get_children())} visíveis')
+        for key,button in self.review_buttons.items():
+            enabled=ready and (selected==1 if key=='edit' else bool(self.tree.focus()) if key=='focus' else selected>0)
+            button.configure(state='normal' if enabled else 'disabled')
 
     def review_ready(self):
         if self.busy or not self.session:return False
@@ -298,13 +351,76 @@ class Application:
         self.review_dirty=True;self.refresh_points();self.refresh_validity();self.viewer.render()
 
     def select_point(self):
-        selected=self.tree.selection();self.viewer.selected_id=int(selected[0]) if selected else None
-        if not self.busy:self.viewer.render()
+        selected=self.tree.selection();active=self.tree.focus()
+        if not active and selected:
+            active=selected[-1];self.tree.focus(active)
+        self.viewer.selected_ids={int(i) for i in selected}
+        self.viewer.selected_id=int(active) if active else None
+        self.refresh_review_controls()
+        if self.busy:return
+        key=None
+        if active and self.session and self.session.review:
+            s=self.session.review.item(active)['current']
+            key=(id(self.session.review),active,s['pixel_x'],s['pixel_y'],tuple(s['bounds']))
+        if self.follow_review.get() and key is not None and key!=self._last_followed:
+            self.focus_selected()
+        else:self.viewer.render()
+        self._last_followed=key
 
     def focus_selected(self):
-        if self.busy or not self.session or not self.tree.selection() or self.session.review is None:return
-        s=self.session.review.item(self.tree.selection()[0])['current']
-        self.viewer.layer.set('Sondagens');self.viewer.focus(s['pixel_x'],s['pixel_y'])
+        active=self.tree.focus() or next(iter(self.tree.selection()),None)
+        if self.busy or not self.session or not active or self.session.review is None:return
+        s=self.session.review.item(active)['current']
+        self.viewer.layer.set('Sondagens');self.viewer.focus(s['pixel_x'],s['pixel_y'],s['bounds'])
+
+    def review_shortcut(self,command):
+        if not self.busy:command()
+        return 'break'
+
+    def review_click(self,event):
+        row=self.tree.identify_row(event.y)
+        if row and not event.state & 1:self._selection_anchor=row
+
+    def navigate_review(self,step,extend=False):
+        if self.busy:return 'break'
+        rows=list(self.tree.get_children())
+        if not rows:return 'break'
+        active=self.tree.focus()
+        index=rows.index(active) if active in rows else (-1 if step>0 else len(rows))
+        target=rows[max(0,min(len(rows)-1,index+step))]
+        if extend:
+            anchor=self._selection_anchor if self._selection_anchor in rows else active if active in rows else target
+            self._selection_anchor=anchor
+            a,b=sorted((rows.index(anchor),rows.index(target)))
+            self.tree.selection_set(rows[a:b+1])
+        else:
+            self.tree.selection_set(target);self._selection_anchor=target
+        self.tree.focus(target);self.tree.see(target);self.select_point()
+        return 'break'
+
+    def select_all_points(self):
+        if self.busy:return
+        rows=self.tree.get_children();self.tree.selection_set(rows)
+        if rows and not self.tree.focus():self.tree.focus(rows[0])
+        self.select_point()
+
+    def clear_point_selection(self):
+        if self.busy:return
+        self.tree.selection_remove(self.tree.selection());self.tree.focus('')
+        self._selection_anchor=None;self.select_point()
+
+    def invert_point_selection(self):
+        if self.busy:return
+        selected=set(self.tree.selection())
+        self.tree.selection_set([i for i in self.tree.get_children() if i not in selected])
+        self.select_point()
+
+    def toggle_active_point(self):
+        active=self.tree.focus()
+        if self.busy or not active:return
+        if active in self.tree.selection():self.tree.selection_remove(active)
+        else:self.tree.selection_add(active)
+        self.select_point()
 
     def canvas_action(self,action,xy):
         if self.busy:return
@@ -331,7 +447,16 @@ class Application:
             item=min(self.session.review.items,key=lambda i:math.hypot(i['current']['pixel_x']-px,i['current']['pixel_y']-py))
             s=item['current']
             if math.hypot(s['pixel_x']-px,s['pixel_y']-py)*self.viewer.scale<30:
-                self.filter.set('Todos');self.refresh_points();self.tree.selection_set(str(item['id']));self.tree.see(str(item['id']))
+                self.filter.set('Todos');self.refresh_points();point_id=str(item['id'])
+                if action=='toggle_point':
+                    if point_id in self.tree.selection():self.tree.selection_remove(point_id)
+                    else:self.tree.selection_add(point_id)
+                elif action=='range_point' and self._selection_anchor in self.tree.get_children():
+                    rows=list(self.tree.get_children());a,b=sorted((rows.index(self._selection_anchor),rows.index(point_id)))
+                    self.tree.selection_set(rows[a:b+1])
+                else:self.tree.selection_set(point_id)
+                if action!='range_point':self._selection_anchor=point_id
+                self.tree.focus(point_id);self.tree.see(point_id);self.select_point()
 
     def inspect_digit(self,digit):
         popup=tk.Toplevel(self.root);popup.title(f'Caractere {digit.index} / leitura original e alternativas')

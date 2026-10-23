@@ -25,6 +25,7 @@ def main():
     p.add_argument('--reference',type=Path,default=Path(__file__).resolve().parents[1]/'docs/experiments/crop_reference.json')
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--retry-ambiguous',action='store_true')
+    p.add_argument('--retry-one',action=argparse.BooleanOptionalAction,default=True)
     args=p.parse_args();reference=json.loads(args.reference.read_text())
     engine=PaddleRecognizer(args.model,args.model_dir)
     records=[];inputs={};start=time.perf_counter()
@@ -39,10 +40,10 @@ def main():
         full_text,full_confidence=engine.predict([rgb])[0]
         runs={}
         for segmentation in ['legacy','black']:
-            cfg=Config(dpi=dpi,segmentation=segmentation,retry_ambiguous=args.retry_ambiguous)
+            cfg=Config(dpi=dpi,segmentation=segmentation,retry_ambiguous=args.retry_ambiguous,retry_one=args.retry_one)
             boxes=segment(rgb,cfg)
             digits=recognize(rgb,boxes,engine,cfg.ocr_batch_size,cfg.crop_padding,
-                             retry=cfg.retry_ambiguous,min_confidence=cfg.min_confidence)
+                             retry=cfg.retry_ambiguous,retry_one=cfg.retry_one,min_confidence=cfg.min_confidence)
             for grouping in ['fixed','relative']:
                 cfg.grouping=grouping
                 sounding=group(digits,cfg);values=[s.depth for s in sounding]

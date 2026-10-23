@@ -47,6 +47,8 @@ def test_stage_changes_invalidate_only_required_work(session):
     session.run_grouping(changed,SPEC)
     assert session.digits is old_digits
     assert not session.valid_digits(replace(cfg,crop_padding=5),SPEC)
+    assert session.valid_segments(replace(cfg,retry_one=False))
+    assert not session.valid_digits(replace(cfg,retry_one=False),SPEC)
     assert not session.valid_segments(replace(cfg,threshold=90))
     with pytest.raises(ValueError,match='etapa 1'):
         session.run_ocr(replace(cfg,threshold=90),SPEC,engine=Reader())
@@ -123,6 +125,30 @@ def test_project_refuses_invalid_digit_pairing(session,tmp_path):
     data=json.loads(project.read_text());data['digits'][0]['index']=99
     project.write_text(json.dumps(data))
     with pytest.raises(ValueError,match='caixas'):ChartSession.load_project(project)
+
+
+def test_old_project_does_not_claim_new_one_retry_was_run(session,tmp_path):
+    ready(session);session.review.change(0,'accepted')
+    project=tmp_path/'old.vfproject.json';session.save_project(project)
+    data=json.loads(project.read_text());data['config'].pop('retry_one')
+    project.write_text(json.dumps(data))
+    restored=ChartSession.load_project(project)
+    assert restored.config.retry_one is False
+    assert restored.valid_groups(restored.config,SPEC) and restored.review.counts['accepted']==1
+    assert not restored.valid_digits(replace(restored.config,retry_one=True),SPEC)
+
+
+def test_loaded_review_ids_and_batch_decisions_preserve_history(session):
+    from vetorizafb.review import ReviewSet
+    ready(session)
+    records=session.review.items
+    records[0]['id']=20;records[1]['id']=3
+    review=ReviewSet.from_items(records)
+    new=review.add_manual(100,50,10.1)
+    assert new==21
+    for point_id in [20,3,new]:review.change(point_id,'accepted',note='Batch check')
+    assert review.counts['accepted']==3
+    assert all(review.item(i)['history'][-1]['note']=='Batch check' for i in [20,3,new])
 
 
 def test_cancelled_ocr_preserves_previous_results(session):

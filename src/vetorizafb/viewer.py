@@ -10,6 +10,7 @@ class ChartViewer(ttk.Frame):
         super().__init__(parent)
         self.on_action, self.session = on_action, None
         self.roi = self.selected_id = self.photo = self._press = None
+        self.selected_ids = set()
         self.scale, self.left, self.top = 1., 0., 0.
         self.suspended=False
         self.layer = tk.StringVar(value='Original')
@@ -37,6 +38,7 @@ class ChartViewer(ttk.Frame):
 
     def set_session(self,session):
         self.session, self.roi, self.selected_id = session,session.roi,None
+        self.selected_ids=set()
         self.after_idle(self.fit)
 
     def fit(self):
@@ -55,15 +57,22 @@ class ChartViewer(ttk.Frame):
         self.left,self.top = px-cx/self.scale,py-cy/self.scale
         self.render()
 
-    def focus(self,x,y):
-        self.scale = max(2.,self.scale)
+    def focus(self,x,y,bounds=None):
+        if bounds is None:self.scale=max(2.,self.scale)
+        else:
+            a,b,c,d=bounds
+            # About 80 screen pixels per sounding height, capped for context.
+            self.scale=max(.01,min(8.,80/max(10,d-b),
+                           max(1,self.canvas.winfo_width())*.65/max(20,c-a),
+                           max(1,self.canvas.winfo_height())*.65/max(20,d-b)))
         self.left = x-self.canvas.winfo_width()/self.scale/2
         self.top = y-self.canvas.winfo_height()/self.scale/2
         self.render()
 
     def pixel(self,x,y):return self.left+x/self.scale,self.top+y/self.scale
 
-    def press(self,event):self._press = event.x,event.y,self.left,self.top
+    def press(self,event):
+        self.canvas.focus_set();self._press = event.x,event.y,self.left,self.top
 
     def drag(self,event):
         if not self._press:return
@@ -87,7 +96,11 @@ class ChartViewer(ttk.Frame):
             self.canvas.delete('selection')
             if x2>x1 and y2>y1:self.on_action('roi',(x1,y1,x2-x1,y2-y1))
         elif math.hypot(event.x-sx,event.y-sy)<5 and 0<=px<w and 0<=py<h:
-            self.on_action(self.mode.get(),(px,py))
+            action=self.mode.get()
+            if action=='Inspecionar':
+                if event.state & 4:action='toggle_point'
+                elif event.state & 1:action='range_point'
+            self.on_action(action,(px,py))
 
     def render(self):
         if self.session is None or self.suspended:return
@@ -124,11 +137,13 @@ class ChartViewer(ttk.Frame):
             for item in self.session.review.items:
                 s = item['current']
                 colour = {'unreviewed':'#f08000','accepted':'#00a000','rejected':'#df2040'}[item['status']]
+                if item['id'] in self.selected_ids:colour = '#0068df'
                 if item['id'] == self.selected_id:colour = '#005bff'
                 box(s['bounds'],colour)
                 px,py = point(s['pixel_x'],s['pixel_y'])
                 if -20<=px<=cw+20 and -20<=py<=ch+20:
                     draw.ellipse((px-3,py-3,px+3,py+3),outline=colour,width=2)
+                    if item['id']==self.selected_id:draw.ellipse((px-7,py-7,px+7,py+7),outline=colour,width=2)
                     if self.scale>=.45:draw.text((px+5,py-15),f"{s['depth']:g}",fill=colour)
         if self.roi:
             x,y,rw,rh = self.roi;box((x,y,x+rw,y+rh),'#0068ff')

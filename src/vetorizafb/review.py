@@ -25,9 +25,11 @@ class ReviewSet:
         self.items = [dict(id=i, original=snapshot(s), current=snapshot(s),
                            status="unreviewed", note="", history=[])
                       for i, s in enumerate(soundings)]
+        self._by_id={item['id']:item for item in self.items}
+        self._next_id=len(self.items)
 
     def item(self, point_id):
-        return next(item for item in self.items if item['id'] == int(point_id))
+        return self._by_id[int(point_id)]
 
     def change(self, point_id, action, *, depth=None, xy=None, note=""):
         item = self.item(point_id)
@@ -61,11 +63,12 @@ class ReviewSet:
             raise ValueError("Finite pixel coordinates required")
         sounding = Sounding(x, y, depth_value(depth), None, (x,y,x,y), [],
                             "manual", flags=['manual_addition'])
-        point_id = max((i['id'] for i in self.items), default=-1)+1
-        self.items.append(dict(id=point_id, original=None, current=snapshot(sounding),
+        point_id=self._next_id;self._next_id+=1
+        item=dict(id=point_id, original=None, current=snapshot(sounding),
                                status='unreviewed', note='', history=[dict(
                                    timestamp_utc=datetime.now(timezone.utc).isoformat(),
-                                   action='manual_addition', after=snapshot(sounding))]))
+                                   action='manual_addition', after=snapshot(sounding))])
+        self.items.append(item);self._by_id[point_id]=item
         return point_id
 
     def soundings(self, *, accepted_only=False):
@@ -96,4 +99,6 @@ class ReviewSet:
             if s.confidence is not None and (not math.isfinite(float(s.confidence)) or not 0<=s.confidence<=1):
                 raise ValueError("Invalid point confidence")
             result.items.append(raw)
+            result._by_id[raw['id']]=raw
+        result._next_id=max(ids,default=-1)+1
         return result

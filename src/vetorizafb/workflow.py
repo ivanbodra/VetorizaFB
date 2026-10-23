@@ -49,7 +49,8 @@ class ChartSession:
 
     def expected_ocr_key(self, config, model_spec):
         return (self.seg_key, tuple(model_spec), config.ocr_batch_size, config.crop_padding,
-                config.retry_ambiguous, config.min_confidence if config.retry_ambiguous else None)
+                config.retry_ambiguous, config.retry_one,
+                config.min_confidence if config.retry_ambiguous or config.retry_one else None)
 
     def valid_segments(self, config, roi=None):
         return self.boxes is not None and self.seg_key == self.expected_seg_key(config,roi)
@@ -87,7 +88,7 @@ class ChartSession:
                 self._engine_spec = tuple(model_spec)
             engine = self._engine
         digits = recognize(self.rgb,self.boxes,engine,config.ocr_batch_size,config.crop_padding,
-                           retry=config.retry_ambiguous,min_confidence=config.min_confidence,
+                           retry=config.retry_ambiguous,retry_one=config.retry_one,min_confidence=config.min_confidence,
                            progress=progress,cancel=cancel)
         check_cancel(cancel)
         self.digits = digits
@@ -149,7 +150,10 @@ class ChartSession:
         session = cls(input_override or data['input_path'])
         if session.input_hash != data['input_sha256']:
             raise ValueError("O projeto pertence a outra imagem (SHA-256 diferente)")
-        session.config = config = Config(**data['config'])
+        # Old projects did not perform the new directed retry. Keep their cached
+        # readings and review decisions valid under their original behaviour.
+        options=dict(data['config']);options.setdefault('retry_one',False)
+        session.config = config = Config(**options)
         session.roi = session.validate_roi(tuple(data['roi']) if data['roi'] else None)
         session.model_spec = tuple(data['model_spec'])
         session.timings = data['timings']

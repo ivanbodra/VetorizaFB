@@ -90,6 +90,7 @@ class Config:
     ocr_batch_size: int = 64
     crop_padding: int = 3
     retry_ambiguous: bool = False
+    retry_one: bool = True
 
     def __post_init__(self):
         numeric = [self.reference_dpi, self.dpi, self.tol_x, self.tol_y,
@@ -120,8 +121,8 @@ class Config:
                 raise ValueError(f"{key} must be an integer")
         if not 1 <= self.ocr_batch_size <= 1024 or not 0 <= self.crop_padding <= 100:
             raise ValueError("Invalid OCR batch size/padding")
-        if not isinstance(self.retry_ambiguous, bool):
-            raise ValueError("retry_ambiguous must be boolean")
+        for key in ('retry_ambiguous','retry_one'):
+            if not isinstance(getattr(self,key),bool):raise ValueError(f"{key} must be boolean")
 
     @property
     def scale(self):
@@ -171,7 +172,37 @@ def check_cancel(cancel):
         raise ProcessingCancelled("Processing cancelled between batches/stages")
 
 
-def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False,
+def one_retry_candidates(digits):
+    """Narrow nonnumeric strokes outside apparent words; no character guessing.
+
+    Use a spatial grid to inspect local neighbours, rather than all pairs.
+    This is a conservative retry filter, not a sounding/letter classifier.
+    """
+    if not digits:return []
+    ambiguous={'I','l','|','!',''}
+    size=max(1.,float(np.median([d.box.h for d in digits]))*2)
+    grid={}
+    for d in digits:
+        x,y=d.box.center
+        grid.setdefault((math.floor(x/size),math.floor(y/size)),[]).append(d)
+    candidates=[]
+    for d in digits:
+        b=d.box;x,y=b.center
+        if d.text is not None or d.raw_text.strip() not in ambiguous or not .15<=b.w/b.h<=.65:continue
+        word=False;radius=1.8*b.h
+        for gx in range(math.floor((x-radius)/size),math.floor((x+radius)/size)+1):
+            for gy in range(math.floor((y-b.h*.6)/size),math.floor((y+b.h*.6)/size)+1):
+                for other in grid.get((gx,gy),[]):
+                    ox,oy=other.box.center;t=other.raw_text.strip()
+                    if (other.index!=d.index and abs(ox-x)<=radius and abs(oy-y)<=b.h*.6
+                        and .65*b.h<=other.box.h<=1.5*b.h and other.confidence>=.5
+                        and t not in ambiguous and any(c.isalpha() for c in t)):
+                        word=True;break
+        if not word:candidates.append(d)
+    return candidates
+
+
+def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False, retry_one=False,
               min_confidence=.35, progress=None, cancel=None):
     if batch_size < 1 or pad < 0:
         raise ValueError("Invalid batch size or padding")
@@ -194,10 +225,13 @@ def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False,
             out.append(Digit(box, str(raw), conf, start+i))
         if progress:
             progress(min(start+len(subset), len(boxes)), len(boxes), "OCR")
-    if retry:
+    if retry or retry_one:
         # Recover difficult crops with a second *real* model reading, not a
         # guessed character or fabricated confidence. Keep both readings.
-        ambiguous = [d for d in out if d.text is None or d.score < min_confidence]
+        ones=one_retry_candidates(out) if retry_one else []
+        directed={d.index for d in ones}
+        ambiguous = ([d for d in out if d.text is None or d.score < min_confidence]
+                     if retry else ones)
         for start in range(0, len(ambiguous), batch_size):
             check_cancel(cancel)
             subset = ambiguous[start:start+batch_size]
@@ -219,11 +253,14 @@ def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False,
                 if not math.isfinite(conf) or not 0 <= conf <= 1:
                     raise ValueError("Invalid retry OCR confidence")
                 d.alternatives.append(dict(text=raw, confidence=conf, method="binary_padded_2x"))
-                if len(raw.strip()) == 1 and raw.strip() in "0123456789" and conf >= min_confidence:
+                is_one=d.index in directed
+                eligible=(raw.strip()=='1' and conf>=max(.8,min_confidence) if is_one else
+                          len(raw.strip())==1 and raw.strip() in '0123456789' and conf>=min_confidence)
+                if eligible:
                     if d.text is None or conf > d.score:
-                        d.selected_text, d.selected_confidence, d.method = raw.strip(), conf, "ocr_retry"
+                        d.selected_text, d.selected_confidence, d.method = raw.strip(), conf, "ocr_one_retry" if is_one else "ocr_retry"
             if progress:
-                progress(min(start+len(subset),len(ambiguous)),len(ambiguous),"OCR retry")
+                progress(min(start+len(subset),len(ambiguous)),len(ambiguous),"OCR retry" if retry else "OCR: reler possíveis 1")
     check_cancel(cancel)
     return out
 
@@ -287,6 +324,7 @@ def group(digits, config):
         ymin = min(d.box.y for d in members)
         ymax = max(d.box.y+d.box.h for d in members)
         flags = ["ocr_retry"] if any(d.method != "ocr" for d in members) else []
+        if any(d.method=='ocr_one_retry' for d in members):flags.append('ocr_one_retry')
         out.append(Sounding((xmin+xmax)/2, (ymin+ymax)/2, depth,
                             min(d.score for d in members),
                             (xmin,ymin,xmax,ymax), [d.index for d in members],

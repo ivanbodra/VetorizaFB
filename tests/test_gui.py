@@ -103,3 +103,88 @@ def test_save_project_from_gui(app,tmp_path,monkeypatch):
     assert not app.review_dirty
     restored=ChartSession.load_project(path)
     assert restored.review.counts['accepted']==1
+
+
+def review_points(app):
+    app.run_stage('all');finish(app)
+    # A viewport smaller than the chart is necessary to verify following/zoom.
+    app.session.rgb=np.full((1000,2000,3),255,np.uint8)
+    for x,y in [(400,250),(800,450),(1200,650)]:app.session.review.add_manual(x,y,11.1)
+    app.refresh_points();app.refresh_validity();app.clear_point_selection()
+
+
+def key(app,sequence,widget=None):
+    widget=widget or app.tree
+    widget.focus_force();app.root.update()
+    widget.event_generate(sequence);app.root.update()
+
+
+def test_keyboard_navigation_range_and_zoom_follow_active_point(app):
+    review_points(app)
+    key(app,'<Down>');assert app.tree.selection()==('0',)
+    key(app,'<Right>');assert app.tree.selection()==('1',)
+    key(app,'<Shift-Right>')
+    assert app.tree.selection()==('1','2') and app.tree.focus()=='2'
+    assert app.viewer.selected_id==2 and app.viewer.selected_ids=={1,2}
+    cx,cy=app.viewer.pixel(app.viewer.canvas.winfo_width()/2,app.viewer.canvas.winfo_height()/2)
+    assert (cx,cy)==pytest.approx((800,450))
+    scale=app.viewer.scale
+    key(app,'<Shift-Right>');assert app.tree.selection()==('1','2','3')
+    assert app.viewer.scale==scale  # no cumulative zoom on each arrow
+    key(app,'<Control-space>');assert app.tree.selection()==('1','2')
+    assert app.tree.focus()=='3' and app.viewer.selected_id==3
+    app.follow_review.set(False);left,top,scale=app.viewer.left,app.viewer.top,app.viewer.scale
+    key(app,'<Left>')
+    assert (app.viewer.left,app.viewer.top,app.viewer.scale)==(left,top,scale)
+    key(app,'<Escape>');assert not app.tree.selection() and app.viewer.selected_id is None
+
+
+def test_keyboard_batch_approval_exclusion_edit_and_filtered_selection(app,monkeypatch):
+    review_points(app)
+    key(app,'<Control-Shift-A>')
+    assert len(app.tree.selection())==4
+    app.review_note.set('Conferido na carta')
+    key(app,'<Control-a>')
+    assert app.session.review.counts['accepted']==4
+    assert all(i['history'][-1]['note']=='Conferido na carta' for i in app.session.review.items)
+    app.clear_point_selection();app.navigate_review(1);key(app,'<Control-x>')
+    assert app.session.review.item(0)['status']=='rejected'
+    monkeypatch.setattr('vetorizafb.gui.simpledialog.askfloat',lambda *a,**k:10.1)
+    key(app,'<Down>');key(app,'<Control-e>')
+    assert app.session.review.item(1)['current']['depth']==10.1
+    assert app.session.review.item(1)['status']=='unreviewed'
+    app.filter.set('Pendentes');app.refresh_points()
+    key(app,'<Control-Shift-A>');assert app.tree.selection()==('1',)
+    key(app,'<Control-a>');assert not app.tree.get_children()
+    assert app.session.review.counts=={'accepted':3,'rejected':1,'unreviewed':0}
+    assert app.viewer.selected_ids==set() and app.viewer.selected_id is None
+
+
+def test_pending_filter_advances_and_text_fields_keep_their_keys(app):
+    review_points(app)
+    app.filter.set('Pendentes');app.refresh_points();key(app,'<Down>')
+    key(app,'<Control-a>')
+    assert app.tree.selection()==('1',) and app.viewer.selected_id==1
+    key(app,'<Control-x>');assert app.tree.selection()==('2',)
+    before=app.session.review.counts.copy()
+    app.review_note.set('Editar esta nota')
+    key(app,'<Control-a>',app.note_entry)
+    key(app,'<Left>',app.note_entry)
+    assert app.session.review.counts==before and app.tree.selection()==('2',)
+    app.fields['threshold'].set('100')
+    key(app,'<Control-a>');key(app,'<Control-x>')
+    assert app.session.review.counts==before
+
+
+def test_canvas_toggle_range_and_invert_selection(app):
+    review_points(app);app.viewer.layer.set('Sondagens')
+    app.canvas_action('Inspecionar',(400,250))
+    app.canvas_action('toggle_point',(1200,650))
+    assert app.tree.selection()==('1','3') and app.viewer.selected_id==3
+    app.canvas_action('toggle_point',(400,250))
+    assert app.tree.selection()==('3',)
+    app.canvas_action('range_point',(1200,650))
+    assert app.tree.selection()==('1','2','3')
+    app.invert_point_selection();assert app.tree.selection()==('0',)
+    key(app,'<Control-a>',app.viewer.canvas)
+    assert app.session.review.item(0)['status']=='accepted'

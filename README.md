@@ -4,7 +4,7 @@ Extract georeferenced sounding candidates from raster nautical charts and review
 them before XYZ export. Historical handwritten hydrographic field sheets are a
 separate future module.
 
-## Current development version: 0.2.0
+## Current development version: 0.3.0
 
 Branch `ocr-modernization` / [PR #1](https://github.com/ivanbodra/VetorizaFB/pull/1).
 The original seven uploaded files remain byte-for-byte preserved under `legacy/`
@@ -13,15 +13,19 @@ represented by those uploads; the v4 interface prototype contains OCR/export
 placeholders. This is an experimental development update, not an established
 replacement with proven 100% chart accuracy.
 
-Version 0.2 retains the PaddleOCR 3.x core and restores/extends working tools:
+Version 0.3 retains the PaddleOCR 3.x core and staged tools:
 
 - Separate segmentation, OCR, grouping and export stages with valid-stage reuse.
 - Editable DPI, thresholds, blur/dilation, size filters, crop padding, batch size,
   confidence, spacing and decimal interpretation, plus JSON parameter profiles.
 - Original/mask/boxes/OCR/soundings layers, zoom, pan, ROI selection, contour-size
   histograms and character-crop inspection.
-- Optional second OCR reading on normalized crops, with original/alternative
-  scores preserved; no guessed replacement digits or manufactured confidence.
+- Directed rereading of possible narrow `1` glyphs, enabled by default, plus an
+  optional broader retry. Both preserve original text and real model scores.
+- Arrow navigation with following/size-based zoom, Shift range selection,
+  Ctrl+click toggles, visible-row selection and batch approval/exclusion.
+  In the chart/table, Ctrl+A approves, Ctrl+X rejects and Ctrl+E edits one value;
+  Ctrl+Shift+A selects all visible rows. Text-entry shortcuts keep their scope.
 - Correction, repositioning, manual insertion, rejection and explicit acceptance
   of points, with a saved decision trail and resumable review projects.
 - Separate candidate and accepted-only XYZ bundles; staged writes, completion
@@ -30,7 +34,8 @@ Version 0.2 retains the PaddleOCR 3.x core and restores/extends working tools:
   corpus while reducing repeated scans through vertical columns.
 
 Read the [current user guide](docs/USER_GUIDE.md) and
-[restoration/validation report](docs/RESTORATION.md). Historical reports remain
+[keyboard/one-retry validation](docs/REVIEW_AND_ONES.md).
+The [0.2 restoration report](docs/RESTORATION.md) and historical reports remain
 in [initial OCR experiments](docs/EXPERIMENTS.md),
 [0.1 grouping audit](docs/GROUPING_AUDIT.md) and [baseline scope](docs/BASELINE.md).
 
@@ -51,7 +56,7 @@ py -3.12 -m venv .venv
 
 For an existing clone, preserve local changes, switch to `ocr-modernization`,
 run `git pull --ff-only` and repeat installation into the root `.venv`. The window
-must show **0.2.0**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
+must show **0.3.0**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
 and a Tk display; use `xvfb-run -a python -m pytest -q` for headless GUI tests.
 CPU PaddleOCR 3.7.0/PaddlePaddle 3.3.1 and OpenCV versions are pinned; supporting
 dependencies have ranges. First use may retrieve weights, or select a matching
@@ -71,7 +76,8 @@ session-only pytest workaround and custom-GIS-data opt-out.
   --config configs/chart_300dpi_retry.json
 ```
 
-The example enables an experimental retry. Default retry is off. Without
+The example enables the broader experimental retry. Directed `1` retry is on by
+default; broader retry is off. Without
 `--config`, DPI comes from TIFF metadata. A custom configuration must specify
 actual DPI; absent values use defaults. Target CRS defaults to EPSG:4326, with
 X=longitude and Y=latitude; `--target-crs` selects another appropriate CRS.
@@ -85,9 +91,12 @@ not establish complete chart coverage.
 
 ## Accuracy and limits
 
-The small development-crop set is not a full-chart reference. Optional retry
-recovers a previously discarded `I`/`1` in a 1.8 m sounding, but contour labels
-remain false positives. Read the validation report for exact denominators.
+The five soundings in the user's screenshot were located in the original 21300
+GeoTIFF: directed retry improves exact crop matches from 2/5 to 5/5, also confirmed
+when processing the whole chart. On the earlier, separate development set it
+matches 18/19 positive crops; both contour-label negatives remain false positives.
+These are diagnostic samples, not a full-chart accuracy reference. Read the
+[validation report](docs/REVIEW_AND_ONES.md) for scope and reproducible results.
 
 The automatic point anchor is the text-box centre and remains unverified against
 cartographic anchors; a reviewer can reposition it. There is no trained sounding

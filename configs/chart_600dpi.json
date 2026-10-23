@@ -2,6 +2,7 @@
   "dpi": 600,
   "reference_dpi": 600,
   "segmentation": "legacy",
+  "retry_one": true,
   "threshold": 120,
   "blur_size": 5,
   "kernel_size": 2,

@@ -1,6 +1,6 @@
-# VetorizaFB 0.2 user guide
+# VetorizaFB 0.3 user guide
 
-Updated 2026-10-22. Development branch: `ocr-modernization`, PR #1.
+Updated 2026-10-23. Development branch: `ocr-modernization`, PR #1.
 The [0.1 guide](USER_GUIDE_0_1.md) is retained for historical reference.
 
 This version retains PaddleOCR 3.x and restores staged calibration and image
@@ -36,7 +36,7 @@ py -3.12 -m venv .venv
 ```
 
 On an existing installation, reuse the root `.venv` and rerun the editable
-installation after updating. Confirm that the window title shows **0.2.0**.
+installation after updating. Confirm that the window title shows **0.3.0**.
 Linux equivalents are `.venv/bin/python`, `.venv/bin/vetorizafb-gui` and
 `.venv/bin/vetorizafb`; Tkinter and a display are required for the GUI tests.
 Use `xvfb-run -a python -m pytest -q` in a headless Linux test environment.
@@ -96,11 +96,26 @@ With an empty folder field, PaddleOCR may retrieve weights on first use.
 The installed setup and GUI use CPU; GPU configuration is outside this setup.
 
 Set batch size (1-1024), crop padding (0-100 actual pixels) and minimum confidence.
-**Reler ambíguos** optionally makes a second model reading after binarization,
-white padding and 2x enlargement. It is off by default: it can recover a digit,
-but may also recognize line fragments as numbers. Both raw readings and actual
-scores remain recorded, and affected groups receive `ocr_retry`. No character
-is guessed and no synthetic confidence is inserted.
+**Reler possíveis “1”** is enabled by default. Narrow, unresolved `I`, `l`, `|`,
+`!` or empty readings are eligible for a second model reading after binarization,
+white padding and 2x enlargement. A local letter-neighbour check suppresses
+apparent word contexts. Only an actual model output of exactly `1` with a score
+at least `max(0.80, minimum confidence)` is selected. Recognized zeros and
+multi-character readings are never replaced by this directed pass. A failed
+retry stays unresolved; this is not a forced `I` → `1` substitution.
+
+**Reler todos os demais ambíguos** enables the broader retry and is off by default.
+It accepts any single numeric alternative above the configured minimum. When
+both options are enabled they share one retry batch; directed candidates retain
+the stricter `1` rule. Other crops, including apparent words skipped by the
+directed filter, can still enter the broader retry. Letters and line fragments
+can become false positives, so use this option experimentally.
+
+Both raw readings and real scores remain recorded. Affected groups receive
+`ocr_retry`; directed recoveries also receive `ocr_one_retry` and the table shows
+**Releitura dirigida: 1**. Every generated point starts pending. No synthetic
+confidence is inserted and a model score is not a probability of a correct
+sounding. See the [diagnostic results](REVIEW_AND_ONES.md).
 
 Choose **Executar etapa 2**. Progress reports batches; model loading and individual
 batches cannot be interrupted midway. Cancellation is checked between batches
@@ -119,7 +134,7 @@ In **3. Agrupar**, adjust fixed/relative spacing, horizontal and vertical tolera
 subscript height/drop, maximum integer eligible for decimal interpretation and
 confidence. Choose **Executar etapa 3 / reagrupar**. When only grouping settings
 change, valid digit reads are reused. Changing minimum confidence requires new
-OCR when optional retry is enabled, because it controls which crops are retried.
+OCR when either retry is enabled, because it affects retry eligibility/selection.
 
 **Executar etapas pendentes (1 → 3)** computes only invalid/missing stages. Explicit
 stage buttons rerun that stage. Re-segmenting, re-reading or regrouping replaces
@@ -139,16 +154,49 @@ rule. Raw OCR can still confuse contour labels and sounding text.
 Mouse wheel zooms around the pointer. **Ajustar**, **100%**, plus and minus control
 scale. In **Inspecionar** mode, drag to pan. **Sondagens** displays point anchors,
 boxes and interpreted depths: orange pending, green accepted, red rejected,
-blue selected. Labels are suppressed at small scales for legibility; zoom in.
-Double-click a table row or choose **Ampliar ponto** to focus its position.
+blue selected. The active point has an additional ring. Labels are suppressed
+at small scales for legibility; zoom in.
 
-The table supports multiple selection and Ctrl+A on the table. Filter pending,
-accepted or rejected points. Add an optional **Nota da revisão** before an action.
+Click the table or the chart to use review shortcuts. Arrows follow the order
+of the **visible table rows**, rather than searching spatially. Navigation stops
+at the ends. With **Acompanhar ponto / zoom** enabled, a new active point is
+centred as far as chart edges allow and zoom is calculated from the sounding
+height (about 80 screen pixels, capped at 800%), with surrounding context.
+Repeated navigation does not multiply the zoom. Disable following to retain
+manual zoom/pan; double-click or **Ampliar ponto** explicitly focuses the active
+point regardless of this setting.
 
-- **Corrigir valor** changes one selected depth, preserving its original value.
+| Shortcut / control | Action in the review table or chart |
+|---|---|
+| Down / Right | Next visible point; select it and make it active |
+| Up / Left | Previous visible point |
+| Shift + arrow | Extend or shrink a contiguous selection from its anchor |
+| Ctrl + click | Toggle individual points in the table or soundings image |
+| Shift + click | Select a range; in the image this uses table order |
+| Ctrl+Space | Toggle selection of the active point without changing its focus |
+| Ctrl+A | Approve all selected points |
+| Ctrl+X | Reject all selected points, keeping their history |
+| Ctrl+E | Edit the depth when exactly one point is selected |
+| Ctrl+Shift+A / **Selecionar todos** | Select every visible row |
+| Esc / **Limpar seleção** | Deselect all points |
+| **Inverter seleção** | Toggle selection across the visible rows |
+
+Filter **Todos**, **Pendentes**, **Aprovados** or **Excluídos**. Select-all respects
+the filter; choose **Todos** first to include the whole working result. The
+selection count shows how many visible points are selected. With a pending-only
+filter, approval/exclusion removes those rows and selects the next remaining
+point so review can continue. Ctrl+A is approval here; it no longer selects all.
+These bindings are local to the table/chart. Parameter and note fields retain
+their normal text-editing keys and cannot approve/reject a point through them.
+
+Add an optional **Nota da revisão** before an action; batch decisions record it
+for every selected point. Editing and approval are disabled during processing
+or when the configured stages are stale.
+
+- **Editar valor** changes one selected depth, preserving its original value.
   Enter a finite value with at most one decimal; it becomes pending again.
-- **Aprovar** explicitly accepts selected points. It is not an automatic check.
-- **Excluir** rejects selected spurious points; original data and history remain.
+- **Aprovar seleção** explicitly accepts all selected points. It is not an automatic check.
+- **Excluir seleção** rejects selected spurious points; original data and history remain.
 - **Pendente** reopens an accepted/rejected decision.
 - **Inserir ponto** mode lets you click a missed sounding and enter its depth.
   Manual points have no model confidence and remain pending until accepted.
@@ -175,6 +223,11 @@ select its new location. A different source hash is rejected. Source modificatio
 also blocks export. Save the applied state before changing settings; unsaved
 UI parameter edits are not recorded as processed results. A source must remain
 available for project loading and geographic export.
+
+Projects saved by 0.2 without a `retry_one` field reopen with that option disabled:
+their cached OCR and review are preserved under the behaviour actually used.
+Enable the new option and rerun OCR/grouping when you want directed retry;
+save the existing project first if it contains review decisions to retain.
 
 ## 7. Export candidates or accepted points
 
@@ -236,5 +289,6 @@ a reproduction of the old branding/assets or an independently reproduced copy
 of the historical EasyOCR 3.0.1 executable. Neither automated tests nor the small
 crop experiment establish 100% full-chart extraction accuracy.
 
-See [restoration validation](RESTORATION.md), [initial experiments](EXPERIMENTS.md)
+See [keyboard/one-retry validation](REVIEW_AND_ONES.md),
+[0.2 restoration validation](RESTORATION.md), [initial experiments](EXPERIMENTS.md)
 and the [official model catalogue](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/module_usage/text_recognition.en.md).
