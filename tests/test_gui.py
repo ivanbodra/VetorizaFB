@@ -358,3 +358,58 @@ def test_last_selected_icon_format_has_priority(app,tmp_path,monkeypatch):
         app.choose_icon()
         assert apply_icon(app.root)==app.icon_path
         assert app.icon_path.suffix==source.suffix
+
+
+def test_tab_readiness_tracks_stage_invalidation_without_status_row(app):
+    from tkinter import ttk
+    assert app.stage_states==['pending']*4
+    assert not [w for w in app.chart_entry.master.winfo_children() if isinstance(w,ttk.Label) and str(w.cget('textvariable'))==str(app.validity)]
+    app.run_stage('all');finish(app)
+    assert app.stage_states==['ready']*4
+    app.fields['tol_x'].set('35')
+    assert app.stage_states==['ready','ready','pending','pending']
+    app.fields['min_w'].set('4')
+    assert app.stage_states==['pending']*4
+    assert app.ocr_button.instate(['disabled'])
+    app.session=None;app.refresh_validity()
+    assert app.stage_states==['empty']*4
+
+
+def test_cn_prompt_distinguishes_loaded_and_new_paths(app):
+    app.path.set(str(app.session.path));assert app.chart_entry.cget('style')=='TEntry'
+    app.path.set(str(app.session.path.parent/'other.tif'))
+    assert app.chart_entry.cget('style')=='Required.TEntry'
+    app.path.set('');assert app.chart_entry.cget('style')=='Required.TEntry'
+
+
+def test_compact_toolbar_never_cuts_actions_and_details_are_contextual(app):
+    app.root.geometry('1050x720');app.root.update()
+    bar=app.review_buttons['accepted'].master
+    for button in app.review_buttons.values():
+        assert button.winfo_x()>=0
+        assert button.winfo_x()+button.winfo_width()<=bar.winfo_width()
+    app.viewer.layer.set('Original');app.viewer.mode.set('Inspecionar');app.root.update()
+    assert not app.viewer.details.winfo_ismapped()
+    assert app.viewer.canvas.winfo_height()>=220
+    app.viewer.layer.set('Prévia dos filtros');app.root.update()
+    assert app.viewer.details.winfo_ismapped()
+    app.viewer.layer.set('Original');app.viewer.mode.set('Medir caractere');app.root.update()
+    assert app.viewer.details.winfo_ismapped()
+
+
+def test_context_help_preserves_review_selection_and_tooltip_lifecycle(app):
+    from types import SimpleNamespace
+    from vetorizafb.ui import Tooltip
+    review_points(app);app.tree.selection_set(('0','1'));before=app.session.review.counts.copy()
+    app.show_review_menu(SimpleNamespace(x_root=100,y_root=100))
+    app.review_menu.unpost()
+    assert app.tree.selection()==('0','1') and app.session.review.counts==before
+    # A contextual action applies to the existing selection, exactly like the button.
+    app.review_menu.invoke(0)
+    assert app.session.review.counts['accepted']==2
+    popup=app.show_shortcuts();app.root.update();popup.destroy()
+    tip=Tooltip(app.review_buttons['accepted'],'Aprovar · Ctrl+A')
+    tip.show();assert tip.popup.winfo_exists()
+    tip.hide();assert tip.popup is None
+    tip.schedule();assert tip.pending
+    tip.hide();assert tip.pending is None

@@ -16,7 +16,7 @@ import traceback
 from .runtime import configure_gis_runtime
 configure_gis_runtime()
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageDraw, ImageTk
 import numpy as np
 
 from .core import Config, ProcessingCancelled
@@ -27,6 +27,7 @@ from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
 from .calibration import CalibrationPreview
 from .branding import apply_icon, asset_photo
+from .ui import Tooltip
 
 
 class Application:
@@ -39,13 +40,16 @@ class Application:
         self.preview = CalibrationPreview()
         self._preview_id = None
         self.measurement = None
-        self.measure_text = tk.StringVar(value="Arraste um retângulo ao redor de um numeral.")
+        self.measure_text = tk.StringVar()
         self.events, self.cancel = queue.Queue(),threading.Event()
         self.path, self.output = tk.StringVar(),tk.StringVar()
         self.model = tk.StringVar(value='PP-OCRv6_small_rec')
         self.model_dir, self.target_crs = tk.StringVar(),tk.StringVar(value='EPSG:4326')
         self.status = tk.StringVar(value='Selecione uma carta GeoTIFF para iniciar.')
         self.validity, self.counts = tk.StringVar(),tk.StringVar()
+        self.counts_summary=tk.StringVar()
+        self.stage_states=[]
+        self.tooltips=[]
         self.roi_text = tk.StringVar(value='Área: carta inteira')
         self.filter = tk.StringVar(value='Todos')
         self.review_note = tk.StringVar()
@@ -66,6 +70,7 @@ class Application:
         root.bind('<Control-o>',lambda e:self.choose_chart())
         root.bind('<Control-s>',lambda e:self.save_project())
         self._poll_id=root.after(80,self.poll)
+        self.path.trace_add('write',lambda *args:self.refresh_chart_prompt())
         self.refresh_validity()
 
     def configure_style(self):
@@ -75,15 +80,63 @@ class Application:
         tkfont.nametofont('TkDefaultFont').configure(family=self.ui_font,size=10)
         tkfont.nametofont('TkTextFont').configure(family=self.ui_font,size=10)
         if 'clam' in style.theme_names():style.theme_use('clam')
-        style.configure('.',font=(self.ui_font,10),background='#f3f6f8',foreground='#183342')
-        style.configure('TButton',padding=(9,6))
-        style.configure('TNotebook.Tab',padding=(10,8))
-        style.configure('Treeview',rowheight=26,background='#ffffff',fieldbackground='#ffffff')
-        style.configure('Treeview.Heading',font=(self.ui_font,10,'bold'),padding=6)
+        style.configure('.',font=(self.ui_font,10),background='#f5f8fb',foreground='#19364a')
+        style.configure('TButton',padding=(8,4),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9',focusthickness=1,focuscolor='#0a70b5')
+        style.map('TButton',background=[('disabled','#eef1f4'),('pressed','#c4dfef'),('active','#d2e8f9')],foreground=[('disabled','#8d9baa')],bordercolor=[('disabled','#e0e6ec'),('active','#468eb9')])
+        for name,bg,hover,fg in [('Primary','#096fab','#085a8b','white'),('Approve','#e1f4e9','#c9ead8','#17663d'),('Reject','#fbe6e8','#f5cfd4','#9c2635')]:
+            style.configure(name+'.TButton',background=bg,foreground=fg,bordercolor=bg)
+            style.map(name+'.TButton',background=[('disabled','#eef1f4'),('pressed',hover),('active',hover)],foreground=[('disabled','#8d9baa')])
+        style.configure('TNotebook',background='#f5f8fb',borderwidth=0,tabmargins=0)
+        style.configure('TNotebook.Tab',padding=(7,7),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
+        style.map('TNotebook.Tab',background=[('selected','#096fab'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#096fab')],darkcolor=[('selected','#096fab')],bordercolor=[('selected','#096fab')])
+        style.configure('TEntry',fieldbackground='white',padding=4,bordercolor='#cbd9e4')
+        style.configure('Required.TEntry',fieldbackground='#fff2bf',bordercolor='#d9b650')
+        style.configure('TCombobox',fieldbackground='white',background='#e5f1fb',arrowcolor='#17547e',padding=3)
+        style.map('TCombobox',fieldbackground=[('readonly','white')],foreground=[('readonly','#19364a')])
+        style.configure('Treeview',rowheight=24,background='white',fieldbackground='white',borderwidth=0)
+        style.configure('Treeview.Heading',font=(self.ui_font,9,'bold'),background='#e7eff5',foreground='#36576d',padding=5,relief='flat')
         style.map('Treeview',background=[('selected','#176b85')],foreground=[('selected','white')])
         style.configure('Brand.TFrame',background='#153b50')
-        style.configure('Brand.TLabel',background='#153b50',foreground='white',font=(self.ui_font,20,'bold'))
-        style.configure('Subtitle.TLabel',background='#153b50',foreground='#bcd9e5',font=(self.ui_font,10))
+        style.configure('Brand.TLabel',background='#153b50',foreground='white',font=(self.ui_font,18,'bold'))
+        style.configure('Tooltip.TLabel',background='#17374b',foreground='white',font=(self.ui_font,9))
+        self.stage_icons={}
+        for state,colour in [('empty','#afbdc8'),('pending','#f1b747'),('ready','#57cba1'),('busy','#5eb5ff')]:
+            im=Image.new('RGBA',(10,10))
+            ImageDraw.Draw(im).ellipse((1,1,8,8),fill=colour)
+            self.stage_icons[state]=ImageTk.PhotoImage(im,master=self.root)
+
+    def tip(self,widget,text):
+        item=Tooltip(widget,text);self.tooltips.append(item);return item
+
+    def refresh_chart_prompt(self):
+        if not hasattr(self,'chart_entry'):return
+        loaded=self.session is not None and self.path.get().strip()==str(self.session.path)
+        self.chart_entry.configure(style='TEntry' if loaded else 'Required.TEntry')
+
+    def show_shortcuts(self):
+        popup=tk.Toplevel(self.root);popup.title('Atalhos');popup.resizable(False,False)
+        panel=ttk.Frame(popup,padding=18);panel.pack()
+        for row,(keys,action) in enumerate([
+            ('Setas','Navegar entre sondagens'),('Shift + setas','Selecionar faixa'),('Ctrl + clique','Selecionar ou desselecionar'),
+            ('Ctrl + A','Aprovar selecionados'),('Ctrl + X','Excluir selecionados'),('Ctrl + E','Editar profundidade'),
+            ('Ctrl + Shift + A','Selecionar todos os visíveis'),('Esc','Limpar seleção / cancelar ferramenta'),
+            ('Ctrl + O / Ctrl + S','Abrir carta / salvar projeto'),('F1','Abrir manual')]):
+            ttk.Label(panel,text=keys,font=(self.ui_font,10,'bold')).grid(row=row,column=0,sticky='w',padx=(0,24),pady=5)
+            ttk.Label(panel,text=action).grid(row=row,column=1,sticky='w',pady=5)
+        ttk.Label(panel,text='Atalhos de revisão: imagem e tabela. Campos de texto mantêm seus atalhos.',wraplength=430).grid(row=11,column=0,columnspan=2,sticky='w',pady=(12,0))
+        return popup
+
+    def show_review_menu(self,event):
+        # Preserve the current multi-selection; right click never approves a point.
+        self.refresh_review_controls()
+        if hasattr(self,'review_menu'):self.review_menu.destroy()
+        menu=self.review_menu=tk.Menu(self.root,tearoff=False)
+        for key,label,shortcut in [('accepted','Aprovar','Ctrl+A'),('rejected','Excluir','Ctrl+X'),('edit','Editar','Ctrl+E'),('unreviewed','Marcar pendente','')]:
+            button=self.review_buttons[key]
+            menu.add_command(label=label,accelerator=shortcut,command=button.invoke,state='disabled' if button.instate(['disabled']) else 'normal')
+        menu.add_separator();menu.add_command(label='Atalhos…',command=self.show_shortcuts)
+        try:menu.tk_popup(event.x_root,event.y_root)
+        finally:menu.grab_release()
 
     def open_manual(self):
         manual=Path(__file__).parent/'assets'/'manual_ptbr.html'
@@ -96,7 +149,7 @@ class Application:
         popup=tk.Toplevel(self.root);popup.title('Sobre o VetorizaFB');popup.resizable(False,False)
         apply_icon(popup,self.icon_path)
         panel=ttk.Frame(popup,padding=24);panel.pack(fill='both',expand=True)
-        popup._brand_images=[asset_photo(popup,'logo_app.png',(190,190))]
+        popup._brand_images=[asset_photo(popup,'logo_app.png',(150,150))]
         ttk.Label(panel,image=popup._brand_images[0]).pack(pady=(0,12))
         institutions=ttk.Frame(panel);institutions.pack(pady=(0,12))
         for name,label in [('logo_mb.png','Marinha do Brasil'),('logo_chm.png','Centro de Hidrografia da Marinha')]:
@@ -104,9 +157,9 @@ class Application:
             badge=ttk.Frame(institutions);badge.pack(side='left',padx=14)
             ttk.Label(badge,image=photo).pack()
             ttk.Label(badge,text=label,wraplength=170,anchor='center').pack()
-        ttk.Label(panel,text=f'VetorizaFB {__version__}',font=(self.ui_font,22,'bold')).pack(anchor='w')
+        ttk.Label(panel,text=f'Versão {__version__}',font=(self.ui_font,16,'bold')).pack(anchor='w')
         ttk.Label(panel,text='Extração e revisão de sondagens em cartas náuticas',padding=(0,8)).pack(anchor='w')
-        ttk.Label(panel,text='Projeto: Ivan Bodra Guimarães\nPaddleOCR • calibração por etapas • exportação georreferenciada\nResultados automáticos exigem revisão.\nÍcone: '+(self.icon_path.name if self.icon_path else 'original ainda não fornecido'),wraplength=500).pack(anchor='w')
+        ttk.Label(panel,text='Ivan Bodra Guimarães',wraplength=500).pack(anchor='w')
         ttk.Button(panel,text='Abrir manual (F1)',command=self.open_manual).pack(side='left',pady=(18,0))
         ttk.Button(panel,text='Fechar',command=popup.destroy).pack(side='right',pady=(18,0))
         return popup
@@ -170,33 +223,50 @@ class Application:
             files.add_command(label=label,command=command)
         help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
         help_menu.add_command(label='Manual de uso (F1)',command=self.open_manual)
+        help_menu.add_command(label='Atalhos de teclado…',command=self.show_shortcuts)
         help_menu.add_command(label='Carregar ícone original…',command=self.choose_icon)
         help_menu.add_separator();help_menu.add_command(label='Sobre o VetorizaFB',command=self.about)
-        brand=ttk.Frame(self.root,padding=(16,10),style='Brand.TFrame');brand.pack(fill='x')
-        self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(64,54))
+        brand=ttk.Frame(self.root,padding=(12,5),style='Brand.TFrame');brand.pack(fill='x')
+        self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(44,34))
         self.brand_icon=ttk.Label(brand,image=self.header_logo,style='Brand.TLabel')
         self.brand_icon.pack(side='left',padx=(0,10))
         ttk.Label(brand,text=f'VetorizaFB  {__version__}',style='Brand.TLabel').pack(side='left')
-        ttk.Label(brand,text='CALIBRAR  /  RECONHECER  /  REVISAR',style='Subtitle.TLabel').pack(side='left',padx=24)
         ttk.Button(brand,text='Manual · F1',command=self.open_manual).pack(side='right')
         header=ttk.Frame(self.root,padding=8);header.pack(fill='x');header.columnconfigure(1,weight=1)
-        ttk.Label(header,text='Carta').grid(row=0,column=0,sticky='w')
-        ttk.Entry(header,textvariable=self.path).grid(row=0,column=1,sticky='ew',padx=6)
-        ttk.Button(header,text='Selecionar / abrir',command=self.choose_chart).grid(row=0,column=2)
-        ttk.Button(header,text='Abrir caminho',command=self.load_chart).grid(row=0,column=3,padx=5)
-        ttk.Label(header,textvariable=self.validity).grid(row=1,column=0,columnspan=4,sticky='w',pady=5)
+        ttk.Label(header,text='CN').grid(row=0,column=0,sticky='w')
+        self.chart_entry=ttk.Entry(header,textvariable=self.path,style='Required.TEntry')
+        self.chart_entry.grid(row=0,column=1,sticky='ew',padx=6)
+        self.tip(self.chart_entry,'Selecione uma carta náutica GeoTIFF ou informe o caminho e clique em Carregar. O amarelo indica que essa carta ainda não foi carregada.')
+        ttk.Button(header,text='Abrir…',command=self.choose_chart).grid(row=0,column=2)
+        ttk.Button(header,text='Carregar',command=self.load_chart).grid(row=0,column=3,padx=5)
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
         left=ttk.Frame(split,width=355);split.add(left,weight=0)
         self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
         self.segment_panel=ScrollablePanel(self.tabs);seg=self.segment_panel.content
         ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(3)]
         for frame,label in [(self.segment_panel,'1. Segmentar'),(ocr,'2. OCR'),(group,'3. Agrupar'),(export,'4. Exportar')]:
-            self.tabs.add(frame,text=label);frame.columnconfigure(1,weight=1)
+            self.tabs.add(frame,text=label,image=self.stage_icons['empty'],compound='left');frame.columnconfigure(1,weight=1)
+        self.stage_labels=['1 Segmentar','2 OCR','3 Agrupar','4 Exportar']
+        for i,label in enumerate(self.stage_labels):self.tabs.tab(i,text=label)
+        self.tab_tip=self.tip(self.tabs,lambda:self.stage_tooltip())
+        self.tabs.bind('<Motion>',self.tab_hover)
         seg.columnconfigure(1,weight=1)
         def setting(frame,row,label,key,values=None):
-            ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=4)
+            ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
             widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=13) if values else ttk.Entry(frame,textvariable=self.fields[key],width=14)
-            widget.grid(row=row,column=1,sticky='ew',padx=(8,0),pady=3)
+            widget.grid(row=row,column=1,sticky='ew',padx=(8,0),pady=2)
+            hints={
+                'dpi':'DPI real da carta. As dimensões dos filtros são escaladas em relação ao DPI de referência.',
+                'reference_dpi':'DPI em que os limites de tamanho foram calibrados.',
+                'min_w':'Largura mínima no DPI de referência. O limite é estrito: a caixa deve ser maior.',
+                'max_w':'Largura máxima no DPI de referência. O limite é estrito: a caixa deve ser menor.',
+                'min_h':'Altura mínima no DPI de referência; preserve também os decímetros menores.',
+                'max_h':'Altura máxima no DPI de referência.',
+                'yellow_delta':'Diferença mínima R−B e G−B nos pixels de fundo; a tinta escura é ignorada.',
+                'yellow_min_fraction':'Fração mínima de fundo amarelo para rejeitar a caixa.',
+                'crop_padding':'Margem em pixels originais ao redor do caractere para o OCR.',
+                'min_confidence':'Escore mínimo aceito; a releitura dirigida do numeral 1 exige pelo menos 0,80.'}
+            if key in hints:self.tip(widget,hints[key])
         for row,(label,key,values) in enumerate([
             ('DPI efetivo','dpi',None),('DPI de referência','reference_dpi',None),
             ('Modo','segmentation',['legacy','black']),('Limiar (0–255)','threshold',None),
@@ -206,36 +276,32 @@ class Application:
         ttk.Checkbutton(seg,text='Excluir caixas com fundo amarelo',variable=self.fields['exclude_yellow']).grid(row=10,column=0,columnspan=2,sticky='w',pady=6)
         setting(seg,11,'R−B e G−B mínimos','yellow_delta')
         setting(seg,12,'Fração mínima do fundo','yellow_min_fraction')
-        self.seg_button=ttk.Button(seg,text='Executar etapa 1',command=lambda:self.run_stage('segment'))
+        self.seg_button=ttk.Button(seg,text='Segmentar',style='Primary.TButton',command=lambda:self.run_stage('segment'))
         self.seg_button.grid(row=14,column=0,columnspan=2,sticky='ew',pady=8)
-        ttk.Button(seg,text='Inspecionar dimensões / histogramas',command=self.inspect_sizes).grid(row=15,column=0,columnspan=2,sticky='ew',pady=3)
+        ttk.Button(seg,text='Dimensões',command=self.inspect_sizes).grid(row=15,column=0,columnspan=2,sticky='ew',pady=3)
         ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=16,column=0,columnspan=2,sticky='w',pady=8)
         ttk.Button(seg,text='Usar carta inteira',command=lambda:self.set_roi(None)).grid(row=17,column=0,columnspan=2,sticky='ew')
-        ttk.Button(seg,text='Medir caractere na imagem',command=self.measure_character).grid(row=19,column=0,columnspan=2,sticky='ew',pady=5)
+        ttk.Button(seg,text='Medir caractere',command=self.measure_character).grid(row=19,column=0,columnspan=2,sticky='ew',pady=5)
         ttk.Label(seg,textvariable=self.measure_text,wraplength=285).grid(row=20,column=0,columnspan=2,sticky='w',pady=5)
-        ttk.Button(seg,text='Usar como mínimo (com margem)',command=lambda:self.use_measurement(True)).grid(row=21,column=0,columnspan=2,sticky='ew')
-        ttk.Button(seg,text='Usar como máximo (com margem)',command=lambda:self.use_measurement(False)).grid(row=22,column=0,columnspan=2,sticky='ew',pady=3)
+        ttk.Button(seg,text='Definir mínimos',command=lambda:self.use_measurement(True)).grid(row=21,column=0,columnspan=2,sticky='ew')
+        ttk.Button(seg,text='Definir máximos',command=lambda:self.use_measurement(False)).grid(row=22,column=0,columnspan=2,sticky='ew',pady=3)
         ttk.Button(seg,text='Prévia dos filtros',command=lambda:(self.viewer.layer.set('Prévia dos filtros'),self.update_preview())).grid(row=23,column=0,columnspan=2,sticky='ew',pady=6)
-        ttk.Label(seg,text='Prévia: verde = aceita; cinza-claro = descartada. Passe o cursor para ver o motivo. Ajustes de máscara exigem executar a etapa 1.',wraplength=285).grid(row=24,column=0,columnspan=2,sticky='w',pady=6)
-        ttk.Label(seg,text='Para trabalhar por área, escolha “Selecionar área” na imagem e arraste um retângulo. As coordenadas continuam referidas à carta original.',wraplength=280).grid(row=18,column=0,columnspan=2,pady=12,sticky='w')
         ttk.Label(ocr,text='Modelo OCR').grid(row=0,column=0,sticky='w')
         ttk.Combobox(ocr,textvariable=self.model,state='readonly',width=23,values=['PP-OCRv6_small_rec','PP-OCRv6_medium_rec','PP-OCRv5_server_rec']).grid(row=1,column=0,columnspan=2,sticky='ew',pady=5)
         ttk.Label(ocr,text='Pasta local de inferência (opcional)').grid(row=2,column=0,columnspan=2,sticky='w',pady=(10,3))
         ttk.Entry(ocr,textvariable=self.model_dir).grid(row=3,column=0,columnspan=2,sticky='ew')
         ttk.Button(ocr,text='Selecionar pasta do modelo',command=self.choose_model).grid(row=4,column=0,columnspan=2,sticky='ew',pady=5)
         for row,(label,key) in enumerate([('Tamanho do lote','ocr_batch_size'),('Margem do recorte (px)','crop_padding'),('Confiança mínima','min_confidence')],6):setting(ocr,row,label,key)
-        ttk.Checkbutton(ocr,text='Reler possíveis “1” (I / l / traço estreito)',variable=self.fields['retry_one']).grid(row=9,column=0,columnspan=2,sticky='w',pady=(8,2))
-        ttk.Checkbutton(ocr,text='Reler todos os demais ambíguos',variable=self.fields['retry_ambiguous']).grid(row=10,column=0,columnspan=2,sticky='w',pady=3)
-        ttk.Label(ocr,text='Releitura: binário + margem + 2×. O “1” dirigido exige escore ≥ 0,80. O texto original é preservado; os pontos continuam pendentes de revisão.',wraplength=310).grid(row=11,column=0,columnspan=2,sticky='w',pady=8)
-        self.ocr_button=ttk.Button(ocr,text='Executar etapa 2',command=lambda:self.run_stage('ocr'))
+        ttk.Checkbutton(ocr,text='Reler possíveis “1”',variable=self.fields['retry_one']).grid(row=9,column=0,columnspan=2,sticky='w',pady=(8,2))
+        ttk.Checkbutton(ocr,text='Reler ambíguos',variable=self.fields['retry_ambiguous']).grid(row=10,column=0,columnspan=2,sticky='w',pady=3)
+        self.ocr_button=ttk.Button(ocr,text='Reconhecer',style='Primary.TButton',command=lambda:self.run_stage('ocr'))
         self.ocr_button.grid(row=12,column=0,columnspan=2,sticky='ew',pady=8)
         for row,(label,key,values) in enumerate([
             ('Modo','grouping',['relative','fixed']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
             ('Razão altura decimal','decimal_height_ratio',None),('Queda decimal','decimal_drop',None),
             ('Inteiro máximo p/ decimal','decimal_max_integer',None),('Confiança mínima','min_confidence',None)]):setting(group,row,label,key,values)
-        self.group_button=ttk.Button(group,text='Executar etapa 3 / reagrupar',command=lambda:self.run_stage('group'))
+        self.group_button=ttk.Button(group,text='Agrupar',style='Primary.TButton',command=lambda:self.run_stage('group'))
         self.group_button.grid(row=8,column=0,columnspan=2,sticky='ew',pady=10)
-        ttk.Label(group,text='Alterar só o agrupamento reutiliza o OCR válido. Reagrupar cria outra revisão; salve o projeto antes de substituir decisões.',wraplength=310).grid(row=9,column=0,columnspan=2,pady=10,sticky='w')
         ttk.Label(export,text='Pasta de saída').grid(row=0,column=0,columnspan=2,sticky='w')
         ttk.Entry(export,textvariable=self.output).grid(row=1,column=0,columnspan=2,sticky='ew',pady=5)
         ttk.Button(export,text='Selecionar saída',command=lambda:self.output.set(filedialog.askdirectory() or self.output.get())).grid(row=2,column=0,columnspan=2,sticky='ew')
@@ -243,17 +309,17 @@ class Application:
         ttk.Entry(export,textvariable=self.target_crs).grid(row=3,column=1,sticky='ew')
         self.export_button=ttk.Button(export,text='Exportar candidatos',command=lambda:self.export(False))
         self.export_button.grid(row=4,column=0,columnspan=2,sticky='ew',pady=5)
-        self.reviewed_button=ttk.Button(export,text='Exportar somente aprovados',command=lambda:self.export(True))
+        self.reviewed_button=ttk.Button(export,text='Exportar aprovados',command=lambda:self.export(True))
         self.reviewed_button.grid(row=5,column=0,columnspan=2,sticky='ew',pady=5)
-        ttk.Button(export,text='Salvar projeto de revisão',command=self.save_project).grid(row=6,column=0,columnspan=2,sticky='ew',pady=10)
-        ttk.Button(export,text='Abrir projeto de revisão',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
-        ttk.Label(export,text='XYZ: X Y profundidade. Padrão EPSG:4326 (longitude, latitude). Z em metros, positivo para baixo. Sem conversão de datum vertical.',wraplength=310).grid(row=8,column=0,columnspan=2,sticky='w',pady=15)
+        ttk.Button(export,text='Salvar projeto',command=self.save_project).grid(row=6,column=0,columnspan=2,sticky='ew',pady=10)
+        ttk.Button(export,text='Abrir projeto',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
         controls=ttk.Frame(left);controls.pack(side='bottom',fill='x',before=self.tabs)
-        self.run_button=ttk.Button(controls,text='Executar etapas pendentes (1 → 3)',command=lambda:self.run_stage('all'))
+        self.run_button=ttk.Button(controls,text='Processar',style='Primary.TButton',command=lambda:self.run_stage('all'))
         self.run_button.pack(fill='x',pady=8)
-        self.cancel_button=ttk.Button(controls,text='Cancelar entre lotes / etapas',command=self.cancel.set,state='disabled');self.cancel_button.pack(fill='x')
+        self.cancel_button=ttk.Button(controls,text='Cancelar',command=self.cancel.set,state='disabled');self.cancel_button.pack(fill='x')
         self.progress=ttk.Progressbar(controls,mode='determinate');self.progress.pack(fill='x',pady=6)
-        ttk.Label(controls,textvariable=self.counts,wraplength=335).pack(fill='x',pady=5)
+        summary=ttk.Label(controls,textvariable=self.counts_summary);summary.pack(fill='x',pady=3)
+        self.tip(summary,lambda:self.counts.get())
         right=ttk.Panedwindow(split,orient='vertical');split.add(right,weight=1)
         self.viewer=ChartViewer(right,self.canvas_action);right.add(self.viewer,weight=3)
         bottom=ttk.Frame(right);right.add(bottom,weight=1)
@@ -264,21 +330,22 @@ class Application:
         filt.bind('<<ComboboxSelected>>',lambda e:self.refresh_points())
         bar=ttk.Frame(bottom);bar.pack(fill='x')
         self.review_buttons={}
-        for key,label,cmd in [('accepted','Aprovar seleção',lambda:self.review_action('accepted')),('rejected','Excluir seleção',lambda:self.review_action('rejected')),
-                              ('unreviewed','Pendente',lambda:self.review_action('unreviewed')),('edit','Editar valor',self.correct_depth),('focus','Ampliar ponto',self.focus_selected)]:
-            button=ttk.Button(bar,text=label,command=cmd);button.pack(side='left',padx=2,pady=3)
+        for key,label,cmd in [('accepted','Aprovar',lambda:self.review_action('accepted')),('rejected','Excluir',lambda:self.review_action('rejected')),
+                              ('unreviewed','Pendente',lambda:self.review_action('unreviewed')),('edit','Editar',self.correct_depth),('focus','Ampliar',self.focus_selected)]:
+            button=ttk.Button(bar,text=label,command=cmd,width=0,style={'accepted':'Approve.TButton','rejected':'Reject.TButton'}.get(key,'TButton'));button.grid(row=0,column=len(self.review_buttons),padx=2,pady=2,sticky='w')
             self.review_buttons[key]=button
-        tools=ttk.Frame(bottom);tools.pack(fill='x')
-        for key,label,cmd in [('insert','Adicionar profundidade',lambda:self.activate_review_tool('Inserir ponto')),
-                              ('move','Mover ponto',lambda:self.activate_review_tool('Mover selecionado')),
+        tools=bar
+        for key,label,cmd in [('insert','Adicionar',lambda:self.activate_review_tool('Inserir ponto')),
+                              ('move','Mover',lambda:self.activate_review_tool('Mover selecionado')),
                               ('position','Posição…',self.edit_position),('offset','Offset…',self.offset_dialog)]:
-            button=ttk.Button(tools,text=label,command=cmd);button.pack(side='left',padx=2,pady=3)
+            button=ttk.Button(tools,text=label,command=cmd,width=0);button.grid(row=0,column=len(self.review_buttons),padx=2,pady=2,sticky='w')
             self.review_buttons[key]=button
+        bar.bind('<Configure>',lambda event:self.layout_review_toolbar(event.width))
         select=ttk.Frame(bottom);select.pack(fill='x')
-        for label,cmd in [('Selecionar todos',self.select_all_points),('Limpar seleção',self.clear_point_selection),('Inverter seleção',self.invert_point_selection)]:
-            ttk.Button(select,text=label,command=cmd).pack(side='left',padx=2,pady=3)
-        ttk.Checkbutton(select,text='Acompanhar ponto / zoom',variable=self.follow_review,command=lambda:self.focus_selected() if self.follow_review.get() else None).pack(side='left',padx=8)
-        self.tree=ttk.Treeview(bottom,columns=['id','depth','confidence','status','origin'],show='headings',selectmode='extended',height=7)
+        for label,cmd in [('Todos',self.select_all_points),('Limpar',self.clear_point_selection),('Inverter',self.invert_point_selection)]:
+            ttk.Button(select,text=label,command=cmd,width=0).pack(side='left',padx=2,pady=3)
+        ttk.Checkbutton(select,text='Acompanhar',variable=self.follow_review,command=lambda:self.focus_selected() if self.follow_review.get() else None).pack(side='left',padx=8)
+        self.tree=ttk.Treeview(bottom,columns=['id','depth','confidence','status','origin'],show='headings',selectmode='extended',height=5)
         for key,label,width in [('id','ID',45),('depth','Profundidade',100),('confidence','Confiança',85),('status','Revisão',100),('origin','Observações',240)]:
             self.tree.heading(key,text=label);self.tree.column(key,width=width,minwidth=35)
         scroll=ttk.Scrollbar(bottom,orient='vertical',command=self.tree.yview);scroll.pack(side='right',fill='y');self.tree.configure(yscrollcommand=scroll.set)
@@ -296,16 +363,42 @@ class Application:
                                 ('Control-e',self.correct_depth),('Control-Shift-A',self.select_all_points),
                                 ('Escape',self.clear_point_selection),('Control-space',self.toggle_active_point)]:
                 widget.bind(f'<{key}>',lambda e,cmd=command:self.review_shortcut(cmd))
-        help_label=ttk.Label(bottom,text='Setas: navegar · Shift+setas: faixa · Ctrl+clique: alternar · Ctrl+A: aprovar · Ctrl+X: excluir · Ctrl+E: editar · Ctrl+Shift+A: todos · Esc: limpar',wraplength=1000)
-        help_label.pack(fill='x',padx=4,pady=3,before=self.tree)
-        help_label.bind('<Configure>',lambda e:help_label.configure(wraplength=max(100,e.width-8)))
         notes=ttk.Frame(bottom);notes.pack(fill='x',before=self.tree)
-        ttk.Label(notes,text='Nota da revisão:').pack(side='left',padx=4)
+        ttk.Label(notes,text='Nota').pack(side='left',padx=4)
         self.note_entry=ttk.Entry(notes,textvariable=self.review_note)
         self.note_entry.pack(side='left',fill='x',expand=True,padx=4,pady=3)
-        self.footer=ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=8)
+        self.footer=ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=(8,3))
         self.footer.pack(side='bottom',fill='x',before=split)
         self.footer.bind('<Configure>',lambda e:self.footer.configure(wraplength=max(100,e.width-16)))
+        for key,text in {
+            'accepted':'Aprovar selecionados · Ctrl+A', 'rejected':'Excluir selecionados · Ctrl+X',
+            'unreviewed':'Voltar selecionados para pendentes', 'edit':'Editar uma profundidade · Ctrl+E',
+            'focus':'Centralizar e ampliar o ponto ativo', 'insert':'Adicionar profundidade: clique na imagem. Esc cancela.',
+            'move':'Mover o ponto selecionado: clique na nova posição.', 'position':'Editar X/Y em pixels originais',
+            'offset':'Prévia e deslocamento de todos os pontos ou dos selecionados'}.items():self.tip(self.review_buttons[key],text)
+        self.tip(self.seg_button,'Aplicar os filtros e recalcular a segmentação. Requer uma carta carregada.')
+        self.tip(self.ocr_button,'Reconhecer as caixas da segmentação atual. A releitura preserva o texto e o escore originais.')
+        self.tip(self.group_button,'Agrupar dígitos em profundidades; reutiliza o OCR válido. Salve a revisão antes de reagrupar.')
+        self.tip(self.run_button,'Executar somente as etapas pendentes: segmentar, reconhecer e agrupar.')
+        self.tip(self.cancel_button,'Solicitar cancelamento ao término do lote ou etapa atual.')
+        for widget in (self.tree,self.viewer.canvas):widget.bind('<Button-3>',self.show_review_menu)
+        # Fit compact toolbar labels to their content rather than Tk's default width.
+        def compact(widget):
+            for child in widget.winfo_children():
+                if isinstance(child,ttk.Button):child.configure(width=0)
+                compact(child)
+        compact(self.root)
+
+    def layout_review_toolbar(self,width):
+        x=y=0
+        height=max(button.winfo_reqheight() for button in self.review_buttons.values())+4
+        for button in self.review_buttons.values():
+            needed=button.winfo_reqwidth()+4
+            if x and x+needed>width:x=0;y+=height
+            button.grid_forget()
+            button.place(x=x+2,y=y+2,width=needed-4,height=height-4)
+            x+=needed
+        self.review_buttons['accepted'].master.configure(height=y+height)
 
     def config(self):
         defaults=asdict(Config());data={}
@@ -325,6 +418,19 @@ class Application:
     def set_config(self,config):
         for k,v in asdict(config).items():self.fields[k].set(v)
 
+    def tab_hover(self,event):
+        try:index=self.tabs.index(f'@{event.x},{event.y}')
+        except tk.TclError:return
+        if index!=getattr(self,'_hover_tab',None):
+            self._hover_tab=index;self.tab_tip.schedule()
+
+    def stage_tooltip(self):
+        index=getattr(self,'_hover_tab',0)
+        if not self.stage_states:return 'Carregue uma carta para iniciar.'
+        names=['Segmentação','OCR','Agrupamento','Exportação']
+        info={'empty':'carregue uma carta','pending':'precisa executar ou atualizar','ready':'atualizada','busy':'processando'}
+        return names[index]+': '+info[self.stage_states[index]]+'.'
+
     def refresh_validity(self):
         if hasattr(self,"viewer"):self.schedule_preview()
         if not hasattr(self,'seg_button'):return
@@ -336,11 +442,16 @@ class Application:
                 digits=self.session.valid_digits(cfg,self.model_spec(),self.roi)
                 groups=self.session.valid_groups(cfg,self.model_spec(),self.roi)
             self.validity.set(f"Segmentação: {'atualizada' if seg else 'pendente'} | OCR: {'atualizado' if digits else 'pendente'} | Agrupamento: {'atualizado' if groups else 'pendente'}")
-        except (ValueError,TypeError) as exc:self.validity.set(str(exc))
+        except (ValueError,TypeError) as exc:
+            self.validity.set(str(exc))
+            if not self.busy:self.status.set(str(exc))
         for button,enabled in [(self.seg_button,self.session is not None),(self.ocr_button,seg),
                                (self.group_button,digits),(self.run_button,self.session is not None),
                                (self.export_button,groups),(self.reviewed_button,groups and self.session.review.counts['accepted']>0)]:
             button.configure(state='normal' if enabled and not self.busy else 'disabled')
+        self.refresh_chart_prompt()
+        self.stage_states=[('empty' if self.session is None else 'busy' if self.busy else 'ready' if valid else 'pending') for valid in (seg,digits,groups,groups)]
+        for index,state in enumerate(self.stage_states):self.tabs.tab(index,image=self.stage_icons[state])
         self.refresh_review_controls()
 
     def start(self,task,done=lambda result:None,cancellable=True):
@@ -370,7 +481,7 @@ class Application:
                     self.cancel_button.configure(state='disabled')
                     if kind=='ok':
                         try:
-                            callback(value);self.status.set('Concluído. Confira as etapas e revise os pontos antes do XYZ final.')
+                            callback(value);self.status.set('Concluído.')
                         except Exception as exc:
                             self.status.set(str(exc));messagebox.showerror('Interface',str(exc),parent=self.root)
                     elif isinstance(value,ProcessingCancelled):self.status.set('Cancelado. Etapas já concluídas foram preservadas.')
@@ -439,6 +550,7 @@ class Application:
             self.select_point();return
         session=self.session;counts=session.review.counts if session.review else {}
         timing_names={'segment':'Segmentação','ocr':'OCR','group':'Agrupamento'}
+        self.counts_summary.set(f"{len(session.boxes or [])} caixas · {sum(counts.values())} sondagens")
         self.counts.set(f"Caixas: {len(session.boxes or [])} | Cor: {len(session.color_rejected)} rejeitadas | Dígitos: {sum(d.text is not None for d in session.digits or [])}\nPendentes: {counts.get('unreviewed',0)} | Aprovados: {counts.get('accepted',0)} | Excluídos: {counts.get('rejected',0)}\n"+', '.join(f'{timing_names[k]}: {v:.3f}s' for k,v in session.timings.items()))
         if session.review is None:
             self.select_point();return
@@ -739,6 +851,7 @@ class Application:
             self.cancel.set();messagebox.showinfo('Processando','Cancelamento solicitado. Aguarde o lote/etapa antes de fechar.');return
         if self.confirm_replace():
             self._closed=True
+            for tip in self.tooltips:tip.hide()
             if self._preview_id:self.root.after_cancel(self._preview_id)
             self.root.after_cancel(self._poll_id);self.root.destroy()
 

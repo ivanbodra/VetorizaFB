@@ -3,6 +3,7 @@ import math
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageDraw, ImageTk
+from .ui import Tooltip
 
 
 class ChartViewer(ttk.Frame):
@@ -17,24 +18,26 @@ class ChartViewer(ttk.Frame):
         self.preview_boxes = []
         self.measurement = None
         self.show_rejected = tk.BooleanVar(value=True)
-        self.inspection_text = tk.StringVar(value="Medidas em pixels originais • arraste no modo Medir caractere")
+        self.inspection_text = tk.StringVar()
         self.layer = tk.StringVar(value='Original')
         self.mode = tk.StringVar(value='Inspecionar')
         self.zoom_text = tk.StringVar()
         bar = ttk.Frame(self); bar.pack(fill='x')
         for text, cmd in [('Ajustar',self.fit),('100%',lambda:self.zoom_to(1)),
                           ('−',lambda:self.zoom_to(self.scale/1.4)),('+',lambda:self.zoom_to(self.scale*1.4))]:
-            ttk.Button(bar,text=text,command=cmd,width=7).pack(side='left',padx=2,pady=3)
-        ttk.Label(bar,textvariable=self.zoom_text,width=8).pack(side='left')
-        layer = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=12,
+            button=ttk.Button(bar,text=text,command=cmd,width=3 if text in {'−','+'} else 0)
+            button.pack(side='left',padx=2,pady=2)
+            Tooltip(button,{'Ajustar':'Mostrar a carta inteira','100%':'Um pixel da imagem por pixel da tela','−':'Reduzir zoom · roda do mouse','+':'Ampliar zoom · roda do mouse'}[text])
+        ttk.Label(bar,textvariable=self.zoom_text,width=6).pack(side='left')
+        layer = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=17,
                              values=['Original','Máscara','Caixas','Prévia dos filtros','Rejeitadas por cor','OCR','Sondagens'])
         layer.pack(side='left',padx=4); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
-        ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=18,
+        ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=17,
                      values=['Inspecionar','Selecionar área','Medir caractere','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
-        details = ttk.Frame(self); details.pack(fill='x')
+        self.details = details = ttk.Frame(self)
         ttk.Checkbutton(details,text='Mostrar descartadas',variable=self.show_rejected,command=self.render).pack(side='left',padx=5)
         ttk.Label(details,textvariable=self.inspection_text).pack(side='left',padx=8)
-        self.canvas = tk.Canvas(self,bg='#20272d',highlightthickness=0)
+        self.canvas = tk.Canvas(self,bg='#e2eaf0',highlightthickness=0)
         self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar área','Medir caractere'} else ''))
         self.canvas.pack(fill='both',expand=True)
         self.canvas.bind('<Motion>',self.hover)
@@ -45,6 +48,15 @@ class ChartViewer(ttk.Frame):
         self.canvas.bind('<MouseWheel>',lambda e:self.zoom_to(self.scale*(1.3 if e.delta>0 else 1/1.3),e.x,e.y))
         self.canvas.bind('<Button-4>',lambda e:self.zoom_to(self.scale*1.3,e.x,e.y))
         self.canvas.bind('<Button-5>',lambda e:self.zoom_to(self.scale/1.3,e.x,e.y))
+
+        self.layer.trace_add('write',lambda *args:self.update_details())
+        self.mode.trace_add('write',lambda *args:self.update_details())
+        Tooltip(layer,'Camada de visualização. Prévia dos filtros: verde = aceita, cinza-claro = descartada. Passe o cursor sobre as caixas para inspecionar.')
+
+    def update_details(self):
+        if self.layer.get()=='Prévia dos filtros' or self.mode.get()=='Medir caractere':
+            self.details.pack(fill='x',before=self.canvas)
+        else:self.details.pack_forget()
 
     def set_session(self,session):
         self.preview_boxes = []; self.measurement = None

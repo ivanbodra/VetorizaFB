@@ -409,3 +409,23 @@ their aspect ratios. The original splash and additional mascot are retained as
 assets; no artificial startup delay or loading screen is introduced. User-selected
 icons remain supported and the last selected format persists across launches.
 All seven supplied images are preserved byte-for-byte in package assets.
+
+
+### Compact desktop workspace
+
+The native Python/Tkinter application retains its processing and project format.
+The active tab is blue; readiness dots represent current (green), stale/pending
+(amber), processing (light blue) and no chart (grey). Hover provides the textual
+meaning. Tabs remain available for configuration, while execution buttons retain
+stage validity checks. The fixed stage-status line and shortcut legend are
+removed. The CN path field is pale yellow until that path has been loaded.
+
+Review actions use short labels (Aprovar, Excluir, Editar, Adicionar, Mover).
+The toolbar wraps to preserve every action at smaller widths. Contextual tooltips,
+Help → Keyboard shortcuts and a chart/table right-click menu replace permanent
+explanatory text. Right-click preserves the current multi-selection; review keys
+retain their original scope. Grey indicates disabled controls; available controls
+use blue, with soft green/red for approval/exclusion. About omits implementation
+and icon-filename diagnostics. Preview details show only during preview/measurement;
+the sidebar summary exposes full counts and timings on hover. No dependency or
+OCR/geospatial algorithm changes are required.
