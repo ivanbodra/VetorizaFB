@@ -397,10 +397,13 @@ def test_compact_toolbar_never_cuts_actions_and_details_are_contextual(app):
     assert app.viewer.details.winfo_ismapped()
 
 
-def test_context_help_preserves_review_selection_and_tooltip_lifecycle(app):
+def test_context_help_preserves_review_selection_and_tooltip_lifecycle(app,monkeypatch):
     from types import SimpleNamespace
     from vetorizafb.ui import Tooltip
     review_points(app);app.tree.selection_set(('0','1'));before=app.session.review.counts.copy()
+    # Native Windows popup menus wait for user input; exercise real menu entries
+    # and review actions without entering that OS-owned modal loop in CI.
+    monkeypatch.setattr('tkinter.Menu.tk_popup',lambda *args,**kwargs:None)
     app.show_review_menu(SimpleNamespace(x_root=100,y_root=100))
     app.review_menu.unpost()
     assert app.tree.selection()==('0','1') and app.session.review.counts==before
