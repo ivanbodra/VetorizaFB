@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vetorizafb"
-version = "0.4.0"
+version = "4.0"
 description = "Experimental sounding extraction from georeferenced nautical charts"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.26,<3", "opencv-contrib-python==4.10.0.84", "Pillow>=10", "rasterio>=1.3,<2", "pyproj>=3.6,<4"]
@@ -20,3 +20,6 @@ vetorizafb-gui = "vetorizafb.gui:main"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+vetorizafb = ["assets/*.html", "assets/*.png", "assets/*.ico"]

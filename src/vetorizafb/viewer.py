@@ -13,6 +13,11 @@ class ChartViewer(ttk.Frame):
         self.selected_ids = set()
         self.scale, self.left, self.top = 1., 0., 0.
         self.suspended=False
+        self._visible_preview = []
+        self.preview_boxes = []
+        self.measurement = None
+        self.show_rejected = tk.BooleanVar(value=True)
+        self.inspection_text = tk.StringVar(value="Medidas em pixels originais • arraste no modo Medir caractere")
         self.layer = tk.StringVar(value='Original')
         self.mode = tk.StringVar(value='Inspecionar')
         self.zoom_text = tk.StringVar()
@@ -22,13 +27,17 @@ class ChartViewer(ttk.Frame):
             ttk.Button(bar,text=text,command=cmd,width=7).pack(side='left',padx=2,pady=3)
         ttk.Label(bar,textvariable=self.zoom_text,width=8).pack(side='left')
         layer = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=12,
-                             values=['Original','Máscara','Caixas','Rejeitadas por cor','OCR','Sondagens'])
+                             values=['Original','Máscara','Caixas','Prévia dos filtros','Rejeitadas por cor','OCR','Sondagens'])
         layer.pack(side='left',padx=4); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
         ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=18,
-                     values=['Inspecionar','Selecionar área','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
+                     values=['Inspecionar','Selecionar área','Medir caractere','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
+        details = ttk.Frame(self); details.pack(fill='x')
+        ttk.Checkbutton(details,text='Mostrar descartadas',variable=self.show_rejected,command=self.render).pack(side='left',padx=5)
+        ttk.Label(details,textvariable=self.inspection_text).pack(side='left',padx=8)
         self.canvas = tk.Canvas(self,bg='#20272d',highlightthickness=0)
-        self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar área'} else ''))
+        self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar área','Medir caractere'} else ''))
         self.canvas.pack(fill='both',expand=True)
+        self.canvas.bind('<Motion>',self.hover)
         self.canvas.bind('<Configure>',lambda e:self.render())
         self.canvas.bind('<ButtonPress-1>',self.press)
         self.canvas.bind('<B1-Motion>',self.drag)
@@ -38,6 +47,7 @@ class ChartViewer(ttk.Frame):
         self.canvas.bind('<Button-5>',lambda e:self.zoom_to(self.scale/1.3,e.x,e.y))
 
     def set_session(self,session):
+        self.preview_boxes = []; self.measurement = None
         self.session, self.roi, self.selected_id = session,session.roi,None
         self.selected_ids=set()
         self.after_idle(self.fit)
@@ -78,7 +88,7 @@ class ChartViewer(ttk.Frame):
     def drag(self,event):
         if not self._press:return
         x,y,left,top = self._press
-        if self.mode.get() == 'Selecionar área':
+        if self.mode.get() in {'Selecionar área','Medir caractere'}:
             self.canvas.delete('selection')
             self.canvas.create_rectangle(x,y,event.x,event.y,outline='#00d5ff',width=2,tags='selection')
         elif self.mode.get() == 'Inspecionar':
@@ -90,18 +100,32 @@ class ChartViewer(ttk.Frame):
         sx,sy,left,top = self._press; self._press = None
         px,py = self.pixel(event.x,event.y)
         h,w = self.session.rgb.shape[:2]
-        if self.mode.get() == 'Selecionar área':
+        if self.mode.get() in {'Selecionar área','Medir caractere'}:
             ax,ay = left+sx/self.scale,top+sy/self.scale
             x1,y1 = max(0,math.floor(min(ax,px))),max(0,math.floor(min(ay,py)))
             x2,y2 = min(w,math.ceil(max(ax,px))),min(h,math.ceil(max(ay,py)))
             self.canvas.delete('selection')
-            if x2>x1 and y2>y1:self.on_action('roi',(x1,y1,x2-x1,y2-y1))
+            if x2>x1 and y2>y1:
+                if self.mode.get() == 'Medir caractere':
+                    self.measurement=(x1,y1,x2,y2);self.on_action('measure',(x2-x1,y2-y1));self.render()
+                else:self.on_action('roi',(x1,y1,x2-x1,y2-y1))
         elif math.hypot(event.x-sx,event.y-sy)<5 and 0<=px<w and 0<=py<h:
             action=self.mode.get()
             if action=='Inspecionar':
                 if event.state & 4:action='toggle_point'
                 elif event.state & 1:action='range_point'
             self.on_action(action,(px,py))
+
+    def hover(self,event):
+        if self.layer.get() != 'Prévia dos filtros' or self._press:return
+        x,y=self.pixel(event.x,event.y)
+        matches=[(b,reason) for b,reason in self._visible_preview if b.x<=x<=b.x+b.w and b.y<=y<=b.y+b.h]
+        self.canvas.delete('hover')
+        if not matches:return
+        b,reason=min(matches,key=lambda pair:pair[0].w*pair[0].h)
+        self.inspection_text.set(f'{b.w} × {b.h} px — {reason or "aceita pelos filtros"}')
+        self.canvas.create_rectangle((b.x-self.left)*self.scale,(b.y-self.top)*self.scale,
+            (b.x+b.w-self.left)*self.scale,(b.y+b.h-self.top)*self.scale,outline='#007c91',width=2,tags='hover')
 
     def render(self):
         if self.session is None or self.suspended:return
@@ -128,6 +152,15 @@ class ChartViewer(ttk.Frame):
             if label is not None and self.scale>=.45:
                 draw.text(point(a,max(0,b-12/self.scale)),str(label),fill=colour)
         layer = self.layer.get()
+        self._visible_preview=[]
+        if layer=='Prévia dos filtros':
+            for b,reason in self.preview_boxes:
+                if b.x+b.w<x1 or b.x>x2 or b.y+b.h<y1 or b.y>y2:continue
+                if reason and not self.show_rejected.get():continue
+                self._visible_preview.append((b,reason))
+                if self.scale>=.6:box((b.x,b.y,b.x+b.w,b.y+b.h),'#c4c9ce' if reason else '#008879')
+            if self.scale<.6 and self.preview_boxes:self.inspection_text.set('Amplie para pelo menos 60% para visualizar as caixas.')
+        if self.measurement:box(self.measurement,'#007c91')
         if layer=='Rejeitadas por cor':
             for b in self.session.color_rejected:box((b.x,b.y,b.x+b.w,b.y+b.h),'#df2040')
         if layer in {'Caixas','OCR'}:

@@ -378,3 +378,33 @@ See [colour-filter/position-tool validation](COLOR_AND_POSITIONS.md),
 [keyboard/one-retry validation](REVIEW_AND_ONES.md),
 [0.2 restoration validation](RESTORATION.md), [initial experiments](EXPERIMENTS.md)
 and the [official model catalogue](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/module_usage/text_recognition.en.md).
+
+## Version 4.0 — visual calibration and application identity
+
+The application is now named **VetorizaFB 4.0** at the author's request (this
+supersedes the development sequence 0.4.0). Existing project format and original
+sources are retained. F1 and Help → Manual open the bundled offline Portuguese
+manual; Help → About identifies the running version.
+
+Run segmentation once, then use **Medir caractere** to drag a native-pixel
+rectangle independent of zoom. The panel shows native and reference-DPI sizes.
+Buttons can set minimum/maximum width and height, allowing one reference pixel
+of margin because existing size tests use strict inequalities. Measure narrow
+ones, wide zeros and small decimal glyphs before setting the full range.
+
+**Prévia dos filtros** reclassifies cached contours on parameter changes without
+OCR or mutation of the session, review, exports or stage signatures. Accepted
+boxes are green; rejected boxes have thin light-grey outlines. Toggle rejected
+visibility. At less than 60% zoom, outlines are hidden; hover at a useful zoom
+shows native size and rejection reason and highlights only that box. Width,
+height and yellow-background controls update after a brief debounce. Changes to
+mask/DPI/ROI require stage 1 again; invalid or stale previews clear their boxes.
+Apply the chosen limits with stage 1 before OCR. The preview is calibration,
+not classification of soundings or a guarantee of accuracy.
+
+The original `logo_vetorizaFB.ico` is referenced by the legacy source but its
+bytes were not included in the source uploads. No replacement is presented as
+the original. The app loads matching original ICO/PNG assets from package,
+repository root, legacy folder or the user's persisted selection. Help → Load
+original icon accepts the original file and stores a validated copy for next
+launch. The About panel states when the original is unavailable.

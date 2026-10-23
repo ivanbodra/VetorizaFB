@@ -2,11 +2,15 @@
 from dataclasses import asdict
 import json
 import math
+import os
+import shutil
+import webbrowser
 from pathlib import Path
 import queue
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import font as tkfont
 import traceback
 
 from .runtime import configure_gis_runtime
@@ -21,6 +25,8 @@ from .viewer import ChartViewer
 from .workflow import ChartSession
 from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
+from .calibration import CalibrationPreview
+from .branding import apply_icon
 
 
 class Application:
@@ -30,6 +36,10 @@ class Application:
         self._closed=False
         self._one_shot_mode=False
         self.roi = None
+        self.preview = CalibrationPreview()
+        self._preview_id = None
+        self.measurement = None
+        self.measure_text = tk.StringVar(value="Arraste um retângulo ao redor de um numeral.")
         self.events, self.cancel = queue.Queue(),threading.Event()
         self.path, self.output = tk.StringVar(),tk.StringVar()
         self.model = tk.StringVar(value='PP-OCRv6_small_rec')
@@ -46,14 +56,103 @@ class Application:
                        for k,v in asdict(Config()).items()}
         root.title(f'VetorizaFB {__version__} — processamento e revisão')
         root.geometry('1450x950');root.minsize(1050,720)
+        self.configure_style()
+        self.icon_path = apply_icon(root)
         self.build()
         for var in [*self.fields.values(),self.model,self.model_dir]:
             var.trace_add('write',lambda *args:self.refresh_validity())
         root.protocol('WM_DELETE_WINDOW',self.close)
+        root.bind('<F1>',lambda e:self.open_manual())
         root.bind('<Control-o>',lambda e:self.choose_chart())
         root.bind('<Control-s>',lambda e:self.save_project())
         self._poll_id=root.after(80,self.poll)
         self.refresh_validity()
+
+    def configure_style(self):
+        style=ttk.Style(self.root)
+        families=set(tkfont.families(self.root))
+        self.ui_font=next((f for f in ('Segoe UI','DejaVu Sans','Nimbus Sans','Helvetica') if f in families),tkfont.nametofont('TkDefaultFont').actual('family'))
+        tkfont.nametofont('TkDefaultFont').configure(family=self.ui_font,size=10)
+        tkfont.nametofont('TkTextFont').configure(family=self.ui_font,size=10)
+        if 'clam' in style.theme_names():style.theme_use('clam')
+        style.configure('.',font=(self.ui_font,10),background='#f3f6f8',foreground='#183342')
+        style.configure('TButton',padding=(9,6))
+        style.configure('TNotebook.Tab',padding=(10,8))
+        style.configure('Treeview',rowheight=26,background='#ffffff',fieldbackground='#ffffff')
+        style.configure('Treeview.Heading',font=(self.ui_font,10,'bold'),padding=6)
+        style.map('Treeview',background=[('selected','#176b85')],foreground=[('selected','white')])
+        style.configure('Brand.TFrame',background='#153b50')
+        style.configure('Brand.TLabel',background='#153b50',foreground='white',font=(self.ui_font,20,'bold'))
+        style.configure('Subtitle.TLabel',background='#153b50',foreground='#bcd9e5',font=(self.ui_font,10))
+
+    def open_manual(self):
+        manual=Path(__file__).parent/'assets'/'manual_ptbr.html'
+        try:
+            if not manual.is_file():raise OSError('Manual local não encontrado. Reinstale o pacote.')
+            if not webbrowser.open(manual.resolve().as_uri()):raise OSError('Não foi possível abrir o navegador padrão.')
+        except OSError as exc:messagebox.showerror('Manual',str(exc),parent=self.root)
+
+    def about(self):
+        popup=tk.Toplevel(self.root);popup.title('Sobre o VetorizaFB');popup.resizable(False,False)
+        apply_icon(popup,self.icon_path)
+        panel=ttk.Frame(popup,padding=24);panel.pack(fill='both',expand=True)
+        if self.icon_path:
+            photo=popup._vetorizafb_icon;ttk.Label(panel,image=photo).pack(pady=(0,12))
+        ttk.Label(panel,text=f'VetorizaFB {__version__}',font=(self.ui_font,22,'bold')).pack(anchor='w')
+        ttk.Label(panel,text='Extração e revisão de sondagens em cartas náuticas',padding=(0,8)).pack(anchor='w')
+        ttk.Label(panel,text='Projeto: Ivan Bodra Guimarães\nPaddleOCR • calibração por etapas • exportação georreferenciada\nResultados automáticos exigem revisão.\nÍcone: '+(self.icon_path.name if self.icon_path else 'original ainda não fornecido'),wraplength=500).pack(anchor='w')
+        ttk.Button(panel,text='Abrir manual (F1)',command=self.open_manual).pack(side='left',pady=(18,0))
+        ttk.Button(panel,text='Fechar',command=popup.destroy).pack(side='right',pady=(18,0))
+        return popup
+
+    def choose_icon(self):
+        path=filedialog.askopenfilename(title='Selecionar ícone original',filetypes=[('Ícone ou imagem','*.ico *.png')])
+        if not path:return
+        try:
+            with Image.open(path) as image:image.verify()
+            folder=Path(os.environ.get('APPDATA',Path.home()/'.config'))/'VetorizaFB';folder.mkdir(parents=True,exist_ok=True)
+            target=folder/('logo_vetorizafb'+Path(path).suffix.lower())
+            if Path(path).resolve()!=target.resolve():shutil.copyfile(path,target)
+            self.icon_path=apply_icon(self.root,target)
+            if self.icon_path:self.brand_icon.configure(image=self.root._vetorizafb_icon)
+            self.status.set('Ícone original carregado. Será reutilizado nas próximas aberturas.')
+        except (OSError,ValueError) as exc:messagebox.showerror('Ícone',str(exc),parent=self.root)
+
+    def schedule_preview(self):
+        if self._preview_id:self.root.after_cancel(self._preview_id)
+        self._preview_id=self.root.after(180,self.update_preview)
+
+    def update_preview(self):
+        if self._preview_id:self.root.after_cancel(self._preview_id)
+        self._preview_id=None
+        if self.busy or not self.session:return
+        try:
+            result=self.preview.classify(self.session,self.config(),self.roi)
+            self.viewer.preview_boxes=result
+            if self.viewer.layer.get()=='Prévia dos filtros':
+                kept=sum(not reason for _,reason in result)
+                self.viewer.inspection_text.set(f'{kept} aceitas • {len(result)-kept} descartadas • prévia, ainda não aplicada')
+                self.viewer.render()
+        except (ValueError,TypeError) as exc:
+            self.viewer.preview_boxes=[]
+            if self.viewer.layer.get()=='Prévia dos filtros':
+                self.viewer.inspection_text.set(str(exc));self.viewer.render()
+
+    def measure_character(self):
+        self.viewer.mode.set('Medir caractere')
+        self.viewer.layer.set('Prévia dos filtros');self.update_preview()
+        self.status.set('Arraste um retângulo justo ao redor de um numeral; medidas em pixels originais.')
+
+    def use_measurement(self,minimum):
+        if not self.measurement:return
+        try:
+            cfg=self.config();w,h=self.measurement
+            # Bounds are strict in the existing segmentation; leave one reference pixel of margin.
+            values=[max(1,math.floor(v/cfg.scale)-1) if minimum else math.ceil(v/cfg.scale)+1 for v in (w,h)]
+            low='min_' if minimum else 'max_'
+            for key,value in zip(('w','h'),values):self.fields[low+key].set(str(value))
+            self.viewer.layer.set('Prévia dos filtros');self.update_preview()
+        except (ValueError,TypeError) as exc:self.status.set(str(exc))
 
     def build(self):
         menu=tk.Menu(self.root);self.root.configure(menu=menu)
@@ -62,6 +161,17 @@ class Application:
                               ('Salvar projeto (Ctrl+S)',self.save_project),('Carregar parâmetros',self.load_config),
                               ('Salvar parâmetros',self.save_config),('Sair',self.close)]:
             files.add_command(label=label,command=command)
+        help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
+        help_menu.add_command(label='Manual de uso (F1)',command=self.open_manual)
+        help_menu.add_command(label='Carregar ícone original…',command=self.choose_icon)
+        help_menu.add_separator();help_menu.add_command(label='Sobre o VetorizaFB',command=self.about)
+        brand=ttk.Frame(self.root,padding=(16,10),style='Brand.TFrame');brand.pack(fill='x')
+        self.brand_icon=ttk.Label(brand,style='Brand.TLabel')
+        if self.icon_path:self.brand_icon.configure(image=self.root._vetorizafb_icon)
+        self.brand_icon.pack(side='left',padx=(0,10))
+        ttk.Label(brand,text=f'VetorizaFB  {__version__}',style='Brand.TLabel').pack(side='left')
+        ttk.Label(brand,text='CALIBRAR  /  RECONHECER  /  REVISAR',style='Subtitle.TLabel').pack(side='left',padx=24)
+        ttk.Button(brand,text='Manual · F1',command=self.open_manual).pack(side='right')
         header=ttk.Frame(self.root,padding=8);header.pack(fill='x');header.columnconfigure(1,weight=1)
         ttk.Label(header,text='Carta').grid(row=0,column=0,sticky='w')
         ttk.Entry(header,textvariable=self.path).grid(row=0,column=1,sticky='ew',padx=6)
@@ -94,6 +204,12 @@ class Application:
         ttk.Button(seg,text='Inspecionar dimensões / histogramas',command=self.inspect_sizes).grid(row=15,column=0,columnspan=2,sticky='ew',pady=3)
         ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=16,column=0,columnspan=2,sticky='w',pady=8)
         ttk.Button(seg,text='Usar carta inteira',command=lambda:self.set_roi(None)).grid(row=17,column=0,columnspan=2,sticky='ew')
+        ttk.Button(seg,text='Medir caractere na imagem',command=self.measure_character).grid(row=19,column=0,columnspan=2,sticky='ew',pady=5)
+        ttk.Label(seg,textvariable=self.measure_text,wraplength=285).grid(row=20,column=0,columnspan=2,sticky='w',pady=5)
+        ttk.Button(seg,text='Usar como mínimo (com margem)',command=lambda:self.use_measurement(True)).grid(row=21,column=0,columnspan=2,sticky='ew')
+        ttk.Button(seg,text='Usar como máximo (com margem)',command=lambda:self.use_measurement(False)).grid(row=22,column=0,columnspan=2,sticky='ew',pady=3)
+        ttk.Button(seg,text='Prévia dos filtros',command=lambda:(self.viewer.layer.set('Prévia dos filtros'),self.update_preview())).grid(row=23,column=0,columnspan=2,sticky='ew',pady=6)
+        ttk.Label(seg,text='Prévia: verde = aceita; cinza-claro = descartada. Passe o cursor para ver o motivo. Ajustes de máscara exigem executar a etapa 1.',wraplength=285).grid(row=24,column=0,columnspan=2,sticky='w',pady=6)
         ttk.Label(seg,text='Para trabalhar por área, escolha “Selecionar área” na imagem e arraste um retângulo. As coordenadas continuam referidas à carta original.',wraplength=280).grid(row=18,column=0,columnspan=2,pady=12,sticky='w')
         ttk.Label(ocr,text='Modelo OCR').grid(row=0,column=0,sticky='w')
         ttk.Combobox(ocr,textvariable=self.model,state='readonly',width=23,values=['PP-OCRv6_small_rec','PP-OCRv6_medium_rec','PP-OCRv5_server_rec']).grid(row=1,column=0,columnspan=2,sticky='ew',pady=5)
@@ -125,11 +241,12 @@ class Application:
         ttk.Button(export,text='Salvar projeto de revisão',command=self.save_project).grid(row=6,column=0,columnspan=2,sticky='ew',pady=10)
         ttk.Button(export,text='Abrir projeto de revisão',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
         ttk.Label(export,text='XYZ: X Y profundidade. Padrão EPSG:4326 (longitude, latitude). Z em metros, positivo para baixo. Sem conversão de datum vertical.',wraplength=310).grid(row=8,column=0,columnspan=2,sticky='w',pady=15)
-        self.run_button=ttk.Button(left,text='Executar etapas pendentes (1 → 3)',command=lambda:self.run_stage('all'))
+        controls=ttk.Frame(left);controls.pack(side='bottom',fill='x',before=self.tabs)
+        self.run_button=ttk.Button(controls,text='Executar etapas pendentes (1 → 3)',command=lambda:self.run_stage('all'))
         self.run_button.pack(fill='x',pady=8)
-        self.cancel_button=ttk.Button(left,text='Cancelar entre lotes / etapas',command=self.cancel.set,state='disabled');self.cancel_button.pack(fill='x')
-        self.progress=ttk.Progressbar(left,mode='determinate');self.progress.pack(fill='x',pady=6)
-        ttk.Label(left,textvariable=self.counts,wraplength=335).pack(fill='x',pady=5)
+        self.cancel_button=ttk.Button(controls,text='Cancelar entre lotes / etapas',command=self.cancel.set,state='disabled');self.cancel_button.pack(fill='x')
+        self.progress=ttk.Progressbar(controls,mode='determinate');self.progress.pack(fill='x',pady=6)
+        ttk.Label(controls,textvariable=self.counts,wraplength=335).pack(fill='x',pady=5)
         right=ttk.Panedwindow(split,orient='vertical');split.add(right,weight=1)
         self.viewer=ChartViewer(right,self.canvas_action);right.add(self.viewer,weight=3)
         bottom=ttk.Frame(right);right.add(bottom,weight=1)
@@ -202,6 +319,7 @@ class Application:
         for k,v in asdict(config).items():self.fields[k].set(v)
 
     def refresh_validity(self):
+        if hasattr(self,"viewer"):self.schedule_preview()
         if not hasattr(self,'seg_button'):return
         seg=digits=groups=False
         try:
@@ -477,6 +595,14 @@ class Application:
 
     def canvas_action(self,action,xy):
         if self.busy:return
+        if action=='measure':
+            self.measurement=xy
+            try:
+                scale=self.config().scale
+                self.measure_text.set(f'{xy[0]} × {xy[1]} px originais\n{xy[0]/scale:.1f} × {xy[1]/scale:.1f} px no DPI de referência')
+                self.viewer.inspection_text.set(self.measure_text.get().replace('\n',' • '))
+            except (ValueError,TypeError):self.measure_text.set('Corrija os parâmetros de DPI para converter a medida.')
+            return
         if action=='roi':self.set_roi(xy);return
         if action in {'Inserir ponto','Mover selecionado'}:
             if not self.review_ready():return
@@ -605,7 +731,9 @@ class Application:
         if self.busy:
             self.cancel.set();messagebox.showinfo('Processando','Cancelamento solicitado. Aguarde o lote/etapa antes de fechar.');return
         if self.confirm_replace():
-            self._closed=True;self.root.after_cancel(self._poll_id);self.root.destroy()
+            self._closed=True
+            if self._preview_id:self.root.after_cancel(self._preview_id)
+            self.root.after_cancel(self._poll_id);self.root.destroy()
 
 
 def main():

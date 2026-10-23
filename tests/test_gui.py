@@ -33,6 +33,7 @@ def app(tmp_path,monkeypatch,tk_root):
     yield instance
     root.update()
     instance._closed=True
+    if instance._preview_id:root.after_cancel(instance._preview_id)
     root.after_cancel(instance._poll_id)
     for widget in root.winfo_children():widget.destroy()
     root.update_idletasks()
@@ -266,5 +267,66 @@ def test_gui_yellow_filter_configuration_invalidation_and_layer(app):
 def test_review_controls_and_notes_remain_visible_at_minimum_window_size(app):
     app.root.geometry('1050x720');app.root.update()
     for widget in [app.note_entry,app.footer,*app.review_buttons.values()]:
+        assert widget.winfo_ismapped()
+        assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()
+
+
+def test_live_preview_is_non_mutating_and_clears_stale_mask(app):
+    app.run_stage('all');finish(app)
+    boxes=app.session.boxes;digits=app.session.digits;review=app.session.review
+    app.viewer.layer.set('Prévia dos filtros');app.update_preview()
+    assert app.viewer.preview_boxes and not app.viewer.preview_boxes[0][1]
+    app.fields['min_w'].set('15');app.update_preview()
+    assert 'largura' in app.viewer.preview_boxes[0][1]
+    assert app.session.boxes is boxes and app.session.digits is digits and app.session.review is review
+    assert not app.session.valid_segments(app.config())
+    app.fields['threshold'].set('100');app.update_preview()
+    assert app.viewer.preview_boxes==[] and 'etapa 1' in app.viewer.inspection_text.get()
+
+
+def test_measurement_uses_native_pixels_independent_of_zoom(app):
+    from types import SimpleNamespace
+    app.run_stage('segment');finish(app)
+    app.measure_character();v=app.viewer
+    for scale in (2,4):
+        v.scale=scale;v.left=v.top=0
+        v.press(SimpleNamespace(x=20*scale,y=20*scale))
+        v.release(SimpleNamespace(x=30*scale,y=45*scale,state=0))
+        assert app.measurement==(10,25)
+    app.fields['dpi'].set('300')
+    app.canvas_action('measure',(10,25))
+    assert '20.0 × 50.0' in app.measure_text.get()
+    app.use_measurement(True)
+    assert app.fields['min_w'].get()=='19' and app.fields['min_h'].get()=='49'
+
+
+def test_manual_about_and_preview_toggle(app,monkeypatch):
+    from pathlib import Path
+    from vetorizafb import __version__
+    assert __version__=='4.0' and '4.0' in app.root.title()
+    urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
+    app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
+    popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()
+    app.run_stage('segment');finish(app);app.viewer.layer.set('Prévia dos filtros')
+    app.fields['min_w'].set('15');app.update_preview()
+    app.viewer.scale=2;app.viewer.render();assert app.viewer._visible_preview
+    app.viewer.show_rejected.set(False);app.viewer.render();assert not app.viewer._visible_preview
+
+
+def test_original_icon_is_loaded_and_persisted(app,tmp_path,monkeypatch):
+    from PIL import Image
+    source=tmp_path/'original.png';Image.new('RGBA',(32,32),'navy').save(source)
+    monkeypatch.setenv('APPDATA',str(tmp_path/'preferences'))
+    monkeypatch.setattr('vetorizafb.gui.filedialog.askopenfilename',lambda **kw:str(source))
+    app.choose_icon()
+    assert app.icon_path.read_bytes()==source.read_bytes()
+    from vetorizafb.branding import apply_icon
+    assert apply_icon(app.root)==app.icon_path
+    assert app.brand_icon.cget('image')
+
+
+def test_execution_controls_remain_visible_at_minimum_window(app):
+    app.root.geometry('1050x720');app.root.update()
+    for widget in (app.run_button,app.cancel_button,app.progress):
         assert widget.winfo_ismapped()
         assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()
