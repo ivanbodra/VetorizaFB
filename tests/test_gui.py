@@ -188,3 +188,83 @@ def test_canvas_toggle_range_and_invert_selection(app):
     app.invert_point_selection();assert app.tree.selection()==('0',)
     key(app,'<Control-a>',app.viewer.canvas)
     assert app.session.review.item(0)['status']=='accepted'
+
+
+def test_direct_insert_move_buttons_and_hidden_pending_point_focus(app,monkeypatch):
+    review_points(app);app.session.review.change(0,'accepted')
+    app.filter.set('Aprovados');app.refresh_points()
+    app.review_note.set('Manual sounding')
+    app.review_buttons['insert'].invoke()
+    assert app.viewer.mode.get()=='Inserir ponto'
+    monkeypatch.setattr('vetorizafb.gui.simpledialog.askfloat',lambda *a,**k:1.9)
+    app.canvas_action('Inserir ponto',(100,70))
+    assert app.filter.get()=='Todos' and app.tree.focus()=='4'
+    assert app.tree.selection()==('4',) and app.viewer.selected_id==4
+    assert app.session.review.item(4)['history'][-1]['note']=='Manual sounding'
+    assert app.viewer.mode.get()=='Inspecionar'
+    app.review_action('accepted');app.review_buttons['move'].invoke()
+    app.canvas_action('Mover selecionado',(120,80))
+    item=app.session.review.item(4)
+    assert (item['current']['pixel_x'],item['current']['pixel_y'])==(120,80)
+    assert item['status']=='unreviewed' and item['current']['confidence'] is None
+    assert app.viewer.mode.get()=='Inspecionar'
+    app.review_buttons['insert'].invoke();key(app,'<Escape>',app.viewer.canvas)
+    assert app.viewer.mode.get()=='Inspecionar' and len(app.session.review.items)==5
+
+
+def test_real_numeric_position_dialog_accepts_decimal_comma(app):
+    from vetorizafb.dialogs import PositionDialog
+    review_points(app);app.navigate_review(1);app.review_action('accepted')
+    def enter():
+        dialog=next(w for w in app.root.winfo_children() if isinstance(w,PositionDialog))
+        try:dialog.x.set('40,5');dialog.y.set('50');dialog.ok()
+        finally:
+            if dialog.winfo_exists():dialog.cancel()
+    app.root.after(80,enter)
+    app.review_buttons['position'].invoke();app.root.update()
+    item=app.session.review.item(0)
+    assert (item['current']['pixel_x'],item['current']['pixel_y'])==(40.5,50)
+    assert item['status']=='unreviewed'
+
+
+def test_real_offset_dialog_previews_all_points_despite_active_filter(app):
+    from copy import deepcopy
+    from vetorizafb.dialogs import OffsetDialog
+    review_points(app);app.session.review.change(0,'accepted');app.session.review.change(2,'rejected')
+    app.filter.set('Aprovados');app.refresh_points()
+    before=deepcopy(app.session.review.items)
+    def enter():
+        dialog=next(w for w in app.root.winfo_children() if isinstance(w,OffsetDialog))
+        try:
+            dialog.x.set('4');dialog.y.set('-2');dialog.preview()
+            assert app.session.review.items==before
+            assert '4 sondagens' in dialog.preview_text.get()
+            dialog.ok()
+        finally:
+            if dialog.winfo_exists():dialog.cancel()
+    app.root.after(80,enter)
+    app.review_buttons['offset'].invoke();app.root.update()
+    assert len(app.session.review.items)==4
+    assert app.session.review.item(0)['status']=='unreviewed'
+    assert app.session.review.item(2)['status']=='rejected'
+    for old,item in zip(before,app.session.review.items):
+        assert item['current']['pixel_x']==old['current']['pixel_x']+4
+        assert item['current']['pixel_y']==old['current']['pixel_y']-2
+
+
+def test_gui_yellow_filter_configuration_invalidation_and_layer(app):
+    app.run_stage('all');finish(app)
+    app.fields['exclude_yellow'].set(True)
+    assert not app.review_ready() and app.ocr_button.instate(['disabled'])
+    app.session.rgb[:]=(245,245,120);app.session.rgb[20:45,20:30]=0
+    app.run_stage('segment');finish(app)
+    assert len(app.session.color_rejected)==1 and app.session.boxes==[]
+    app.viewer.layer.set('Rejeitadas por cor');app.viewer.render();app.root.update()
+    assert 'Cor: 1 rejeitadas' in app.counts.get()
+
+
+def test_review_controls_and_notes_remain_visible_at_minimum_window_size(app):
+    app.root.geometry('1050x720');app.root.update()
+    for widget in [app.note_entry,app.footer,*app.review_buttons.values()]:
+        assert widget.winfo_ismapped()
+        assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()

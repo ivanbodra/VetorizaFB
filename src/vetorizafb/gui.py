@@ -19,6 +19,7 @@ from .core import Config, ProcessingCancelled
 from .pipeline import write_json_atomic
 from .viewer import ChartViewer
 from .workflow import ChartSession
+from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
 
 
@@ -27,6 +28,7 @@ class Application:
         self.root, self.session = root,None
         self.busy = self.review_dirty = False
         self._closed=False
+        self._one_shot_mode=False
         self.roi = None
         self.events, self.cancel = queue.Queue(),threading.Event()
         self.path, self.output = tk.StringVar(),tk.StringVar()
@@ -69,9 +71,11 @@ class Application:
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
         left=ttk.Frame(split,width=355);split.add(left,weight=0)
         self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
-        seg,ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(4)]
-        for frame,label in [(seg,'1. Segmentar'),(ocr,'2. OCR'),(group,'3. Agrupar'),(export,'4. Exportar')]:
+        self.segment_panel=ScrollablePanel(self.tabs);seg=self.segment_panel.content
+        ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(3)]
+        for frame,label in [(self.segment_panel,'1. Segmentar'),(ocr,'2. OCR'),(group,'3. Agrupar'),(export,'4. Exportar')]:
             self.tabs.add(frame,text=label);frame.columnconfigure(1,weight=1)
+        seg.columnconfigure(1,weight=1)
         def setting(frame,row,label,key,values=None):
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=4)
             widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=13) if values else ttk.Entry(frame,textvariable=self.fields[key],width=14)
@@ -82,12 +86,15 @@ class Application:
             ('Desfoque','blur_size',None),('Dilatação','kernel_size',None),
             ('Largura mínima','min_w',None),('Largura máxima','max_w',None),
             ('Altura mínima','min_h',None),('Altura máxima','max_h',None)]):setting(seg,row,label,key,values)
+        ttk.Checkbutton(seg,text='Excluir caixas com fundo amarelo',variable=self.fields['exclude_yellow']).grid(row=10,column=0,columnspan=2,sticky='w',pady=6)
+        setting(seg,11,'R−B e G−B mínimos','yellow_delta')
+        setting(seg,12,'Fração mínima do fundo','yellow_min_fraction')
         self.seg_button=ttk.Button(seg,text='Executar etapa 1',command=lambda:self.run_stage('segment'))
-        self.seg_button.grid(row=11,column=0,columnspan=2,sticky='ew',pady=8)
-        ttk.Button(seg,text='Inspecionar dimensões / histogramas',command=self.inspect_sizes).grid(row=12,column=0,columnspan=2,sticky='ew',pady=3)
-        ttk.Label(seg,textvariable=self.roi_text,wraplength=310).grid(row=13,column=0,columnspan=2,sticky='w',pady=8)
-        ttk.Button(seg,text='Usar carta inteira',command=lambda:self.set_roi(None)).grid(row=14,column=0,columnspan=2,sticky='ew')
-        ttk.Label(seg,text='Para trabalhar por área, escolha “Selecionar área” na imagem e arraste um retângulo. As coordenadas continuam referidas à carta original.',wraplength=310).grid(row=15,column=0,columnspan=2,pady=12,sticky='w')
+        self.seg_button.grid(row=14,column=0,columnspan=2,sticky='ew',pady=8)
+        ttk.Button(seg,text='Inspecionar dimensões / histogramas',command=self.inspect_sizes).grid(row=15,column=0,columnspan=2,sticky='ew',pady=3)
+        ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=16,column=0,columnspan=2,sticky='w',pady=8)
+        ttk.Button(seg,text='Usar carta inteira',command=lambda:self.set_roi(None)).grid(row=17,column=0,columnspan=2,sticky='ew')
+        ttk.Label(seg,text='Para trabalhar por área, escolha “Selecionar área” na imagem e arraste um retângulo. As coordenadas continuam referidas à carta original.',wraplength=280).grid(row=18,column=0,columnspan=2,pady=12,sticky='w')
         ttk.Label(ocr,text='Modelo OCR').grid(row=0,column=0,sticky='w')
         ttk.Combobox(ocr,textvariable=self.model,state='readonly',width=23,values=['PP-OCRv6_small_rec','PP-OCRv6_medium_rec','PP-OCRv5_server_rec']).grid(row=1,column=0,columnspan=2,sticky='ew',pady=5)
         ttk.Label(ocr,text='Pasta local de inferência (opcional)').grid(row=2,column=0,columnspan=2,sticky='w',pady=(10,3))
@@ -137,6 +144,12 @@ class Application:
                               ('unreviewed','Pendente',lambda:self.review_action('unreviewed')),('edit','Editar valor',self.correct_depth),('focus','Ampliar ponto',self.focus_selected)]:
             button=ttk.Button(bar,text=label,command=cmd);button.pack(side='left',padx=2,pady=3)
             self.review_buttons[key]=button
+        tools=ttk.Frame(bottom);tools.pack(fill='x')
+        for key,label,cmd in [('insert','Adicionar profundidade',lambda:self.activate_review_tool('Inserir ponto')),
+                              ('move','Mover ponto',lambda:self.activate_review_tool('Mover selecionado')),
+                              ('position','Posição…',self.edit_position),('offset','Offset…',self.offset_dialog)]:
+            button=ttk.Button(tools,text=label,command=cmd);button.pack(side='left',padx=2,pady=3)
+            self.review_buttons[key]=button
         select=ttk.Frame(bottom);select.pack(fill='x')
         for label,cmd in [('Selecionar todos',self.select_all_points),('Limpar seleção',self.clear_point_selection),('Inverter seleção',self.invert_point_selection)]:
             ttk.Button(select,text=label,command=cmd).pack(side='left',padx=2,pady=3)
@@ -160,17 +173,19 @@ class Application:
                                 ('Escape',self.clear_point_selection),('Control-space',self.toggle_active_point)]:
                 widget.bind(f'<{key}>',lambda e,cmd=command:self.review_shortcut(cmd))
         help_label=ttk.Label(bottom,text='Setas: navegar · Shift+setas: faixa · Ctrl+clique: alternar · Ctrl+A: aprovar · Ctrl+X: excluir · Ctrl+E: editar · Ctrl+Shift+A: todos · Esc: limpar',wraplength=1000)
-        help_label.pack(fill='x',padx=4,pady=3)
+        help_label.pack(fill='x',padx=4,pady=3,before=self.tree)
         help_label.bind('<Configure>',lambda e:help_label.configure(wraplength=max(100,e.width-8)))
-        notes=ttk.Frame(bottom);notes.pack(fill='x')
+        notes=ttk.Frame(bottom);notes.pack(fill='x',before=self.tree)
         ttk.Label(notes,text='Nota da revisão:').pack(side='left',padx=4)
         self.note_entry=ttk.Entry(notes,textvariable=self.review_note)
         self.note_entry.pack(side='left',fill='x',expand=True,padx=4,pady=3)
-        ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=8).pack(fill='x')
+        self.footer=ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=8)
+        self.footer.pack(side='bottom',fill='x',before=split)
+        self.footer.bind('<Configure>',lambda e:self.footer.configure(wraplength=max(100,e.width-16)))
 
     def config(self):
         defaults=asdict(Config());data={}
-        integers={'threshold','blur_size','kernel_size','min_w','max_w','min_h','max_h','ocr_batch_size','crop_padding'}
+        integers={'threshold','blur_size','kernel_size','min_w','max_w','min_h','max_h','ocr_batch_size','crop_padding','yellow_delta'}
         for key,var in self.fields.items():
             value=var.get()
             try:
@@ -206,6 +221,7 @@ class Application:
     def start(self,task,done=lambda result:None,cancellable=True):
         if self.busy:return
         self.busy=True;self.cancel.clear();self.refresh_validity()
+        self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.viewer.suspended=True
         self.cancel_button.configure(state='normal' if cancellable else 'disabled')
         self.progress.configure(mode='indeterminate');self.progress.start(12)
@@ -298,7 +314,7 @@ class Application:
             self.select_point();return
         session=self.session;counts=session.review.counts if session.review else {}
         timing_names={'segment':'Segmentação','ocr':'OCR','group':'Agrupamento'}
-        self.counts.set(f"Caixas: {len(session.boxes or [])} | Dígitos: {sum(d.text is not None for d in session.digits or [])}\nPendentes: {counts.get('unreviewed',0)} | Aprovados: {counts.get('accepted',0)} | Excluídos: {counts.get('rejected',0)}\n"+', '.join(f'{timing_names[k]}: {v:.3f}s' for k,v in session.timings.items()))
+        self.counts.set(f"Caixas: {len(session.boxes or [])} | Cor: {len(session.color_rejected)} rejeitadas | Dígitos: {sum(d.text is not None for d in session.digits or [])}\nPendentes: {counts.get('unreviewed',0)} | Aprovados: {counts.get('accepted',0)} | Excluídos: {counts.get('rejected',0)}\n"+', '.join(f'{timing_names[k]}: {v:.3f}s' for k,v in session.timings.items()))
         if session.review is None:
             self.select_point();return
         selected_status={'Pendentes':'unreviewed','Aprovados':'accepted','Excluídos':'rejected'}.get(self.filter.get())
@@ -327,7 +343,11 @@ class Application:
         selected=len(self.tree.selection());ready=self.review_ready()
         self.selection_text.set(f'{selected} selecionados / {len(self.tree.get_children())} visíveis')
         for key,button in self.review_buttons.items():
-            enabled=ready and (selected==1 if key=='edit' else bool(self.tree.focus()) if key=='focus' else selected>0)
+            if key in {'edit','move','position'}:enabled=ready and selected==1
+            elif key=='insert':enabled=ready
+            elif key=='offset':enabled=ready and bool(self.session.review.items)
+            elif key=='focus':enabled=ready and bool(self.tree.focus())
+            else:enabled=ready and selected>0
             button.configure(state='normal' if enabled else 'disabled')
 
     def review_ready(self):
@@ -406,6 +426,7 @@ class Application:
 
     def clear_point_selection(self):
         if self.busy:return
+        self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.tree.selection_remove(self.tree.selection());self.tree.focus('')
         self._selection_anchor=None;self.select_point()
 
@@ -422,6 +443,38 @@ class Application:
         else:self.tree.selection_add(active)
         self.select_point()
 
+    def activate_review_tool(self,mode):
+        if not self.review_ready() or (mode=='Mover selecionado' and len(self.tree.selection())!=1):return
+        self._one_shot_mode=True;self.viewer.layer.set('Sondagens');self.viewer.mode.set(mode)
+        self.viewer.canvas.focus_set()
+        self.status.set('Clique na posição da nova profundidade. Esc cancela.' if mode=='Inserir ponto'
+                        else 'Clique na nova posição da sondagem selecionada. Esc cancela.')
+
+    def finish_position_edit(self,point_id):
+        self.review_dirty=True;self.filter.set('Todos');self.refresh_points()
+        self.tree.selection_set(str(point_id));self.tree.focus(str(point_id));self.tree.see(str(point_id))
+        self.select_point();self.refresh_validity()
+
+    def edit_position(self):
+        if not self.review_ready() or len(self.tree.selection())!=1:return
+        point_id=self.tree.selection()[0]
+        dialog=PositionDialog(self.root,self.session,point_id)
+        if dialog.result is None:return
+        try:self.session.reposition_point(point_id,*dialog.result,note=self.review_note.get())
+        except ValueError as exc:messagebox.showerror('Posição',str(exc),parent=self.root);return
+        self.finish_position_edit(point_id)
+
+    def offset_dialog(self):
+        if not self.review_ready() or not self.session.review.items:return
+        dialog=OffsetDialog(self.root,self.session,self.tree.selection())
+        if dialog.result is None:return
+        try:result=self.session.offset_points(**dialog.result,note=self.review_note.get())
+        except (ValueError,KeyError) as exc:messagebox.showerror('Deslocamento',str(exc),parent=self.root);return
+        if result['batch_id'] is None:return
+        self.review_dirty=True;self.filter.set('Todos');self.refresh_points();self.refresh_validity()
+        self._last_followed=None;self.select_point()
+        self.status.set(f"Deslocamento aplicado a {result['count']} sondagens: Δpixel X={result['pixel_dx']:.6g}, Y={result['pixel_dy']:.6g}. Revise as novas posições.")
+
     def canvas_action(self,action,xy):
         if self.busy:return
         if action=='roi':self.set_roi(xy);return
@@ -429,15 +482,18 @@ class Application:
             if not self.review_ready():return
             if action=='Inserir ponto':
                 value=simpledialog.askfloat('Sondagem ausente','Profundidade em metros, até uma casa decimal:',parent=self.root)
-                if value is None:return
-                try:point_id=self.session.review.add_manual(*xy,value)
+                if value is None:
+                    if self._one_shot_mode:self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
+                    return
+                try:point_id=self.session.add_point(*xy,value,note=self.review_note.get())
                 except ValueError as exc:messagebox.showerror('Profundidade',str(exc));return
             else:
                 if len(self.tree.selection())!=1:return
-                point_id=self.tree.selection()[0];self.session.review.change(point_id,'reposition',xy=xy,note=self.review_note.get())
-            self.review_dirty=True;self.refresh_points()
-            if self.tree.exists(str(point_id)):self.tree.selection_set(str(point_id));self.tree.see(str(point_id))
-            self.refresh_validity();self.viewer.render();return
+                point_id=self.tree.selection()[0]
+                try:self.session.reposition_point(point_id,*xy,note=self.review_note.get())
+                except ValueError as exc:messagebox.showerror('Posição',str(exc));return
+            if self._one_shot_mode:self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
+            self.finish_position_edit(point_id);return
         if self.session and self.viewer.layer.get()=='OCR' and self.session.digits:
             px,py=xy
             nearby=[d for d in self.session.digits if d.box.x-3<=px<=d.box.x+d.box.w+3 and d.box.y-3<=py<=d.box.y+d.box.h+3]

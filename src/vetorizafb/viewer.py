@@ -22,11 +22,12 @@ class ChartViewer(ttk.Frame):
             ttk.Button(bar,text=text,command=cmd,width=7).pack(side='left',padx=2,pady=3)
         ttk.Label(bar,textvariable=self.zoom_text,width=8).pack(side='left')
         layer = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=12,
-                             values=['Original','Máscara','Caixas','OCR','Sondagens'])
+                             values=['Original','Máscara','Caixas','Rejeitadas por cor','OCR','Sondagens'])
         layer.pack(side='left',padx=4); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
         ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=18,
                      values=['Inspecionar','Selecionar área','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
         self.canvas = tk.Canvas(self,bg='#20272d',highlightthickness=0)
+        self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar área'} else ''))
         self.canvas.pack(fill='both',expand=True)
         self.canvas.bind('<Configure>',lambda e:self.render())
         self.canvas.bind('<ButtonPress-1>',self.press)
@@ -127,6 +128,8 @@ class ChartViewer(ttk.Frame):
             if label is not None and self.scale>=.45:
                 draw.text(point(a,max(0,b-12/self.scale)),str(label),fill=colour)
         layer = self.layer.get()
+        if layer=='Rejeitadas por cor':
+            for b in self.session.color_rejected:box((b.x,b.y,b.x+b.w,b.y+b.h),'#df2040')
         if layer in {'Caixas','OCR'}:
             digit_map = {d.index:d for d in self.session.digits or []}
             for i,b in enumerate(self.session.boxes or []):

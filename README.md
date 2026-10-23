@@ -4,7 +4,7 @@ Extract georeferenced sounding candidates from raster nautical charts and review
 them before XYZ export. Historical handwritten hydrographic field sheets are a
 separate future module.
 
-## Current development version: 0.3.1
+## Current development version: 0.4.0
 
 Branch `ocr-modernization` / [PR #1](https://github.com/ivanbodra/VetorizaFB/pull/1).
 The original seven uploaded files remain byte-for-byte preserved under `legacy/`
@@ -13,13 +13,15 @@ represented by those uploads; the v4 interface prototype contains OCR/export
 placeholders. This is an experimental development update, not an established
 replacement with proven 100% chart accuracy.
 
-Version 0.3 retains the PaddleOCR 3.x core and staged tools:
+Version 0.4 retains the PaddleOCR 3.x core and staged tools:
 
 - Separate segmentation, OCR, grouping and export stages with valid-stage reuse.
 - Editable DPI, thresholds, blur/dilation, size filters, crop padding, batch size,
   confidence, spacing and decimal interpretation, plus JSON parameter profiles.
 - Original/mask/boxes/OCR/soundings layers, zoom, pan, ROI selection, contour-size
   histograms and character-crop inspection.
+- Optional yellow-background box rejection using signed R-B/G-B differences and
+  a configurable background fraction, with a separate rejected-box layer.
 - Directed rereading of possible narrow `1` glyphs, enabled by default, plus an
   optional broader retry. Failed directed reads get a final isolated-component
   crop to remove neighbouring ink. All readings preserve real model scores.
@@ -29,13 +31,17 @@ Version 0.3 retains the PaddleOCR 3.x core and staged tools:
   Ctrl+Shift+A selects all visible rows. Text-entry shortcuts keep their scope.
 - Correction, repositioning, manual insertion, rejection and explicit acceptance
   of points, with a saved decision trail and resumable review projects.
+- Direct insertion/move buttons, numeric pixel-position editing and incremental
+  offsets for all or selected points, in image pixels or projected source-grid
+  metres. Preview and full-batch validation precede changes; moved approvals
+  become pending and rejected points remain rejected.
 - Separate candidate and accepted-only XYZ bundles; staged writes, completion
   metadata and output hashes.
 - Y-bucket indexing that preserves greedy group decisions on the regression
   corpus while reducing repeated scans through vertical columns.
 
 Read the [current user guide](docs/USER_GUIDE.md) and
-[remaining-one/crop-isolation validation](docs/REMAINING_ONES.md).
+[colour-filter/position-tool validation](docs/COLOR_AND_POSITIONS.md).
 Earlier reports cover [0.3 keyboard/one-retry validation](docs/REVIEW_AND_ONES.md),
 [0.2 restoration](docs/RESTORATION.md), [initial OCR experiments](docs/EXPERIMENTS.md),
 [0.1 grouping](docs/GROUPING_AUDIT.md) and [baseline scope](docs/BASELINE.md).
@@ -57,7 +63,7 @@ py -3.12 -m venv .venv
 
 For an existing clone, preserve local changes, switch to `ocr-modernization`,
 run `git pull --ff-only` and repeat installation into the root `.venv`. The window
-must show **0.3.1**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
+must show **0.4.0**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
 and a Tk display; use `xvfb-run -a python -m pytest -q` for headless GUI tests.
 CPU PaddleOCR 3.7.0/PaddlePaddle 3.3.1 and OpenCV versions are pinned; supporting
 dependencies have ranges. First use may retrieve weights, or select a matching

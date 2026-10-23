@@ -1,4 +1,4 @@
-# VetorizaFB 0.3 user guide
+# VetorizaFB 0.4 user guide
 
 Updated 2026-10-23. Development branch: `ocr-modernization`, PR #1.
 The [0.1 guide](USER_GUIDE_0_1.md) is retained for historical reference.
@@ -36,7 +36,7 @@ py -3.12 -m venv .venv
 ```
 
 On an existing installation, reuse the root `.venv` and rerun the editable
-installation after updating. Confirm that the window title shows **0.3.1**.
+installation after updating. Confirm that the window title shows **0.4.0**.
 Linux equivalents are `.venv/bin/python`, `.venv/bin/vetorizafb-gui` and
 `.venv/bin/vetorizafb`; Tkinter and a display are required for the GUI tests.
 Use `xvfb-run -a python -m pytest -q` in a headless Linux test environment.
@@ -164,6 +164,25 @@ corpus. Groups of two/three digits may interpret their last digit as a decimal.
 The default integer limit 31 is a configurable heuristic, not a universal CN/FB
 rule. Raw OCR can still confuse contour labels and sounding text.
 
+## Optional yellow-background rejection
+
+In **1. Segmentar**, enable **Excluir caixas com fundo amarelo**. This is off by
+default so existing calibrations remain unchanged. The scrollable panel exposes
+**R−B e G−B mínimos** (default 25 on the 0-255 channel scale) and **Fração mínima
+do fundo** (default 0.60). A box is rejected when enough non-dark background pixels
+meet both channel-difference limits. A small surrounding margin helps estimate
+the background of narrow ones; dark numeral ink is ignored. Signed arithmetic
+prevents cyan/blue subtraction from wrapping into a false yellow result.
+
+The rule includes some yellow-green tints. White, grey and cyan do not satisfy
+the default rule; mixed coast-boundary boxes can remain. Warm paper or a genuine
+sounding on yellow-tinted water can also satisfy it, so tune against the original
+chart. **Rejeitadas por cor** displays excluded boxes over their original pixels;
+the count appears beside accepted boxes. This is box filtering, not a rewrite of
+the original raster or the **Máscara** layer. Changing these settings invalidates
+segmentation and downstream stages; rerun 1 → 3. The JSON profile
+`configs/chart_300dpi_yellow_filter.json` is an optional 300-DPI starting point.
+
 ## 5. Navigate and review
 
 Mouse wheel zooms around the pointer. **Ajustar**, **100%**, plus and minus control
@@ -217,6 +236,51 @@ or when the configured stages are stale.
   Manual points have no model confidence and remain pending until accepted.
 - **Mover selecionado** mode changes the anchor of one selected point by clicking
   the chart. The original detection box stays in the audit; the new XY is pending.
+
+The review panel now exposes these tools directly:
+
+| Button | Operation |
+|---|---|
+| **Adicionar profundidade** | Click the new anchor on the chart, then enter its depth |
+| **Mover ponto** | Select one row, then click its new anchor |
+| **Posição…** | Enter the selected point's X/Y in original-image pixels |
+| **Offset…** | Preview and apply an incremental displacement to all or selected points |
+
+The insert/move buttons activate a one-click tool and return to **Inspecionar**
+after use. Esc cancels it and clears the selection. The original mode selector
+remains available for repeated insertions/moves. A newly inserted pending point
+is made visible/active even if the previous table filter hid pending points.
+Numeric position forms accept a decimal comma or point and reject nonfinite or
+out-of-image coordinates. Manual points retain no model confidence. The review
+note is stored with manual insertion and position changes.
+
+### Incremental position offsets
+
+**Offset…** adds ΔX/ΔY to current anchor positions. Reapplying adds another
+increment; it does not set an absolute cumulative offset. **Todas as sondagens**
+includes rows hidden by the table filter and rejected points. **Selecionadas**
+limits the operation to the explicit selection, when one exists.
+
+- **Pixels da imagem:** positive X moves right; positive Y moves down. Values are
+  original raster pixels, independent of viewport zoom or DPI calibration.
+- **Metros no CRS projetado:** ΔX/ΔY follow the source chart's projected grid axes,
+  rather than the chosen export CRS. The full inverse affine handles rotation
+  and shear; source linear units are converted when needed. These are projected
+  grid metres, not geodesic ground-distance adjustments. A geographic source CRS
+  cannot use this option; use pixels instead.
+
+**Prévia (sem alterar)** reports the point count and equivalent pixel offset.
+**Aplicar** validates every target before moving any point; one out-of-image
+target rejects the whole batch. Zero displacement does nothing. Depths, original
+records, OCR boxes, raster georeferencing and DPI are unchanged. The anchor moves;
+the OCR box stays over the source text for inspection.
+
+Previously approved moved points become pending. Rejected points remain rejected.
+Every target records before/after positions, requested units/deltas, equivalent
+pixel deltas, a shared batch ID and the review note. Save the project to retain
+the history; exported coordinates use the edited anchors. An inverse incremental
+offset can move positions back, while their audit trail remains. Recheck positions
+before approving the shifted set.
 
 Review complete values and decimal typography, including zeros, narrow/slanted
 ones, touching lines, dense groups, contour labels, land annotations, tables,
@@ -309,7 +373,8 @@ a reproduction of the old branding/assets or an independently reproduced copy
 of the historical EasyOCR 3.0.1 executable. Neither automated tests nor the small
 crop experiment establish 100% full-chart extraction accuracy.
 
-See [remaining-one/crop-isolation validation](REMAINING_ONES.md),
+See [colour-filter/position-tool validation](COLOR_AND_POSITIONS.md),
+[remaining-one/crop-isolation validation](REMAINING_ONES.md),
 [keyboard/one-retry validation](REVIEW_AND_ONES.md),
 [0.2 restoration validation](RESTORATION.md), [initial experiments](EXPERIMENTS.md)
 and the [official model catalogue](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/module_usage/text_recognition.en.md).

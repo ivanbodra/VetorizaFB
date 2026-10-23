@@ -3,6 +3,7 @@ from copy import deepcopy
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
 import math
+import uuid
 
 from .core import Sounding
 
@@ -42,11 +43,11 @@ class ReviewSet:
             item['status'] = "unreviewed"
             if 'manual_depth' not in item['current']['flags']:
                 item['current']['flags'].append('manual_depth')
-        elif action == "reposition":
+        elif action in {"reposition","offset"}:
             if xy is None or not all(math.isfinite(float(v)) for v in xy):
                 raise ValueError("Finite pixel coordinates required")
             item['current']['pixel_x'], item['current']['pixel_y'] = map(float, xy)
-            item['status'] = "unreviewed"
+            item['status'] = "rejected" if action=='offset' and previous_status=='rejected' else "unreviewed"
             if 'manual_position' not in item['current']['flags']:
                 item['current']['flags'].append('manual_position')
         else:
@@ -57,7 +58,26 @@ class ReviewSet:
                                     action=action, previous_status=previous_status,
                                     before=before, after=deepcopy(item['current']), note=note))
 
-    def add_manual(self, x, y, depth):
+    def offset(self,point_ids,dx,dy,*,note='',context=None):
+        """Prevalidate all targets before recording an indexed batch translation."""
+        dx,dy=float(dx),float(dy)
+        if not all(math.isfinite(v) for v in (dx,dy)):raise ValueError('Finite offsets required')
+        ids=list(dict.fromkeys(int(i) for i in point_ids))
+        changes=[]
+        for point_id in ids:
+            item=self.item(point_id);s=item['current']
+            xy=(s['pixel_x']+dx,s['pixel_y']+dy)
+            if not all(math.isfinite(v) for v in xy):raise ValueError('Finite positions required')
+            changes.append((point_id,xy))
+        if not changes or (dx==0 and dy==0):return None
+        batch_id=uuid.uuid4().hex
+        details=dict(context or {},pixel_dx=dx,pixel_dy=dy)
+        for point_id,xy in changes:
+            self.change(point_id,'offset',xy=xy,note=note)
+            self.item(point_id)['history'][-1].update(batch_id=batch_id,offset=deepcopy(details))
+        return batch_id
+
+    def add_manual(self, x, y, depth, *, note=''):
         x, y = float(x), float(y)
         if not math.isfinite(x) or not math.isfinite(y):
             raise ValueError("Finite pixel coordinates required")
@@ -65,9 +85,9 @@ class ReviewSet:
                             "manual", flags=['manual_addition'])
         point_id=self._next_id;self._next_id+=1
         item=dict(id=point_id, original=None, current=snapshot(sounding),
-                               status='unreviewed', note='', history=[dict(
+                               status='unreviewed', note=note, history=[dict(
                                    timestamp_utc=datetime.now(timezone.utc).isoformat(),
-                                   action='manual_addition', after=snapshot(sounding))])
+                                   action='manual_addition', after=snapshot(sounding),note=note)])
         self.items.append(item);self._by_id[point_id]=item
         return point_id
 

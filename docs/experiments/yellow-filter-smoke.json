@@ -1,0 +1,433 @@
+{
+  "application_version": "0.4.0",
+  "scope": "Segmentation-only smoke test, without model inference. Rejection counts are not classification accuracy. Positive-crop box retention does not measure complete-chart sounding recall.",
+  "records": [
+    {
+      "input": "21300plano.tif",
+      "sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+      "dpi": 600.0,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false,
+        "retry_one": true,
+        "exclude_yellow": true,
+        "yellow_delta": 25,
+        "yellow_min_fraction": 0.6
+      },
+      "boxes_before": 411,
+      "boxes_after": 411,
+      "rejected_boxes": 0,
+      "elapsed_seconds": 0.3168926719999945,
+      "positive_crop_box_checks": [
+        {
+          "id": "s01",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s02",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s03",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s04",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s05",
+          "boxes_before": 1,
+          "boxes_rejected": 0
+        }
+      ],
+      "rejection_examples": []
+    },
+    {
+      "input": "1410geotiff.tif",
+      "sha256": "c222eb9dad7e616e659d8fe588987ca4836b530a681154bef168c605439a4107",
+      "dpi": 300.0,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 300.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false,
+        "retry_one": true,
+        "exclude_yellow": true,
+        "yellow_delta": 25,
+        "yellow_min_fraction": 0.6
+      },
+      "boxes_before": 9556,
+      "boxes_after": 8071,
+      "rejected_boxes": 1485,
+      "elapsed_seconds": 3.3562832530001288,
+      "positive_crop_box_checks": [
+        {
+          "id": "s06",
+          "boxes_before": 3,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s07",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s08",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s09",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s10",
+          "boxes_before": 3,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s11",
+          "boxes_before": 3,
+          "boxes_rejected": 0
+        }
+      ],
+      "rejection_examples": [
+        {
+          "box": {
+            "x": 7,
+            "y": 5142,
+            "w": 17,
+            "h": 13
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 54,
+            "y": 2288,
+            "w": 21,
+            "h": 23
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 82,
+            "y": 2267,
+            "w": 14,
+            "h": 22
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 100,
+            "y": 2268,
+            "w": 8,
+            "h": 20
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 111,
+            "y": 6180,
+            "w": 17,
+            "h": 14
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 114,
+            "y": 2267,
+            "w": 14,
+            "h": 22
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 139,
+            "y": 6182,
+            "w": 29,
+            "h": 9
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 169,
+            "y": 2205,
+            "w": 14,
+            "h": 16
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 181,
+            "y": 2212,
+            "w": 24,
+            "h": 22
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 183,
+            "y": 2166,
+            "w": 14,
+            "h": 17
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 188,
+            "y": 11342,
+            "w": 15,
+            "h": 10
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 195,
+            "y": 2171,
+            "w": 13,
+            "h": 16
+          },
+          "yellow_background_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "input": "1822geotiff.tif",
+      "sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+      "dpi": 300.0,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 300.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false,
+        "retry_one": true,
+        "exclude_yellow": true,
+        "yellow_delta": 25,
+        "yellow_min_fraction": 0.6
+      },
+      "boxes_before": 9973,
+      "boxes_after": 7692,
+      "rejected_boxes": 2281,
+      "elapsed_seconds": 4.17065639700013,
+      "positive_crop_box_checks": [
+        {
+          "id": "s12",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s13",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s14",
+          "boxes_before": 1,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s15",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s16",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s17",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s18",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        },
+        {
+          "id": "s19",
+          "boxes_before": 2,
+          "boxes_rejected": 0
+        }
+      ],
+      "rejection_examples": [
+        {
+          "box": {
+            "x": 12,
+            "y": 7503,
+            "w": 18,
+            "h": 22
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 12,
+            "y": 7527,
+            "w": 18,
+            "h": 12
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 12,
+            "y": 7541,
+            "w": 18,
+            "h": 12
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 12,
+            "y": 7566,
+            "w": 18,
+            "h": 12
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 12,
+            "y": 7604,
+            "w": 18,
+            "h": 12
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 13,
+            "y": 4557,
+            "w": 13,
+            "h": 13
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 13,
+            "y": 7580,
+            "w": 17,
+            "h": 12
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 13,
+            "y": 7618,
+            "w": 17,
+            "h": 12
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 14,
+            "y": 4817,
+            "w": 12,
+            "h": 13
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 17,
+            "y": 486,
+            "w": 19,
+            "h": 23
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 25,
+            "y": 448,
+            "w": 5,
+            "h": 22
+          },
+          "yellow_background_fraction": 1.0
+        },
+        {
+          "box": {
+            "x": 36,
+            "y": 447,
+            "w": 4,
+            "h": 23
+          },
+          "yellow_background_fraction": 1.0
+        }
+      ]
+    }
+  ]
+}

@@ -91,6 +91,9 @@ class Config:
     crop_padding: int = 3
     retry_ambiguous: bool = False
     retry_one: bool = True
+    exclude_yellow: bool = False
+    yellow_delta: int = 25
+    yellow_min_fraction: float = .6
 
     def __post_init__(self):
         numeric = [self.reference_dpi, self.dpi, self.tol_x, self.tol_y,
@@ -98,7 +101,7 @@ class Config:
                    self.decimal_max_integer, self.min_confidence,
                    self.threshold, self.blur_size, self.kernel_size,
                    self.min_w, self.max_w, self.min_h, self.max_h,
-                   self.ocr_batch_size, self.crop_padding]
+                   self.ocr_batch_size, self.crop_padding,self.yellow_delta,self.yellow_min_fraction]
         if not all(math.isfinite(float(v)) for v in numeric):
             raise ValueError("Configuration values must be finite")
         if self.reference_dpi <= 0 or self.dpi <= 0:
@@ -116,12 +119,14 @@ class Config:
         if self.grouping not in {"fixed", "relative"}:
             raise ValueError("grouping must be fixed or relative")
         for key in ("threshold", "blur_size", "kernel_size", "min_w", "max_w",
-                    "min_h", "max_h", "ocr_batch_size", "crop_padding"):
+                    "min_h", "max_h", "ocr_batch_size", "crop_padding", "yellow_delta"):
             if not isinstance(getattr(self, key), int) or isinstance(getattr(self, key), bool):
                 raise ValueError(f"{key} must be an integer")
         if not 1 <= self.ocr_batch_size <= 1024 or not 0 <= self.crop_padding <= 100:
             raise ValueError("Invalid OCR batch size/padding")
-        for key in ('retry_ambiguous','retry_one'):
+        if not 1<=self.yellow_delta<=255 or not 0<self.yellow_min_fraction<=1:
+            raise ValueError('Invalid yellow-background threshold/fraction')
+        for key in ('retry_ambiguous','retry_one','exclude_yellow'):
             if not isinstance(getattr(self,key),bool):raise ValueError(f"{key} must be boolean")
 
     @property
@@ -148,14 +153,36 @@ def segmentation_mask(rgb, config):
     return mask
 
 
-def segment_details(rgb, config):
+def yellow_background_fraction(rgb,box,config):
+    """Fraction of non-dark background with R-B and G-B >= delta.
+
+    Inspect original pixels, including a small surrounding margin for narrow
+    glyphs. Signed differences prevent cyan/blue uint8 wraparound errors.
+    """
+    pad=max(2,round(2*config.scale));b=box;h,w=rgb.shape[:2]
+    patch=rgb[max(0,b.y-pad):min(h,b.y+b.h+pad),max(0,b.x-pad):min(w,b.x+b.w+pad)].astype(np.int16)
+    background=patch.max(axis=2)>=128
+    count=int(background.sum())
+    if not count:return 0.
+    yellow=(patch[:,:,0]-patch[:,:,2]>=config.yellow_delta)&(patch[:,:,1]-patch[:,:,2]>=config.yellow_delta)
+    return float(np.count_nonzero(yellow & background)/count)
+
+
+def segment_details(rgb, config, *, return_rejected=False):
     mask = segmentation_mask(rgb, config)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     all_boxes = [Box(*cv2.boundingRect(c)) for c in contours]
     s = config.scale
     boxes = [b for b in all_boxes if config.min_w*s < b.w < config.max_w*s
              and config.min_h*s < b.h < config.max_h*s]
-    return mask, all_boxes, sorted(boxes, key=lambda b: (b.x, b.y))
+    rejected=[]
+    if config.exclude_yellow:
+        kept=[]
+        for b in boxes:
+            (rejected if yellow_background_fraction(rgb,b,config)>=config.yellow_min_fraction else kept).append(b)
+        boxes=kept
+    result=(mask,all_boxes,sorted(boxes,key=lambda b:(b.x,b.y)))
+    return (*result,sorted(rejected,key=lambda b:(b.x,b.y))) if return_rejected else result
 
 
 def segment(rgb, config):
