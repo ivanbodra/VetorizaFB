@@ -26,7 +26,7 @@ from .workflow import ChartSession
 from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
 from .calibration import CalibrationPreview
-from .branding import apply_icon
+from .branding import apply_icon, asset_photo
 
 
 class Application:
@@ -96,8 +96,14 @@ class Application:
         popup=tk.Toplevel(self.root);popup.title('Sobre o VetorizaFB');popup.resizable(False,False)
         apply_icon(popup,self.icon_path)
         panel=ttk.Frame(popup,padding=24);panel.pack(fill='both',expand=True)
-        if self.icon_path:
-            photo=popup._vetorizafb_icon;ttk.Label(panel,image=photo).pack(pady=(0,12))
+        popup._brand_images=[asset_photo(popup,'logo_app.png',(190,190))]
+        ttk.Label(panel,image=popup._brand_images[0]).pack(pady=(0,12))
+        institutions=ttk.Frame(panel);institutions.pack(pady=(0,12))
+        for name,label in [('logo_mb.png','Marinha do Brasil'),('logo_chm.png','Centro de Hidrografia da Marinha')]:
+            photo=asset_photo(popup,name,(56,56));popup._brand_images.append(photo)
+            badge=ttk.Frame(institutions);badge.pack(side='left',padx=14)
+            ttk.Label(badge,image=photo).pack()
+            ttk.Label(badge,text=label,wraplength=170,anchor='center').pack()
         ttk.Label(panel,text=f'VetorizaFB {__version__}',font=(self.ui_font,22,'bold')).pack(anchor='w')
         ttk.Label(panel,text='Extração e revisão de sondagens em cartas náuticas',padding=(0,8)).pack(anchor='w')
         ttk.Label(panel,text='Projeto: Ivan Bodra Guimarães\nPaddleOCR • calibração por etapas • exportação georreferenciada\nResultados automáticos exigem revisão.\nÍcone: '+(self.icon_path.name if self.icon_path else 'original ainda não fornecido'),wraplength=500).pack(anchor='w')
@@ -113,6 +119,7 @@ class Application:
             folder=Path(os.environ.get('APPDATA',Path.home()/'.config'))/'VetorizaFB';folder.mkdir(parents=True,exist_ok=True)
             target=folder/('logo_vetorizafb'+Path(path).suffix.lower())
             if Path(path).resolve()!=target.resolve():shutil.copyfile(path,target)
+            (folder/'selected-icon.txt').write_text(target.name,encoding='utf-8')
             self.icon_path=apply_icon(self.root,target)
             if self.icon_path:self.brand_icon.configure(image=self.root._vetorizafb_icon)
             self.status.set('Ícone original carregado. Será reutilizado nas próximas aberturas.')
@@ -166,8 +173,8 @@ class Application:
         help_menu.add_command(label='Carregar ícone original…',command=self.choose_icon)
         help_menu.add_separator();help_menu.add_command(label='Sobre o VetorizaFB',command=self.about)
         brand=ttk.Frame(self.root,padding=(16,10),style='Brand.TFrame');brand.pack(fill='x')
-        self.brand_icon=ttk.Label(brand,style='Brand.TLabel')
-        if self.icon_path:self.brand_icon.configure(image=self.root._vetorizafb_icon)
+        self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(64,54))
+        self.brand_icon=ttk.Label(brand,image=self.header_logo,style='Brand.TLabel')
         self.brand_icon.pack(side='left',padx=(0,10))
         ttk.Label(brand,text=f'VetorizaFB  {__version__}',style='Brand.TLabel').pack(side='left')
         ttk.Label(brand,text='CALIBRAR  /  RECONHECER  /  REVISAR',style='Subtitle.TLabel').pack(side='left',padx=24)

@@ -402,9 +402,10 @@ mask/DPI/ROI require stage 1 again; invalid or stale previews clear their boxes.
 Apply the chosen limits with stage 1 before OCR. The preview is calibration,
 not classification of soundings or a guarantee of accuracy.
 
-The original `logo_vetorizaFB.ico` is referenced by the legacy source but its
-bytes were not included in the source uploads. No replacement is presented as
-the original. The app loads matching original ICO/PNG assets from package,
-repository root, legacy folder or the user's persisted selection. Help → Load
-original icon accepts the original file and stores a validated copy for next
-launch. The About panel states when the original is unavailable.
+The original identity artwork is now bundled: the supplied multi-resolution ICO
+is the default window icon, the original monitor PNG appears in the header,
+and About shows the full application logo with the MB/CHM marks. Images preserve
+their aspect ratios. The original splash and additional mascot are retained as
+assets; no artificial startup delay or loading screen is introduced. User-selected
+icons remain supported and the last selected format persists across launches.
+All seven supplied images are preserved byte-for-byte in package assets.

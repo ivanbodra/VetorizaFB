@@ -330,3 +330,31 @@ def test_execution_controls_remain_visible_at_minimum_window(app):
     for widget in (app.run_button,app.cancel_button,app.progress):
         assert widget.winfo_ismapped()
         assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()
+
+
+def test_bundled_identity_works_without_user_icon(app,tmp_path,monkeypatch):
+    from pathlib import Path
+    from vetorizafb.branding import apply_icon,asset_photo
+    monkeypatch.setenv('APPDATA',str(tmp_path/'empty'))
+    icon=apply_icon(app.root)
+    assert icon.name=='logo_vetorizafb.ico' and icon.parent.name=='assets'
+    assert len(app.root._vetorizafb_icons)==5
+    photo=asset_photo(app.root,'logo_vetorizaFB.png',(100,100))
+    assert photo.width()==100 and photo.height()==74
+    popup=app.about();app.root.update()
+    assert len(popup._brand_images)==3
+    popup.destroy()
+
+
+def test_last_selected_icon_format_has_priority(app,tmp_path,monkeypatch):
+    from pathlib import Path
+    from PIL import Image
+    from vetorizafb.branding import apply_icon
+    monkeypatch.setenv('APPDATA',str(tmp_path/'preferences'))
+    ico=Path(__file__).parents[1]/'src/vetorizafb/assets/logo_vetorizafb.ico'
+    png=tmp_path/'new.png';Image.new('RGBA',(32,32),'teal').save(png)
+    for source in (ico,png,ico):
+        monkeypatch.setattr('vetorizafb.gui.filedialog.askopenfilename',lambda **kw:str(source))
+        app.choose_icon()
+        assert apply_icon(app.root)==app.icon_path
+        assert app.icon_path.suffix==source.suffix
