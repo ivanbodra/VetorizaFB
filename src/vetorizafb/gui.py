@@ -91,6 +91,8 @@ class Application:
         style.configure('.',font=(self.ui_font,10),background='#f5f8fb',foreground='#19364a')
         style.configure('TButton',padding=(8,4),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9',focusthickness=1,focuscolor='#0a70b5')
         style.map('TButton',background=[('disabled','#eef1f4'),('pressed','#c4dfef'),('active','#d2e8f9')],foreground=[('disabled','#8d9baa')],bordercolor=[('disabled','#e0e6ec'),('active','#468eb9')])
+        style.configure('TMenubutton',padding=(8,4),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9')
+        style.map('TMenubutton',background=[('disabled','#eef1f4'),('active','#d2e8f9')],foreground=[('disabled','#8d9baa')])
         for name,bg,hover,fg in [('Primary','#096fab','#085a8b','white'),('Approve','#e1f4e9','#c9ead8','#17663d'),('Reject','#fbe6e8','#f5cfd4','#9c2635')]:
             style.configure(name+'.TButton',background=bg,foreground=fg,bordercolor=bg)
             style.map(name+'.TButton',background=[('disabled','#eef1f4'),('pressed',hover),('active',hover)],foreground=[('disabled','#8d9baa')])
@@ -228,7 +230,7 @@ class Application:
         menu=tk.Menu(self.root);self.root.configure(menu=menu)
         files=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Arquivo',menu=files)
         for label,command in [('Abrir carta (Ctrl+O)',self.choose_chart),('Abrir projeto',self.open_project),
-                              ('Salvar projeto (Ctrl+S)',self.save_project),('Carregar parâmetros',self.load_config),
+                              ('Salvar projeto (Ctrl+S)',self.save_project),('Fechar projeto',self.close_project),('Carregar parâmetros',self.load_config),
                               ('Salvar parâmetros',self.save_config),('Sair',self.close)]:
             files.add_command(label=label,command=command)
         help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
@@ -240,15 +242,15 @@ class Application:
         self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(44,34))
         self.brand_icon=ttk.Label(brand,image=self.header_logo,style='Brand.TLabel')
         self.brand_icon.pack(side='left',padx=(0,10))
-        ttk.Label(brand,text=f'VetorizaFB  {__version__}',style='Brand.TLabel').pack(side='left')
-        ttk.Button(brand,text='Manual · F1',command=self.open_manual).pack(side='right')
-        header=ttk.Frame(self.root,padding=8);header.pack(fill='x');header.columnconfigure(1,weight=1)
-        ttk.Label(header,text='CN').grid(row=0,column=0,sticky='w')
+        ttk.Label(brand,text='VetorizaFB',style='Brand.TLabel').pack(side='left')
+        header=ttk.Frame(brand,style='Brand.TFrame');header.pack(side='right',fill='x',expand=True,padx=(24,0))
+        header.columnconfigure(1,weight=1)
+        ttk.Label(header,text='Carta Náutica:',style='Brand.TLabel',font=(self.ui_font,10)).grid(row=0,column=0,sticky='w')
         self.chart_entry=ttk.Entry(header,textvariable=self.path,style='Required.TEntry')
         self.chart_entry.grid(row=0,column=1,sticky='ew',padx=6)
-        self.tip(self.chart_entry,'Selecione uma carta náutica GeoTIFF ou informe o caminho e clique em Carregar. O amarelo indica que essa carta ainda não foi carregada.')
+        self.chart_entry.bind('<Return>',lambda e:self.load_chart())
+        self.tip(self.chart_entry,'Escolha uma Carta Náutica em Abrir… ou digite o caminho e pressione Enter. O amarelo indica uma carta ainda não carregada.')
         ttk.Button(header,text='Abrir…',command=self.choose_chart).grid(row=0,column=2)
-        ttk.Button(header,text='Carregar',command=self.load_chart).grid(row=0,column=3,padx=5)
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
         left=ttk.Frame(split,width=355);split.add(left,weight=0)
         self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
@@ -373,11 +375,20 @@ class Application:
         restore.grid(row=0,column=len(self.review_buttons),padx=2,pady=2,sticky='w')
         self.review_buttons['restore']=restore
         self.tip(restore,'Voltar ao valor ou à posição original, preservando o histórico. Pontos adicionados manualmente não têm leitura original.')
-        bar.bind('<Configure>',lambda event:self.layout_review_toolbar(event.width))
-        select=ttk.Frame(bottom);select.pack(fill='x')
-        for label,cmd in [('Todos',self.select_all_points),('Limpar',self.clear_point_selection),('Inverter',self.invert_point_selection)]:
-            ttk.Button(select,text=label,command=cmd,width=0).pack(side='left',padx=2,pady=3)
-        ttk.Checkbutton(select,text='Acompanhar',variable=self.follow_review,command=lambda:self.focus_selected() if self.follow_review.get() else None).pack(side='left',padx=8)
+        self.extra_actions=tk.Menu(self.root,tearoff=False,postcommand=self.update_actions_menu)
+        for key in ('unreviewed','focus','insert','move','position','offset'):
+            button=self.review_buttons[key]
+            self.extra_actions.add_command(label=button.cget('text'),command=button.invoke)
+        self.extra_actions.add_cascade(label='Restaurar',menu=self.restore_menu)
+        self.actions_button=ttk.Menubutton(bar,text='Ações',menu=self.extra_actions)
+        selection_menu=tk.Menu(self.root,tearoff=False)
+        for label,cmd in [('Selecionar todos',self.select_all_points),('Limpar seleção',self.clear_point_selection),('Inverter seleção',self.invert_point_selection)]:
+            selection_menu.add_command(label=label,command=cmd)
+        self.selection_button=ttk.Menubutton(bar,text='Seleção',menu=selection_menu)
+        self.follow_button=ttk.Checkbutton(bar,text='Acompanhar',variable=self.follow_review,command=lambda:self.focus_selected() if self.follow_review.get() else None)
+        self.toolbar_widgets=[self.review_buttons[k] for k in ('accepted','rejected','edit')]+[self.actions_button,self.selection_button,self.follow_button]
+        for button in self.review_buttons.values():button.grid_forget()
+        for widget in self.toolbar_widgets:widget.pack(side='left',padx=2,pady=2)
         self.tree=ttk.Treeview(bottom,columns=['id','depth','confidence','status','origin'],show='headings',selectmode='extended',height=5)
         for key,label,width in [('id','ID',45),('depth','Profundidade',100),('confidence','Confiança',85),('status','Revisão',100),('origin','Observações',240)]:
             self.tree.heading(key,text=label,command=lambda k=key:self.sort_review(k));self.tree.column(key,width=width,minwidth=35)
@@ -397,9 +408,14 @@ class Application:
                                 ('Escape',self.clear_point_selection),('Control-space',self.toggle_active_point)]:
                 widget.bind(f'<{key}>',lambda e,cmd=command:self.review_shortcut(cmd))
         notes=ttk.Frame(bottom);notes.pack(fill='x',before=self.tree)
-        ttk.Label(notes,text='Nota').pack(side='left',padx=4)
+        ttk.Label(notes,text='Observação').pack(side='left',padx=4)
         self.note_entry=ttk.Entry(notes,textvariable=self.review_note)
         self.note_entry.pack(side='left',fill='x',expand=True,padx=4,pady=3)
+        self.note_button=ttk.Button(notes,text='Incluir',command=self.include_note)
+        self.note_button.pack(side='left',padx=4)
+        self.note_entry.bind('<Return>',lambda e:self.include_note())
+        self.tip(self.note_button,'Gravar a observação nos pontos selecionados, sem alterar valor, posição ou aprovação.')
+        self.review_note.trace_add('write',lambda *args:self.refresh_review_controls())
         self.footer=ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=(8,3))
         self.footer.pack(side='bottom',fill='x',before=split)
         self.footer.bind('<Configure>',lambda e:self.footer.configure(wraplength=max(100,e.width-16)))
@@ -422,16 +438,12 @@ class Application:
                 compact(child)
         compact(self.root)
 
-    def layout_review_toolbar(self,width):
-        x=y=0
-        height=max(button.winfo_reqheight() for button in self.review_buttons.values())+4
-        for button in self.review_buttons.values():
-            needed=button.winfo_reqwidth()+4
-            if x and x+needed>width:x=0;y+=height
-            button.grid_forget()
-            button.place(x=x+2,y=y+2,width=needed-4,height=height-4)
-            x+=needed
-        self.review_buttons['accepted'].master.configure(height=y+height)
+    def update_actions_menu(self):
+        self.refresh_review_controls()
+        for index,key in enumerate(('unreviewed','focus','insert','move','position','offset')):
+            self.extra_actions.entryconfigure(index,state='disabled' if self.review_buttons[key].instate(['disabled']) else 'normal')
+        self.extra_actions.entryconfigure(6,state='normal' if self.review_ready() and self.can_restore('both') else 'disabled')
+        self.update_restore_menu()
 
     def config(self):
         defaults=asdict(Config());data={}
@@ -664,7 +676,7 @@ class Application:
             s=item['current'];conf=s['confidence']
             flags={'ocr_retry':'Releitura OCR','ocr_one_retry':'Releitura dirigida: 1','manual_depth':'Valor corrigido','manual_position':'Posição corrigida','manual_addition':'Ponto manual'}
             visible_flags=[f for f in s['flags'] if f!='ocr_retry' or 'ocr_one_retry' not in s['flags']]
-            self.tree.insert('','end',iid=str(item['id']),values=[item['id'],f"{s['depth']:g}",'' if conf is None else f'{conf:.3f}',labels[item['status']],', '.join(flags.get(f,f) for f in visible_flags)])
+            self.tree.insert('','end',iid=str(item['id']),values=[item['id'],f"{s['depth']:g}",'' if conf is None else f'{conf:.3f}',labels[item['status']],', '.join([*(flags.get(f,f) for f in visible_flags),*([item['note']] if item.get('note') else [])])])
         self.apply_review_sort()
         remaining=[i for i in selection if self.tree.exists(i)]
         self.tree.selection_set(remaining)
@@ -691,6 +703,20 @@ class Application:
             elif key=='focus':enabled=ready and bool(self.tree.focus())
             else:enabled=ready and selected>0
             button.configure(state='normal' if enabled else 'disabled')
+
+        if hasattr(self,'note_button'):
+            self.note_button.configure(state='normal' if ready and selected and self.review_note.get().strip() else 'disabled')
+        if hasattr(self,'actions_button'):
+            self.actions_button.configure(state='normal' if ready else 'disabled')
+
+    def include_note(self):
+        if not self.review_ready() or not self.tree.selection() or not self.review_note.get().strip():return
+        note=self.review_note.get().strip()
+        for point_id in self.tree.selection():self.session.review.change(point_id,'note',note=note)
+        self.review_dirty=True
+        self.review_note.set('')
+        self.refresh_points();self.refresh_validity()
+        self.status.set('Observação gravada nos pontos selecionados.')
 
     def review_ready(self):
         if self.busy or not self.session:return False
@@ -950,12 +976,38 @@ class Application:
         self.start(lambda:self.session.export(directory,target_crs=crs,accepted_only=accepted_only),
                    lambda meta:messagebox.showinfo('Exportação',f"{meta['soundings']} pontos gravados em {directory}\n{meta['status']}",parent=self.root),cancellable=False)
 
-    def save_project(self):
+    def save_project(self,after_save=None):
         if self.busy or not self.session:return
         path=filedialog.asksaveasfilename(defaultextension='.vfproject.json',filetypes=[('Projeto VetorizaFB','*.vfproject.json')])
         if path:
-            def done(_):self.review_dirty=False
+            def done(_):
+                self.review_dirty=False
+                if after_save:after_save()
             self.start(lambda:self.session.save_project(path),done,cancellable=False)
+
+    def close_project(self):
+        if self.busy or self.session is None:return
+        answer=messagebox.askyesnocancel('Fechar projeto','Deseja salvar o projeto antes de fechar?',parent=self.root)
+        if answer is None:return
+        if answer:self.save_project(after_save=self.clear_project)
+        else:self.clear_project()
+
+    def clear_project(self):
+        self.session=None;self.roi=None;self.review_dirty=False;self.measurement=None
+        self.path.set('');self.output.set('');self.review_note.set('');self.measure_text.set('')
+        self.counts.set('');self.counts_summary.set('');self.filter.set('Todos')
+        self.roi_text.set('Área: carta inteira');self.sort_column=None;self.sort_reverse=False
+        self._selection_anchor=self._last_followed=None
+        self.viewer.session=None;self.viewer.preview_boxes=[];self.viewer.measurement=None
+        self.viewer.selected_id=None;self.viewer.selected_ids=set();self.viewer.roi=None
+        self.viewer.canvas.delete('all');self.viewer.photo=None
+        self.viewer.layer.set('Original');self.viewer.mode.set('Inspecionar')
+        self.viewer.inspection_text.set('');self.viewer.zoom_text.set('')
+        self.preview=CalibrationPreview();self.set_config(Config())
+        labels={'id':'ID','depth':'Profundidade','confidence':'Confiança','status':'Revisão','origin':'Observações'}
+        for key,label in labels.items():self.tree.heading(key,text=label)
+        self.refresh_points();self.refresh_validity()
+        self.status.set('Selecione uma Carta Náutica para iniciar.')
 
     def open_project(self):
         if self.busy or not self.confirm_replace():return

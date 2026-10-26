@@ -38,6 +38,8 @@ class ReviewSet:
         previous_status = item['status']
         if action in {"accepted", "rejected", "unreviewed"}:
             item['status'] = action
+        elif action == "note":
+            if not str(note).strip():raise ValueError("A nota não pode estar vazia")
         elif action == "correct_depth":
             item['current']['depth'] = depth_value(depth)
             item['status'] = "unreviewed"

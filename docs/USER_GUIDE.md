@@ -414,10 +414,10 @@ The active tab is blue; readiness dots represent current (green), stale/pending
 (amber), processing (light blue) and no chart (grey). Hover provides the textual
 meaning. Tabs remain available for configuration, while execution buttons retain
 stage validity checks. The fixed stage-status line and shortcut legend are
-removed. The CN path field is pale yellow until that path has been loaded.
+removed. The Carta Náutica path field is pale yellow until that path has been loaded.
 
 Review actions use short labels (Aprovar, Excluir, Editar, Adicionar, Mover).
-The toolbar wraps to preserve every action at smaller widths. Contextual tooltips,
+The review toolbar stays on one row; secondary actions and selection commands are in Ações and Seleção menus. Contextual tooltips,
 Help → Keyboard shortcuts and a chart/table right-click menu replace permanent
 explanatory text. Right-click preserves the current multi-selection; review keys
 retain their original scope. Grey indicates disabled controls; available controls
@@ -555,9 +555,27 @@ case/accent-insensitive alphabetical order. Missing confidence stays last.
 Sorting persists across refresh/filter changes and does not change point IDs,
 processing order, export order or saved review records.
 
-**Restaurar** (toolbar or right-click menu) offers **Restaurar valor**,
+**Restaurar** (Ações or right-click menu) offers **Restaurar valor**,
 **Restaurar posição**, and **Restaurar ambos** for the selected points. Each
 operation restores the corresponding original reading, preserves independent
 edits and appends to history. Restored points become pending for confirmation.
 Unchanged points are skipped. Manually inserted points have no original reading
 and are not restored. This is restoration to the original, not a stepwise undo.
+
+
+### Compact header, independent observations and closing a project
+
+The header combines the logo/name on the left and **Carta Náutica:** with its
+path and **Abrir…** on the right. A typed path opens with Enter. Version remains
+in the window title and About; Manual remains in Help/F1. Separate Carregar and
+header Manual buttons were removed.
+
+**Observação → Incluir** (or Enter in the field) records the text on the selected
+points without changing their depth, position or approval. The text appears in
+Observações and is saved in the review/project history. Select points and enter
+nonblank text to enable Incluir. Existing action-associated notes remain supported.
+
+**Arquivo → Fechar projeto** asks whether to save first. Yes saves before
+clearing; No clears without saving; Cancel preserves the open project. Cancelling
+the save dialog or a save failure also preserves the project. The application
+stays open and the chart/review state is cleared only after discard or save success.

@@ -270,7 +270,7 @@ def test_gui_yellow_filter_configuration_invalidation_and_layer(app):
 
 def test_review_controls_and_notes_remain_visible_at_minimum_window_size(app):
     app.root.geometry('1050x720');app.root.update()
-    for widget in [app.note_entry,app.footer,*app.review_buttons.values()]:
+    for widget in [app.note_entry,app.note_button,app.footer,*app.toolbar_widgets]:
         assert widget.winfo_ismapped()
         assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()
 
@@ -389,7 +389,7 @@ def test_cn_prompt_distinguishes_loaded_and_new_paths(app):
 def test_compact_toolbar_never_cuts_actions_and_details_are_contextual(app):
     app.root.geometry('1050x720');app.root.update()
     bar=app.review_buttons['accepted'].master
-    for button in app.review_buttons.values():
+    for button in app.toolbar_widgets:
         assert button.winfo_x()>=0
         assert button.winfo_x()+button.winfo_width()<=bar.winfo_width()
     app.viewer.layer.set('Original');app.viewer.mode.set('Inspecionar');app.root.update()
@@ -575,3 +575,67 @@ def test_restore_menu_restores_selected_original_without_touching_manual(app):
     app.restore_original('position')
     assert review.item(0)['current']['pixel_x']==original['pixel_x']
     assert not app.can_restore('both')
+
+
+def test_include_note_without_editing_value_position_or_status(app,tmp_path):
+    from copy import deepcopy
+    from vetorizafb.workflow import ChartSession
+    app.run_stage('all');finish(app)
+    app.tree.selection_set('0');app.tree.focus('0');app.select_point()
+    app.review_action('accepted')
+    before=deepcopy(app.session.review.item(0)['current'])
+    app.review_note.set('Conferido na carta')
+    assert not app.note_button.instate(['disabled'])
+    app.note_button.invoke()
+    item=app.session.review.item(0)
+    assert item['current']==before and item['status']=='accepted'
+    assert item['note']=='Conferido na carta' and item['history'][-1]['action']=='note'
+    assert 'Conferido na carta' in app.tree.set('0','origin')
+    assert app.review_dirty and app.review_note.get()==''
+    path=tmp_path/'notes.vfproject.json';app.session.save_project(path)
+    assert ChartSession.load_project(path).review.item(0)['note']=='Conferido na carta'
+
+
+@pytest.mark.parametrize('answer',[None,False,True])
+def test_close_project_cancel_discard_or_save(app,tmp_path,monkeypatch,answer):
+    from vetorizafb.workflow import ChartSession
+    app.run_stage('all');finish(app)
+    app.review_dirty=True;session=app.session
+    path=tmp_path/'closed.vfproject.json'
+    monkeypatch.setattr('vetorizafb.gui.messagebox.askyesnocancel',lambda *a,**k:answer)
+    monkeypatch.setattr('vetorizafb.gui.filedialog.asksaveasfilename',lambda **k:str(path))
+    app.close_project();finish(app)
+    if answer is None:
+        assert app.session is session and app.review_dirty and not path.exists()
+    else:
+        assert app.session is None and not app.tree.get_children() and not app.review_dirty
+        assert not app.viewer.canvas.find_all() and app.path.get()==''
+        assert app.root.winfo_exists()
+        if answer:assert ChartSession.load_project(path).review.items==session.review.items
+
+
+def test_cancel_save_or_failed_save_keeps_project_open(app,monkeypatch):
+    app.run_stage('all');finish(app);session=app.session;app.review_dirty=True
+    monkeypatch.setattr('vetorizafb.gui.messagebox.askyesnocancel',lambda *a,**k:True)
+    monkeypatch.setattr('vetorizafb.gui.filedialog.asksaveasfilename',lambda **k:'')
+    app.close_project()
+    assert app.session is session and app.review_dirty
+    monkeypatch.setattr('vetorizafb.gui.filedialog.asksaveasfilename',lambda **k:'unused.vfproject.json')
+    def fail(path):raise OSError('Gravação indisponível')
+    monkeypatch.setattr(session,'save_project',fail)
+    errors=[];monkeypatch.setattr('vetorizafb.gui.messagebox.showerror',lambda *a,**k:errors.append(a))
+    app.close_project();finish(app)
+    assert app.session is session and app.review_dirty and errors
+
+
+def test_single_header_and_single_row_review_toolbar(app):
+    from tkinter import ttk
+    app.root.geometry('1050x720');app.root.update()
+    centers=[w.winfo_y()+w.winfo_height()/2 for w in app.toolbar_widgets]
+    assert max(centers)-min(centers)<=1
+    assert app.chart_entry.master.master is app.brand_icon.master
+    labels=[w.cget('text') for w in app.chart_entry.master.winfo_children() if isinstance(w,ttk.Label)]
+    assert labels==['Carta Náutica:']
+    assert app.chart_entry.bind('<Return>')
+    assert app.actions_button.winfo_ismapped() and app.selection_button.winfo_ismapped()
+    assert not app.review_buttons['insert'].winfo_ismapped()
