@@ -544,3 +544,20 @@ classificação geográfica. **Sensibilidade** (1–255): valores maiores inclue
 tons mais suaves. **Cobertura (%)**: percentual mínimo de amarelo no fundo da
 caixa e sua pequena margem, ignorando pixels escuros. O armazenamento mantém
 os valores antigos; a interface converte sensibilidade e percentual.
+
+
+### Review sorting and restoring originals
+
+The review heading places **Mostrar** and the status selector beside the title.
+Click a table heading to sort ascending, then descending (indicated by an arrow).
+ID, depth and confidence use numeric order; status and observations use
+case/accent-insensitive alphabetical order. Missing confidence stays last.
+Sorting persists across refresh/filter changes and does not change point IDs,
+processing order, export order or saved review records.
+
+**Restaurar** (toolbar or right-click menu) offers **Restaurar valor**,
+**Restaurar posição**, and **Restaurar ambos** for the selected points. Each
+operation restores the corresponding original reading, preserves independent
+edits and appends to history. Restored points become pending for confirmation.
+Unchanged points are skipped. Manually inserted points have no original reading
+and are not restored. This is restoration to the original, not a stepwise undo.

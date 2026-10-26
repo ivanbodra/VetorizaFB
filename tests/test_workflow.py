@@ -257,3 +257,34 @@ def test_cancelled_ocr_preserves_previous_results(session):
 @pytest.mark.parametrize('roi',[(-1,0,10,10),(0,0,0,10),(0,0,300,10),(0.5,0,10,10)])
 def test_invalid_roi_is_rejected(session,roi):
     with pytest.raises(ValueError):session.segment(Config(),roi)
+
+
+@pytest.mark.parametrize('action',['restore_depth','restore_position','restore_both'])
+def test_restore_original_preserves_history_and_independent_edits(session,tmp_path,action):
+    from copy import deepcopy
+    ready(session);review=session.review;original=deepcopy(review.item(0)['original'])
+    review.change(0,'correct_depth',depth=12.3)
+    review.change(0,'reposition',xy=(50,60))
+    review.change(0,'accepted')
+    before=deepcopy(review.item(0))
+    review.change(0,action,note='Conferido na carta')
+    item=review.item(0)
+    assert item['original']==original and item['history'][:-1]==before['history']
+    assert item['status']=='unreviewed' and item['history'][-1]['previous_status']=='accepted'
+    assert item['current']['depth']==(12.3 if action=='restore_position' else original['depth'])
+    assert item['current']['pixel_x']==(50 if action=='restore_depth' else original['pixel_x'])
+    assert ('manual_depth' in item['current']['flags'])==(action=='restore_position')
+    assert ('manual_position' in item['current']['flags'])==(action=='restore_depth')
+    project=tmp_path/'restore.vfproject.json';session.save_project(project)
+    reopened=ChartSession.load_project(project)
+    assert reopened.review.items==review.items
+
+
+def test_restore_noop_and_manual_points_are_protected(session):
+    from copy import deepcopy
+    ready(session);review=session.review;before=deepcopy(review.items)
+    assert review.change(0,'restore_both') is False
+    assert review.items==before
+    point=review.add_manual(20,30,4.5);before=deepcopy(review.item(point))
+    with pytest.raises(ValueError,match='no original'):review.change(point,'restore_both')
+    assert review.item(point)==before

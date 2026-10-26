@@ -534,3 +534,44 @@ def test_compact_stage_names_and_native_pixel_controls(app):
         try:visible.add(app.tabs.index(f'@{x},10'))
         except tk.TclError:pass
     assert visible=={0,1,2,3}
+
+
+def test_review_header_sort_is_numeric_and_persists_without_mutating_model(app):
+    from copy import deepcopy
+    app.run_stage('all');finish(app)
+    review=app.session.review
+    review.add_manual(30,30,10)
+    review.add_manual(35,35,2)
+    review.add_manual(40,40,-1)
+    before=deepcopy(review.items);app.refresh_points()
+    app.sort_review('depth')
+    assert [float(app.tree.set(row,'depth')) for row in app.tree.get_children()]==[-1,0,2,10]
+    target=app.tree.get_children()[1];app.tree.selection_set(target);app.tree.focus(target)
+    app.sort_review('depth')
+    assert [float(app.tree.set(row,'depth')) for row in app.tree.get_children()]==[10,2,0,-1]
+    assert app.tree.selection()==(target,) and app.tree.focus()==target
+    app.refresh_points()
+    assert [float(app.tree.set(row,'depth')) for row in app.tree.get_children()]==[10,2,0,-1]
+    app.sort_review('confidence')
+    assert app.tree.set(app.tree.get_children()[0],'confidence')!=''
+    app.sort_review('confidence')
+    assert app.tree.set(app.tree.get_children()[0],'confidence')!=''
+    assert review.items==before
+    assert app.review_filter.master is app.tree.master.winfo_children()[0]
+
+
+def test_restore_menu_restores_selected_original_without_touching_manual(app):
+    app.run_stage('all');finish(app)
+    review=app.session.review;original=review.item(0)['original'].copy()
+    review.change(0,'correct_depth',depth=8)
+    review.change(0,'reposition',xy=(50,60))
+    manual=review.add_manual(40,45,9)
+    app.refresh_points();app.tree.selection_set(('0',str(manual)))
+    app.restore_original('depth')
+    assert review.item(0)['current']['depth']==original['depth']
+    assert review.item(0)['current']['pixel_x']==50
+    assert review.item(manual)['current']['depth']==9
+    assert app.review_dirty and app.can_restore('position') and not app.can_restore('depth')
+    app.restore_original('position')
+    assert review.item(0)['current']['pixel_x']==original['pixel_x']
+    assert not app.can_restore('both')

@@ -54,6 +54,8 @@ class Application:
         self.validity, self.counts = tk.StringVar(),tk.StringVar()
         self.counts_summary=tk.StringVar()
         self.stage_states=[]
+        self.sort_column=None
+        self.sort_reverse=False
         self.tooltips=[]
         self.roi_text = tk.StringVar(value='Área: carta inteira')
         self.filter = tk.StringVar(value='Todos')
@@ -140,6 +142,8 @@ class Application:
         for key,label,shortcut in [('accepted','Aprovar','Ctrl+A'),('rejected','Excluir','Ctrl+X'),('edit','Editar','Ctrl+E'),('unreviewed','Marcar pendente','')]:
             button=self.review_buttons[key]
             menu.add_command(label=label,accelerator=shortcut,command=button.invoke,state='disabled' if button.instate(['disabled']) else 'normal')
+        self.update_restore_menu()
+        menu.add_cascade(label='Restaurar',menu=self.restore_menu,state='normal' if self.review_ready() and self.can_restore('both') else 'disabled')
         menu.add_separator();menu.add_command(label='Atalhos…',command=self.show_shortcuts)
         try:menu.tk_popup(event.x_root,event.y_root)
         finally:menu.grab_release()
@@ -346,8 +350,9 @@ class Application:
         bottom=ttk.Frame(right);right.add(bottom,weight=1)
         heading=ttk.Frame(bottom);heading.pack(fill='x')
         ttk.Label(heading,text='Revisão de sondagens').pack(side='left',padx=4)
-        ttk.Label(heading,textvariable=self.selection_text).pack(side='left',padx=12)
-        filt=ttk.Combobox(heading,textvariable=self.filter,state='readonly',width=12,values=['Todos','Pendentes','Aprovados','Excluídos']);filt.pack(side='right',padx=4)
+        ttk.Label(heading,text='Mostrar').pack(side='left',padx=(12,2))
+        filt=self.review_filter=ttk.Combobox(heading,textvariable=self.filter,state='readonly',width=12,values=['Todos','Pendentes','Aprovados','Excluídos']);filt.pack(side='left',padx=4)
+        ttk.Label(heading,textvariable=self.selection_text).pack(side='right',padx=4)
         filt.bind('<<ComboboxSelected>>',lambda e:self.refresh_points())
         bar=ttk.Frame(bottom);bar.pack(fill='x')
         self.review_buttons={}
@@ -361,6 +366,13 @@ class Application:
                               ('position','Posição…',self.edit_position),('offset','Offset…',self.offset_dialog)]:
             button=ttk.Button(tools,text=label,command=cmd,width=0);button.grid(row=0,column=len(self.review_buttons),padx=2,pady=2,sticky='w')
             self.review_buttons[key]=button
+        self.restore_menu=tk.Menu(self.root,tearoff=False,postcommand=self.update_restore_menu)
+        for part,label in [('depth','Restaurar valor'),('position','Restaurar posição'),('both','Restaurar ambos')]:
+            self.restore_menu.add_command(label=label,command=lambda p=part:self.restore_original(p))
+        restore=ttk.Menubutton(bar,text='Restaurar',menu=self.restore_menu)
+        restore.grid(row=0,column=len(self.review_buttons),padx=2,pady=2,sticky='w')
+        self.review_buttons['restore']=restore
+        self.tip(restore,'Voltar ao valor ou à posição original, preservando o histórico. Pontos adicionados manualmente não têm leitura original.')
         bar.bind('<Configure>',lambda event:self.layout_review_toolbar(event.width))
         select=ttk.Frame(bottom);select.pack(fill='x')
         for label,cmd in [('Todos',self.select_all_points),('Limpar',self.clear_point_selection),('Inverter',self.invert_point_selection)]:
@@ -368,7 +380,7 @@ class Application:
         ttk.Checkbutton(select,text='Acompanhar',variable=self.follow_review,command=lambda:self.focus_selected() if self.follow_review.get() else None).pack(side='left',padx=8)
         self.tree=ttk.Treeview(bottom,columns=['id','depth','confidence','status','origin'],show='headings',selectmode='extended',height=5)
         for key,label,width in [('id','ID',45),('depth','Profundidade',100),('confidence','Confiança',85),('status','Revisão',100),('origin','Observações',240)]:
-            self.tree.heading(key,text=label);self.tree.column(key,width=width,minwidth=35)
+            self.tree.heading(key,text=label,command=lambda k=key:self.sort_review(k));self.tree.column(key,width=width,minwidth=35)
         scroll=ttk.Scrollbar(bottom,orient='vertical',command=self.tree.yview);scroll.pack(side='right',fill='y');self.tree.configure(yscrollcommand=scroll.set)
         self.tree.pack(fill='both',expand=True)
         self.tree.bind('<<TreeviewSelect>>',lambda e:self.select_point())
@@ -653,6 +665,7 @@ class Application:
             flags={'ocr_retry':'Releitura OCR','ocr_one_retry':'Releitura dirigida: 1','manual_depth':'Valor corrigido','manual_position':'Posição corrigida','manual_addition':'Ponto manual'}
             visible_flags=[f for f in s['flags'] if f!='ocr_retry' or 'ocr_one_retry' not in s['flags']]
             self.tree.insert('','end',iid=str(item['id']),values=[item['id'],f"{s['depth']:g}",'' if conf is None else f'{conf:.3f}',labels[item['status']],', '.join(flags.get(f,f) for f in visible_flags)])
+        self.apply_review_sort()
         remaining=[i for i in selection if self.tree.exists(i)]
         self.tree.selection_set(remaining)
         rows=self.tree.get_children()
@@ -672,6 +685,7 @@ class Application:
         self.selection_text.set(f'{selected} selecionados / {len(self.tree.get_children())} visíveis')
         for key,button in self.review_buttons.items():
             if key in {'edit','move','position'}:enabled=ready and selected==1
+            elif key=='restore':enabled=ready and self.can_restore('both')
             elif key=='insert':enabled=ready
             elif key=='offset':enabled=ready and bool(self.session.review.items)
             elif key=='focus':enabled=ready and bool(self.tree.focus())
@@ -688,6 +702,51 @@ class Application:
         for point_id in self.tree.selection():self.session.review.change(point_id,action,note=self.review_note.get())
         if self.tree.selection():self.review_dirty=True
         self.refresh_points();self.refresh_validity();self.viewer.render()
+
+    def can_restore(self,part):
+        if not self.session or self.session.review is None:return False
+        keys={'depth':('depth',),'position':('pixel_x','pixel_y'),'both':('depth','pixel_x','pixel_y')}[part]
+        for point_id in self.tree.selection():
+            item=self.session.review.item(point_id);original=item['original']
+            if original is not None and any(item['current'][k]!=original[k] for k in keys):return True
+        return False
+
+    def update_restore_menu(self):
+        for index,part in enumerate(('depth','position','both')):
+            self.restore_menu.entryconfigure(index,state='normal' if self.review_ready() and self.can_restore(part) else 'disabled')
+
+    def restore_original(self,part):
+        if not self.review_ready():return
+        changed=0
+        for point_id in self.tree.selection():
+            item=self.session.review.item(point_id)
+            if item['original'] is not None:
+                if self.session.review.change(point_id,'restore_'+part,note=self.review_note.get()) is not False:changed+=1
+        if changed:self.review_dirty=True
+        self.refresh_points();self.refresh_validity();self.viewer.render()
+        self.status.set(f'{changed} sondagens restauradas; confira antes de aprovar.')
+
+    def sort_review(self,column):
+        self.sort_reverse=not self.sort_reverse if self.sort_column==column else False
+        self.sort_column=column
+        self.apply_review_sort()
+
+    def apply_review_sort(self):
+        if self.sort_column is None:return
+        import unicodedata
+        column=self.sort_column
+        def key(row):
+            value=self.tree.set(row,column)
+            if column in {'id','depth','confidence'}:return (value=='',float(value) if value else 0)
+            return ''.join(c for c in unicodedata.normalize('NFD',value.casefold()) if not unicodedata.combining(c))
+        rows=list(self.tree.get_children())
+        # Keep missing confidence values last in both directions.
+        missing=[row for row in rows if column=='confidence' and self.tree.set(row,column)=='']
+        missing_ids=set(missing)
+        ordered=sorted((row for row in rows if row not in missing_ids),key=key,reverse=self.sort_reverse)+missing
+        for index,row in enumerate(ordered):self.tree.move(row,'',index)
+        labels={'id':'ID','depth':'Profundidade','confidence':'Confiança','status':'Revisão','origin':'Observações'}
+        for col,label in labels.items():self.tree.heading(col,text=label+(' ▼' if self.sort_reverse else ' ▲') if col==column else label)
 
     def correct_depth(self):
         if not self.review_ready() or len(self.tree.selection())!=1:return

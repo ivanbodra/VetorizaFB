@@ -50,6 +50,18 @@ class ReviewSet:
             item['status'] = "rejected" if action=='offset' and previous_status=='rejected' else "unreviewed"
             if 'manual_position' not in item['current']['flags']:
                 item['current']['flags'].append('manual_position')
+        elif action in {"restore_depth","restore_position","restore_both"}:
+            original=item['original']
+            if original is None:raise ValueError("Manual points have no original reading")
+            keys=[]
+            if action in {"restore_depth","restore_both"}:keys.append('depth')
+            if action in {"restore_position","restore_both"}:keys.extend(('pixel_x','pixel_y'))
+            if all(item['current'][k]==original[k] for k in keys):return False
+            for key in keys:item['current'][key]=deepcopy(original[key])
+            flags=item['current']['flags']
+            if 'depth' in keys:flags[:]=[f for f in flags if f!='manual_depth']
+            if 'pixel_x' in keys:flags[:]=[f for f in flags if f!='manual_position']
+            item['status']='unreviewed'
         else:
             raise ValueError("Unknown review action")
         item['current']['review_status'] = item['status']
