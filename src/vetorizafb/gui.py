@@ -164,14 +164,14 @@ class Application:
         apply_icon(popup,self.icon_path)
         panel=ttk.Frame(popup,padding=24);panel.pack(fill='both',expand=True)
         popup._brand_images=[asset_photo(popup,'logo_app.png',(150,150))]
-        ttk.Label(panel,image=popup._brand_images[0]).pack(pady=(0,12))
         institutions=ttk.Frame(panel);institutions.pack(pady=(0,12))
         for name,label in [('logo_mb.png','Marinha do Brasil'),('logo_chm.png','Centro de Hidrografia da Marinha')]:
             photo=asset_photo(popup,name,(56,56));popup._brand_images.append(photo)
             badge=ttk.Frame(institutions,width=200,height=115);badge.pack(side='left',padx=8);badge.pack_propagate(False)
             ttk.Label(badge,image=photo).pack()
             ttk.Label(badge,text=label,wraplength=190,anchor='center',justify='center').pack(fill='x')
-        ttk.Label(panel,text=f'Versão {__version__}',font=(self.ui_font,16,'bold'),foreground='#153b50').pack(pady=(12,0))
+        ttk.Label(panel,image=popup._brand_images[0]).pack(pady=(0,12))
+        ttk.Label(panel,text=f'Versão {__version__}',font=(self.ui_font,16,'bold'),foreground='#153b50').pack(pady=(0,0))
         ttk.Label(panel,text='Extração e revisão de sondagens em cartas náuticas',padding=(0,8)).pack()
         ttk.Label(panel,text='Ivan Bodra Guimarães',wraplength=500).pack()
         buttons=ttk.Frame(panel);buttons.pack(pady=(18,0))
