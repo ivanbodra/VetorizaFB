@@ -3,6 +3,11 @@
 
 class PaddleRecognizer:
     def __init__(self, model_name="PP-OCRv6_small_rec", model_dir=None, device="cpu"):
+        # Prefer complete local assets before importing the OCR stack.
+        if model_dir is None:
+            from .models import discover_models,default_model_root
+            candidates=discover_models(default_model_root())
+            model_dir=next((str(m.path) for m in candidates if m.name==model_name),None)
         from paddleocr import TextRecognition
         self.model_name, self.model_dir, self.device = model_name, model_dir, device
         self.model = TextRecognition(model_name=model_name, model_dir=model_dir, device=device)

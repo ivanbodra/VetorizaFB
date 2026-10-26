@@ -429,3 +429,49 @@ use blue, with soft green/red for approval/exclusion. About omits implementation
 and icon-filename diagnostics. Preview details show only during preview/measurement;
 the sidebar summary exposes full counts and timings on hover. No dependency or
 OCR/geospatial algorithm changes are required.
+
+### OCR models and explicit proxy-aware downloads
+
+The OCR tab has three compact rows: **Pasta**, **Download → Conexão / baixar…**,
+and **Local**. The first row selects a model library folder (or a single model
+folder); the last lists only supported complete local inference models. Browse
+or enter a folder and press Enter/refresh. Selecting a different model invalidates
+OCR/grouping validity without deleting review decisions. Model discovery requires
+`inference.yml` with a supported model identity, nonempty `inference.pdiparams`
+and `inference.json` or `inference.pdmodel`. This is structural validation, not a
+model-accuracy or weight-integrity certification.
+
+Existing `~/.paddlex/official_models` is the default and is neither moved nor
+copied. `PADDLE_PDX_CACHE_HOME` is respected. Each model occupies its own child
+folder; `_infer` folders from manual extraction are accepted as well. In frozen
+builds a populated `models` folder beside the executable is used when no folder
+preference exists. The selected library location is saved per user. Existing
+project OCR signatures are retained on open; selecting/re-running with a local
+path requires reviewing any replaced results as before.
+
+The download form selects one of the three supported recognition models and one
+connection mode: **Sistema** (Requests-recognized environment/static system proxy
+settings), **Direta** (ignore inherited proxy settings), or **Proxy** (explicit
+HTTP/HTTPS server:port, optionally username/password). Basic proxy authentication
+is supported; PAC execution, NTLM/Kerberos and integrated Windows authentication
+are not implemented. Optional PEM CA configuration preserves TLS verification.
+Credentials remain in process memory for the session, are masked in the form,
+and are not saved in projects, parameter profiles or model-folder preferences.
+No global proxy environment variables are modified.
+
+Downloads use official Paddle BOS inference archives, separately from OCR. The
+chosen connection applies only to the download's own HTTP session. Temporary
+files are extracted within the destination filesystem, with path/link/type/size
+checks; only a complete matching model is published. Failed or cancelled transfers
+remove their temporary files. Existing complete models are reused; incomplete
+existing target folders are preserved and reported rather than overwritten.
+Cancellation is checked between transfer/extraction chunks; connection/read waits
+are bounded to 15/45 seconds. The GUI blocks recognition without a complete local
+model and explains how to obtain one instead of silently attempting a download.
+The CLI retains its prior automatic-download fallback when no local model exists.
+
+Tests cover isolated proxy modes, escaped credentials, TLS/proxy/timeout/407
+messages, archive traversal/symlinks, cancellation/partial cleanup, existing-model
+retention, selectors and real Tk connection forms. HTTP failure/download responses
+are simulated; an actual corporate proxy and rebuilt Windows executable still
+require deployment validation. No input chart is uploaded by model download.

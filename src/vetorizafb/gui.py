@@ -28,6 +28,8 @@ from . import __version__
 from .calibration import CalibrationPreview
 from .branding import apply_icon, asset_photo
 from .ui import Tooltip
+from .models import default_model_root,discover_models,download_model,ConnectionSettings,save_model_root,inspect_model
+from .model_dialog import ModelDownloadDialog
 
 
 class Application:
@@ -45,6 +47,9 @@ class Application:
         self.path, self.output = tk.StringVar(),tk.StringVar()
         self.model = tk.StringVar(value='PP-OCRv6_small_rec')
         self.model_dir, self.target_crs = tk.StringVar(),tk.StringVar(value='EPSG:4326')
+        self.models_root=tk.StringVar(value=str(default_model_root()))
+        self.local_models={}
+        self.network_settings=ConnectionSettings()
         self.status = tk.StringVar(value='Selecione uma carta GeoTIFF para iniciar.')
         self.validity, self.counts = tk.StringVar(),tk.StringVar()
         self.counts_summary=tk.StringVar()
@@ -286,11 +291,28 @@ class Application:
         ttk.Button(seg,text='Definir mínimos',command=lambda:self.use_measurement(True)).grid(row=21,column=0,columnspan=2,sticky='ew')
         ttk.Button(seg,text='Definir máximos',command=lambda:self.use_measurement(False)).grid(row=22,column=0,columnspan=2,sticky='ew',pady=3)
         ttk.Button(seg,text='Prévia dos filtros',command=lambda:(self.viewer.layer.set('Prévia dos filtros'),self.update_preview())).grid(row=23,column=0,columnspan=2,sticky='ew',pady=6)
-        ttk.Label(ocr,text='Modelo OCR').grid(row=0,column=0,sticky='w')
-        ttk.Combobox(ocr,textvariable=self.model,state='readonly',width=23,values=['PP-OCRv6_small_rec','PP-OCRv6_medium_rec','PP-OCRv5_server_rec']).grid(row=1,column=0,columnspan=2,sticky='ew',pady=5)
-        ttk.Label(ocr,text='Pasta local de inferência (opcional)').grid(row=2,column=0,columnspan=2,sticky='w',pady=(10,3))
-        ttk.Entry(ocr,textvariable=self.model_dir).grid(row=3,column=0,columnspan=2,sticky='ew')
-        ttk.Button(ocr,text='Selecionar pasta do modelo',command=self.choose_model).grid(row=4,column=0,columnspan=2,sticky='ew',pady=5)
+        model_panel=ttk.Frame(ocr);model_panel.grid(row=0,column=0,columnspan=2,sticky='ew',pady=(0,10))
+        model_panel.columnconfigure(1,weight=1)
+        ttk.Label(model_panel,text='Pasta').grid(row=0,column=0,sticky='w',padx=(0,6),pady=4)
+        self.models_entry=ttk.Entry(model_panel,textvariable=self.models_root,width=19)
+        self.models_entry.grid(row=0,column=1,sticky='ew',pady=4)
+        self.models_entry.bind('<Return>',lambda e:self.refresh_models())
+        self.models_folder_button=ttk.Button(model_panel,text='…',width=2,command=self.choose_model)
+        self.models_folder_button.grid(row=0,column=2,padx=(4,0),pady=4)
+        ttk.Label(model_panel,text='Download').grid(row=1,column=0,sticky='w',padx=(0,6),pady=4)
+        self.download_button=ttk.Button(model_panel,text='Conexão / baixar…',command=self.configure_model_download)
+        self.download_button.grid(row=1,column=1,columnspan=2,sticky='ew',pady=4)
+        ttk.Label(model_panel,text='Local').grid(row=2,column=0,sticky='w',padx=(0,6),pady=4)
+        self.local_model_combo=ttk.Combobox(model_panel,textvariable=self.model,state='readonly',width=22)
+        self.local_model_combo.grid(row=2,column=1,sticky='ew',pady=4)
+        self.local_model_combo.bind('<<ComboboxSelected>>',lambda e:self.select_local_model())
+        self.refresh_models_button=ttk.Button(model_panel,text='↻',width=2,command=self.refresh_models)
+        self.refresh_models_button.grid(row=2,column=2,padx=(4,0),pady=4)
+        self.tip(self.models_entry,lambda:self.models_root.get()+'\nPasta com subpastas de modelos, ou a própria pasta de um modelo. Enter atualiza a lista; nenhum arquivo é movido.')
+        self.tip(self.local_model_combo,lambda:self.model_dir.get() or 'Nenhum modelo local selecionado. Escolha uma pasta ou baixe um modelo.')
+        self.tip(self.download_button,'Escolher o modelo e a conexão antes de baixar. Download separado do reconhecimento; credenciais apenas nesta sessão.')
+        self.tip(self.refresh_models_button,'Procurar novamente os modelos completos na pasta indicada.')
+        self.refresh_models()
         for row,(label,key) in enumerate([('Tamanho do lote','ocr_batch_size'),('Margem do recorte (px)','crop_padding'),('Confiança mínima','min_confidence')],6):setting(ocr,row,label,key)
         ttk.Checkbutton(ocr,text='Reler possíveis “1”',variable=self.fields['retry_one']).grid(row=9,column=0,columnspan=2,sticky='w',pady=(8,2))
         ttk.Checkbutton(ocr,text='Reler ambíguos',variable=self.fields['retry_ambiguous']).grid(row=10,column=0,columnspan=2,sticky='w',pady=3)
@@ -449,6 +471,8 @@ class Application:
                                (self.group_button,digits),(self.run_button,self.session is not None),
                                (self.export_button,groups),(self.reviewed_button,groups and self.session.review.counts['accepted']>0)]:
             button.configure(state='normal' if enabled and not self.busy else 'disabled')
+        for widget in (self.models_entry,self.models_folder_button,self.download_button,self.refresh_models_button):widget.configure(state='disabled' if self.busy else 'normal')
+        self.local_model_combo.configure(state='disabled' if self.busy else 'readonly')
         self.refresh_chart_prompt()
         self.stage_states=[('empty' if self.session is None else 'busy' if self.busy else 'ready' if valid else 'pending') for valid in (seg,digits,groups,groups)]
         for index,state in enumerate(self.stage_states):self.tabs.tab(index,image=self.stage_icons[state])
@@ -515,7 +539,61 @@ class Application:
         self.start(lambda:ChartSession(path),done)
 
     def choose_model(self):
-        if not self.busy:self.model_dir.set(filedialog.askdirectory() or self.model_dir.get())
+        if self.busy:return
+        path=filedialog.askdirectory(title='Pasta com modelos OCR',initialdir=self.models_root.get())
+        if not path:return
+        selected=inspect_model(path)
+        if selected:path=str(selected.path.parent)
+        self.models_root.set(path);self.refresh_models()
+        if selected:self.model.set(selected.name);self.select_local_model()
+        try:save_model_root(path)
+        except OSError:self.status.set('Pasta selecionada; não foi possível guardar a preferência.')
+
+    def refresh_models(self,select=True):
+        if self.busy:return
+        models=discover_models(self.models_root.get()) if self.models_root.get().strip() else []
+        self.local_models={}
+        for model in models:self.local_models.setdefault(model.name,model)
+        self.local_model_combo.configure(values=list(self.local_models))
+        if select:
+            name=self.model.get() if self.model.get() in self.local_models else next(iter(self.local_models),'')
+            self.model.set(name);self.select_local_model()
+
+    def select_local_model(self):
+        if self.busy:return
+        model=self.local_models.get(self.model.get())
+        self.model_dir.set(str(model.path) if model else '')
+        if hasattr(self,'review_buttons'):self.refresh_validity()
+
+    def configure_model_download(self):
+        if self.busy:return
+        root=self.models_root.get().strip()
+        direct=inspect_model(root) if root else None
+        if direct:root=str(direct.path.parent);self.models_root.set(root)
+        if not root:messagebox.showerror('Modelos','Informe uma pasta para os modelos.',parent=self.root);return
+        dialog=ModelDownloadDialog(self.root,root,self.network_settings,self.model.get())
+        if dialog.result is None:return
+        name,connection=dialog.result;self.network_settings=connection
+        def progress(received,total):
+            self.report_progress(received,total or max(1,received),f'Baixando {name}')
+        def done(model):
+            # Source path is always explicit after download; no implicit network on OCR.
+            self.refresh_models();self.model.set(model.name);self.local_models[model.name]=model
+            self.local_model_combo.configure(values=list(self.local_models));self.select_local_model()
+            try:save_model_root(root)
+            except OSError:pass
+        self.start(lambda:download_model(name,root,connection,cancel=self.cancel,progress=progress),done)
+
+    def require_local_model(self,spec):
+        name,path,_=spec
+        if path:
+            model=inspect_model(path)
+            if model and model.name==name:return (name,str(model.path),spec[2])
+        else:
+            candidates=discover_models(self.models_root.get())
+            for model in candidates:
+                if model.name==name:return (name,str(model.path),spec[2])
+        raise ValueError('Selecione um modelo local completo ou use Conexão / baixar antes de executar o OCR.')
 
     def set_roi(self,roi):
         if self.busy:return
@@ -525,9 +603,12 @@ class Application:
 
     def run_stage(self,stage):
         if self.busy or self.session is None:return
-        try:cfg=self.config();spec=self.model_spec()
+        try:
+            cfg=self.config();spec=self.model_spec()
+            if stage=='ocr' or (stage=='all' and not self.session.valid_digits(cfg,spec,self.roi)):spec=self.require_local_model(spec)
         except ValueError as exc:messagebox.showerror('Parâmetros',str(exc));return
         if not self.confirm_replace():return
+        if spec[1] and spec[1]!=self.model_dir.get():self.model_dir.set(spec[1])
         session,roi=self.session,self.roi
         previous_review=session.review
         def task():
@@ -825,6 +906,8 @@ class Application:
         def done(session):
             self.session=session;self.path.set(str(session.path));self.roi=session.roi;self.set_config(session.config)
             self.model.set(session.model_spec[0]);self.model_dir.set(session.model_spec[1] or '')
+            if session.model_spec[1]:self.models_root.set(str(Path(session.model_spec[1]).parent))
+            self.refresh_models(select=False)
             self.output.set(str(session.path.parent/'results'/session.path.stem));self.viewer.set_session(session)
             self.viewer.layer.set('Sondagens' if session.review else 'OCR' if session.digits else 'Caixas')
             self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Área: carta inteira');self.review_dirty=False

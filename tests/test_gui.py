@@ -20,6 +20,10 @@ def app(tmp_path,monkeypatch,tk_root):
     path=tmp_path/'chart.tif'
     rgb=np.full((3,120,200),255,np.uint8);rgb[:,20:45,20:30]=0
     with rasterio.open(path,'w',driver='GTiff',width=200,height=120,count=3,dtype='uint8',crs='EPSG:3857',transform=from_origin(100,200,2,2)) as ds:ds.write(rgb)
+    models=tmp_path/'models'/'PP-OCRv6_small_rec';models.mkdir(parents=True)
+    (models/'inference.yml').write_text('Global:\n  model_name: PP-OCRv6_small_rec\n')
+    (models/'inference.json').write_text('{}');(models/'inference.pdiparams').write_bytes(b'test fixture')
+    monkeypatch.setenv('VETORIZAFB_MODELS_DIR',str(models.parent))
     root=tk_root;errors=[];root.report_callback_exception=lambda *args:errors.append(args)
     instance=Application(root);root.geometry('1200x850')
     instance.session=ChartSession(path);instance.set_config(Config(segmentation='black'))
@@ -416,3 +420,66 @@ def test_context_help_preserves_review_selection_and_tooltip_lifecycle(app,monke
     tip.hide();assert tip.popup is None
     tip.schedule();assert tip.pending
     tip.hide();assert tip.pending is None
+
+
+def test_model_panel_lists_only_complete_local_models_and_selection_invalidates_ocr(app):
+    from test_models import model_files
+    from vetorizafb.models import MODEL_NAMES
+    app.run_stage('all');finish(app)
+    root=__import__('pathlib').Path(app.models_root.get())
+    model_files(root/MODEL_NAMES[1],MODEL_NAMES[1]);(root/'partial').mkdir()
+    app.refresh_models()
+    assert set(app.local_model_combo.cget('values'))==set(MODEL_NAMES[:2])
+    app.model.set(MODEL_NAMES[1]);app.local_model_combo.event_generate('<<ComboboxSelected>>');app.root.update()
+    assert app.model_dir.get()==str(root/MODEL_NAMES[1])
+    assert not app.review_ready() and app.group_button.instate(['disabled'])
+
+
+def test_ocr_without_model_never_starts_an_implicit_download(app,tmp_path,monkeypatch):
+    errors=[];monkeypatch.setattr('vetorizafb.gui.messagebox.showerror',lambda *args,**kwargs:errors.append(args))
+    app.models_root.set(str(tmp_path/'empty'));app.refresh_models()
+    assert app.local_model_combo.cget('values')==''
+    app.run_stage('all')
+    assert not app.busy and app.session._engine is None
+    assert 'Conexão / baixar' in errors[0][1]
+    app.run_stage('segment');finish(app)
+    assert app.session.boxes is not None
+
+
+def test_explicit_download_populates_local_selector_and_never_saves_password(app,tmp_path,monkeypatch):
+    from test_models import model_files
+    from vetorizafb.models import ConnectionSettings,MODEL_NAMES,LocalModel,preferences_path
+    cfg=ConnectionSettings(mode='proxy',server='proxy.example:3128',username='operator',password='private-secret')
+    class Dialog:
+        result=(MODEL_NAMES[1],cfg)
+        def __init__(self,*args):pass
+    monkeypatch.setenv('APPDATA',str(tmp_path/'settings'))
+    monkeypatch.setattr('vetorizafb.gui.ModelDownloadDialog',Dialog)
+    calls=[]
+    def download(name,root,connection,**kwargs):
+        calls.append(connection);path=model_files(__import__('pathlib').Path(root)/name,name)
+        kwargs['progress'](10,10);return LocalModel(name,path)
+    monkeypatch.setattr('vetorizafb.gui.download_model',download)
+    app.configure_model_download();finish(app)
+    assert calls==[cfg] and app.model.get()==MODEL_NAMES[1]
+    assert app.model_dir.get().endswith(MODEL_NAMES[1])
+    assert 'private-secret' not in preferences_path().read_text()
+    assert 'operator' not in preferences_path().read_text()
+    assert app.session.digits is None  # download never runs OCR
+
+
+def test_real_proxy_dialog_validates_mode_and_keeps_credentials_in_memory(app):
+    from vetorizafb.model_dialog import ModelDownloadDialog
+    from vetorizafb.models import ConnectionSettings
+    def enter():
+        dialog=next(w for w in app.root.winfo_children() if isinstance(w,ModelDownloadDialog))
+        try:
+            assert all(field.instate(['disabled']) for field in dialog.proxy_fields)
+            dialog.mode.set('Proxy');assert all(field.instate(['!disabled']) for field in dialog.proxy_fields)
+            dialog.server.set('proxy.example:3128');dialog.username.set('operator');dialog.password.set('private-secret')
+            dialog.ok()
+        finally:
+            if dialog.winfo_exists():dialog.cancel()
+    app.root.after(100,enter)
+    dialog=ModelDownloadDialog(app.root,app.models_root.get(),ConnectionSettings())
+    assert dialog.result[1].mode=='proxy' and dialog.result[1].password=='private-secret'
