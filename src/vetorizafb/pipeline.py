@@ -3,6 +3,8 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 import csv
 import hashlib
+from fractions import Fraction
+import math
 import importlib.metadata
 import json
 import os
@@ -28,26 +30,39 @@ def sha256(path):
     return h.hexdigest()
 
 
+def chart_dpi(tags):
+    """Read TIFF resolution through GDAL, without opening the raster in Pillow."""
+    try:
+        x=float(Fraction(tags['TIFFTAG_XRESOLUTION']))
+        y=float(Fraction(tags['TIFFTAG_YRESOLUTION']))
+        # TIFF's default ResolutionUnit is inches. Unit 1 is unspecified.
+        unit=str(tags.get('TIFFTAG_RESOLUTIONUNIT','2')).split()[0]
+        if unit not in ('2','3') or not all(math.isfinite(v) and v>0 for v in (x,y)):return None
+        return (x+y)/2*(2.54 if unit=='3' else 1)
+    except (KeyError,ValueError,ZeroDivisionError,OverflowError,TypeError):return None
+
+
 def read_chart(path):
     with rasterio.open(path) as ds:
+        if ds.dtypes[0] != 'uint8':
+            raise ValueError("Only 8-bit chart imagery is currently supported")
         if ds.count < 3:
-            # Pillow expands a color palette correctly; uint8 single-band imagery
-            # is supported too. Other radiometric formats need an explicit policy.
-            if ds.dtypes[0] != 'uint8':
-                raise ValueError("Only 8-bit chart imagery is currently supported")
-            with Image.open(path) as im:
-                rgb = np.asarray(im.convert('RGB'))
+            band=ds.read(1)
+            if ds.colorinterp[0]==rasterio.enums.ColorInterp.palette:
+                # Preserve palette RGB values exactly, ignoring alpha as the
+                # previous Pillow convert('RGB') did. Never resample the chart.
+                table=np.zeros((256,3),dtype=np.uint8)
+                for index,colour in ds.colormap(1).items():
+                    if 0<=index<256:table[index]=colour[:3]
+                rgb=table[band]
+            else:
+                rgb=np.repeat(band[:,:,None],3,axis=2)
         else:
-            arr = ds.read([1,2,3])
+            arr=ds.read([1,2,3])
             if arr.dtype != np.uint8:
                 raise ValueError("Only 8-bit chart imagery is currently supported")
-            rgb = arr.transpose(1,2,0)
-        dpi = None
-        with Image.open(path) as im:
-            val = im.info.get('dpi')
-            if val and len(val) >= 2 and min(val) > 0:
-                dpi = float(sum(val[:2])/2)
-        return rgb.copy(), ds.transform, ds.crs, dpi
+            rgb=arr.transpose(1,2,0)
+        return rgb.copy(),ds.transform,ds.crs,chart_dpi(ds.tags())
 
 
 def write_json_atomic(path, data):

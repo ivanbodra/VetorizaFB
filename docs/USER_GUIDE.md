@@ -1,6 +1,6 @@
-# VetorizaFB 0.4 user guide
+# VetorizaFB 4.0.1 user guide
 
-Updated 2026-10-23. Development branch: `ocr-modernization`, PR #1.
+Updated 2026-10-26. Development branch: `ocr-modernization`, PR #1.
 The [0.1 guide](USER_GUIDE_0_1.md) is retained for historical reference.
 
 This version retains PaddleOCR 3.x and restores staged calibration and image
@@ -497,3 +497,28 @@ retain their saved boxes, OCR, decisions and historical preview; loading never
 adds candidates or claims the correction already ran. Save the review before
 explicitly running segmentation to apply the change, then rerun OCR/grouping.
 Numbers physically connected to lines remain a separate limitation.
+
+
+### 4.0.1 — native GeoTIFF loading and rejected-box visibility
+
+GeoTIFF RGB, indexed-palette and grayscale pixels, CRS, affine transform and TIFF
+resolution metadata are now read through Rasterio/GDAL. Pillow is no longer
+invoked for GeoTIFF pixels or DPI metadata, avoiding DecompressionBombWarning
+on legitimate large charts without changing Pillow's global image guard. No
+resampling or coordinate shift is introduced. TIFF inch/cm resolution units are
+converted to DPI; missing or invalid resolution remains unspecified. The native
+21010 raster (8,682 × 12,708 = 110,330,856 pixels) opens at 300 dpi with Pillow's
+warning promoted to an exception, while Image.MAX_IMAGE_PIXELS remains 89,478,485.
+
+Light-grey rejected boxes appear in **Prévia dos filtros**, with **Mostrar
+descartadas** enabled, from 60% zoom. The ordinary Caixas layer shows applied
+accepted boxes. A rejected box requires a detected foreground component; the
+historical external-contour omission never generated inner boxes to colour grey.
+The closed-frame fix addresses detection itself; size/colour rejection is a
+separate step. Use the original source TIFF and explicitly rerun segmentation
+before OCR/grouping to apply revised extraction to a historical project.
+
+To test this revision before freezing a Windows EXE, update the development
+branch, install editable dependencies and run `python -m vetorizafb.gui` from
+that environment. Confirm 4.0.1 in the title/About. The existing working local
+PyInstaller spec is not replaced by this source update.
