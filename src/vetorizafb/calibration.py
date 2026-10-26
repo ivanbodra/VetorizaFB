@@ -1,7 +1,7 @@
 """Non-mutating size preview over the last segmentation's native contours."""
 from .core import yellow_background_fraction
 
-MASK_KEYS = ('dpi', 'reference_dpi', 'segmentation', 'threshold', 'blur_size', 'kernel_size')
+MASK_KEYS = ('dpi', 'reference_dpi', 'segmentation', 'exclude_magenta', 'threshold', 'blur_size', 'kernel_size')
 
 
 def size_reasons(box, config):

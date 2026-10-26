@@ -36,7 +36,7 @@ def test_preview_strict_boundary_and_scaled_dimensions():
 
 @pytest.mark.parametrize('key',MASK_KEYS)
 def test_preview_refuses_stale_mask(key):
-    s=session();cfg=replace(s.config,**{key:('legacy' if key=='segmentation' else getattr(s.config,key)+2)})
+    s=session();cfg=replace(s.config,**{key:('legacy' if key=='segmentation' else not getattr(s.config,key) if key=='exclude_magenta' else getattr(s.config,key)+2)})
     with pytest.raises(ValueError,match='Máscara'):CalibrationPreview().classify(s,cfg,None)
 
 

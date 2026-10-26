@@ -10,7 +10,7 @@ class ModelDownloadDialog(simpledialog.Dialog):
     def __init__(self,parent,root,connection=None,model_name=None):
         self.destination=root;self.previous=connection or ConnectionSettings()
         self.name=tk.StringVar(parent,value=model_name if model_name in MODEL_NAMES else MODEL_NAMES[0])
-        self.mode=tk.StringVar(parent,value={'system':'Sistema','direct':'Direta','proxy':'Proxy'}[self.previous.mode])
+        self.mode=tk.StringVar(parent,value={'system':'Automática','direct':'Direta','proxy':'Proxy'}[self.previous.mode])
         self.server=tk.StringVar(parent,value=self.previous.server)
         self.username=tk.StringVar(parent,value=self.previous.username)
         self.password=tk.StringVar(parent,value=self.previous.password)
@@ -25,9 +25,9 @@ class ModelDownloadDialog(simpledialog.Dialog):
         model=ttk.Combobox(master,textvariable=self.name,values=MODEL_NAMES,state='readonly',width=30)
         model.grid(row=0,column=1,columnspan=2,sticky='ew',padx=6,pady=5)
         ttk.Label(master,text='Conexão').grid(row=1,column=0,sticky='w',padx=6,pady=5)
-        mode=ttk.Combobox(master,textvariable=self.mode,values=['Sistema','Direta','Proxy'],state='readonly')
+        mode=ttk.Combobox(master,textvariable=self.mode,values=['Automática','Direta','Proxy'],state='readonly')
         mode.grid(row=1,column=1,columnspan=2,sticky='ew',padx=6,pady=5)
-        Tooltip(mode,'Sistema usa as configurações reconhecidas pela biblioteca; não interpreta arquivos PAC. Direta ignora proxy. Proxy aceita servidor:porta e autenticação básica; NTLM/Kerberos não é implementado.')
+        Tooltip(mode,'Automática usa as configurações de rede que o Python reconhece (variáveis HTTP(S)_PROXY e, no Windows, proxy do sistema quando disponível). Não interpreta PAC. Direta ignora proxies. Proxy usa o endereço e credenciais informados.')
         for row,label,var in [(2,'Servidor:porta',self.server),(3,'Usuário',self.username),(4,'Senha',self.password)]:
             ttk.Label(master,text=label).grid(row=row,column=0,sticky='w',padx=6,pady=5)
             entry=ttk.Entry(master,textvariable=var,show='•' if row==4 else '')
@@ -52,7 +52,7 @@ class ModelDownloadDialog(simpledialog.Dialog):
 
     def validate(self):
         try:
-            setting=ConnectionSettings(mode={'Sistema':'system','Direta':'direct','Proxy':'proxy'}[self.mode.get()],
+            setting=ConnectionSettings(mode={'Automática':'system','Direta':'direct','Proxy':'proxy'}[self.mode.get()],
                 server=self.server.get().strip(),username=self.username.get(),password=self.password.get(),ca_file=self.ca_file.get().strip())
             setting.validate();self.result=(self.name.get(),setting)
         except ValueError as exc:messagebox.showerror('Conexão',str(exc),parent=self);return False

@@ -24,7 +24,7 @@ def chart():
 
 
 def config():
-    return Config(dpi=300,reference_dpi=300,blur_size=1,kernel_size=1,min_w=3,max_w=40,min_h=8,max_h=40)
+    return Config(dpi=300,reference_dpi=300,blur_size=1,kernel_size=1,min_w=3,max_w=40,min_h=8,max_h=40,exclude_magenta=False)
 
 
 def test_nested_characters_survive_closed_frames_and_contour_lines(chart):
@@ -79,3 +79,10 @@ def test_old_project_keeps_review_and_old_contour_preview_until_explicit_segment
     restored.segment(cfg)
     assert restored.contour_revision==2 and len(restored.boxes)==3 and restored.review is None
     assert not restored.valid_digits(cfg,spec)
+
+
+def test_magenta_frame_is_ignored_without_losing_black_digits(chart):
+    cfg=replace(config(),exclude_magenta=True)
+    _,all_boxes,accepted=segment_details(chart,cfg)
+    assert accepted==[Box(64,59,18,28),Box(100,60,6,26)]
+    assert len(all_boxes)==3  # black frame and two glyphs; no magenta frame

@@ -92,6 +92,7 @@ class Config:
     retry_ambiguous: bool = False
     retry_one: bool = True
     exclude_yellow: bool = False
+    exclude_magenta: bool = True
     yellow_delta: int = 25
     yellow_min_fraction: float = .6
 
@@ -125,7 +126,7 @@ class Config:
             raise ValueError("Invalid OCR batch size/padding")
         if not 1<=self.yellow_delta<=255 or not 0<self.yellow_min_fraction<=1:
             raise ValueError('Invalid yellow-background threshold/fraction')
-        for key in ('retry_ambiguous','retry_one','exclude_yellow'):
+        for key in ('retry_ambiguous','retry_one','exclude_yellow','exclude_magenta'):
             if not isinstance(getattr(self,key),bool):raise ValueError(f"{key} must be boolean")
 
     @property
@@ -138,8 +139,14 @@ def segmentation_mask(rgb, config):
     if rgb.dtype != np.uint8 or rgb.ndim != 3 or rgb.shape[2] != 3:
         raise ValueError("Expected an RGB uint8 image")
     s = config.scale
+    magenta=None
+    if config.exclude_magenta:
+        red,green,blue=rgb[:,:,0],rgb[:,:,1],rgb[:,:,2]
+        # Values below 100 are rejected before uint8 subtraction can wrap.
+        magenta=(red>=100)&(blue>=100)&(green<=red-55)&(green<=blue-55)
     if config.segmentation == "legacy":
         gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+        if magenta is not None:gray[magenta]=255
         blur = max(1, round(config.blur_size * s))
         blur += blur % 2 == 0
         gray = cv2.GaussianBlur(gray, (blur, blur), 0)
@@ -149,6 +156,7 @@ def segmentation_mask(rgb, config):
     else:
         # Supplemental black-ink mask; original color crops still feed the OCR.
         mask = (rgb.max(axis=2) < config.threshold).astype(np.uint8) * 255
+    if magenta is not None:mask[magenta]=0
     return mask
 
 

@@ -12,7 +12,7 @@ from .review import ReviewSet
 from .geospatial import offset_to_pixels
 
 SEGMENT_KEYS = ('reference_dpi','dpi','segmentation','threshold','blur_size','kernel_size',
-                'min_w','max_w','min_h','max_h','exclude_yellow','yellow_delta','yellow_min_fraction')
+                'min_w','max_w','min_h','max_h','exclude_yellow','exclude_magenta','yellow_delta','yellow_min_fraction')
 GROUP_KEYS = ('reference_dpi','dpi','grouping','tol_x','tol_y','decimal_height_ratio',
               'decimal_drop','decimal_max_integer','min_confidence')
 

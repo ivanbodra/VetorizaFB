@@ -98,7 +98,7 @@ class Application:
             style.map(name+'.TButton',background=[('disabled','#eef1f4'),('pressed',hover),('active',hover)],foreground=[('disabled','#8d9baa')])
         style.configure('TNotebook',background='#f5f8fb',borderwidth=0,tabmargins=0)
         style.configure('TNotebook.Tab',padding=(7,7),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
-        style.map('TNotebook.Tab',background=[('selected','#096fab'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#096fab')],darkcolor=[('selected','#096fab')],bordercolor=[('selected','#096fab')])
+        style.map('TNotebook.Tab',padding=[('selected',(12,11)),('!selected',(7,6))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
         style.configure('TEntry',fieldbackground='white',padding=4,bordercolor='#cbd9e4')
         style.configure('Required.TEntry',fieldbackground='#fff2bf',bordercolor='#d9b650')
         style.configure('TCombobox',fieldbackground='white',background='#e5f1fb',arrowcolor='#17547e',padding=3)
@@ -106,8 +106,10 @@ class Application:
         style.configure('Treeview',rowheight=24,background='white',fieldbackground='white',borderwidth=0)
         style.configure('Treeview.Heading',font=(self.ui_font,9,'bold'),background='#e7eff5',foreground='#36576d',padding=5,relief='flat')
         style.map('Treeview',background=[('selected','#176b85')],foreground=[('selected','white')])
-        style.configure('Brand.TFrame',background='#153b50')
-        style.configure('Brand.TLabel',background='#153b50',foreground='white',font=(self.ui_font,18,'bold'))
+        style.configure('Brand.TFrame',background='#eaf4f8')
+        style.configure('Brand.Field.TFrame',background='#eaf4f8')
+        style.configure('Brand.Field.TLabel',background='#eaf4f8',foreground='#153b50',font=(self.ui_font,10,'bold'))
+        style.configure('Brand.TLabel',background='#eaf4f8',foreground='#153b50',font=(self.ui_font,18,'bold'))
         style.configure('Tooltip.TLabel',background='#17374b',foreground='white',font=(self.ui_font,9))
         self.stage_icons={}
         for state,colour in [('empty','#afbdc8'),('pending','#f1b747'),('ready','#57cba1'),('busy','#5eb5ff')]:
@@ -166,14 +168,15 @@ class Application:
         institutions=ttk.Frame(panel);institutions.pack(pady=(0,12))
         for name,label in [('logo_mb.png','Marinha do Brasil'),('logo_chm.png','Centro de Hidrografia da Marinha')]:
             photo=asset_photo(popup,name,(56,56));popup._brand_images.append(photo)
-            badge=ttk.Frame(institutions);badge.pack(side='left',padx=14)
+            badge=ttk.Frame(institutions,width=200,height=115);badge.pack(side='left',padx=8);badge.pack_propagate(False)
             ttk.Label(badge,image=photo).pack()
-            ttk.Label(badge,text=label,wraplength=170,anchor='center').pack()
-        ttk.Label(panel,text=f'Versão {__version__}',font=(self.ui_font,16,'bold')).pack(anchor='w')
-        ttk.Label(panel,text='Extração e revisão de sondagens em cartas náuticas',padding=(0,8)).pack(anchor='w')
-        ttk.Label(panel,text='Ivan Bodra Guimarães',wraplength=500).pack(anchor='w')
-        ttk.Button(panel,text='Abrir manual (F1)',command=self.open_manual).pack(side='left',pady=(18,0))
-        ttk.Button(panel,text='Fechar',command=popup.destroy).pack(side='right',pady=(18,0))
+            ttk.Label(badge,text=label,wraplength=190,anchor='center',justify='center').pack(fill='x')
+        ttk.Label(panel,text=f'Versão {__version__}',font=(self.ui_font,16,'bold'),foreground='#153b50').pack(pady=(12,0))
+        ttk.Label(panel,text='Extração e revisão de sondagens em cartas náuticas',padding=(0,8)).pack()
+        ttk.Label(panel,text='Ivan Bodra Guimarães',wraplength=500).pack()
+        buttons=ttk.Frame(panel);buttons.pack(pady=(18,0))
+        ttk.Button(buttons,text='Abrir manual',command=self.open_manual).pack(side='left',padx=6)
+        ttk.Button(buttons,text='Fechar',command=popup.destroy).pack(side='left',padx=6)
         return popup
 
     def choose_icon(self):
@@ -236,16 +239,16 @@ class Application:
         help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
         help_menu.add_command(label='Manual de uso (F1)',command=self.open_manual)
         help_menu.add_command(label='Atalhos de teclado…',command=self.show_shortcuts)
-        help_menu.add_command(label='Carregar ícone original…',command=self.choose_icon)
         help_menu.add_separator();help_menu.add_command(label='Sobre o VetorizaFB',command=self.about)
         brand=ttk.Frame(self.root,padding=(12,5),style='Brand.TFrame');brand.pack(fill='x')
         self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(44,34))
         self.brand_icon=ttk.Label(brand,image=self.header_logo,style='Brand.TLabel')
         self.brand_icon.pack(side='left',padx=(0,10))
         ttk.Label(brand,text='VetorizaFB',style='Brand.TLabel').pack(side='left')
-        header=ttk.Frame(brand,style='Brand.TFrame');header.pack(side='right',fill='x',expand=True,padx=(24,0))
+        ttk.Separator(brand,orient='vertical').pack(side='left',fill='y',padx=18,pady=4)
+        header=ttk.Frame(brand,style='Brand.Field.TFrame');header.pack(side='right',fill='x',expand=True)
         header.columnconfigure(1,weight=1)
-        ttk.Label(header,text='Carta Náutica:',style='Brand.TLabel',font=(self.ui_font,10)).grid(row=0,column=0,sticky='w')
+        ttk.Label(header,text='Carta Náutica:',style='Brand.Field.TLabel').grid(row=0,column=0,sticky='w')
         self.chart_entry=ttk.Entry(header,textvariable=self.path,style='Required.TEntry')
         self.chart_entry.grid(row=0,column=1,sticky='ew',padx=6)
         self.chart_entry.bind('<Return>',lambda e:self.load_chart())
@@ -253,7 +256,7 @@ class Application:
         ttk.Button(header,text='Abrir…',command=self.choose_chart).grid(row=0,column=2)
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
         left=ttk.Frame(split,width=355);split.add(left,weight=0)
-        self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
+        self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True,pady=(8,0))
         self.segment_panel=ScrollablePanel(self.tabs);seg=self.segment_panel.content
         ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(3)]
         for frame,label in [(self.segment_panel,'1. Preparar'),(ocr,'2. Reconhecer'),(group,'3. Agrupar'),(export,'4. Exportar')]:
@@ -284,6 +287,7 @@ class Application:
             ('Desfoque','blur_size',None),('Dilatação','kernel_size',None),
             ('Largura mínima','min_w',None),('Largura máxima','max_w',None),
             ('Altura mínima','min_h',None),('Altura máxima','max_h',None)]):setting(seg,row,label,key,values)
+        ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=13,column=0,columnspan=2,sticky='w',pady=3)
         ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=10,column=0,columnspan=2,sticky='w',pady=6)
         setting(seg,11,'Sensibilidade','yellow_delta')
         setting(seg,12,'Cobertura (%)','yellow_min_fraction')
@@ -341,9 +345,11 @@ class Application:
         ttk.Button(export,text='Salvar projeto',command=self.save_project).grid(row=6,column=0,columnspan=2,sticky='ew',pady=10)
         ttk.Button(export,text='Abrir projeto',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
         controls=ttk.Frame(left);controls.pack(side='bottom',fill='x',before=self.tabs)
-        self.run_button=ttk.Button(controls,text='Processar',style='Primary.TButton',command=lambda:self.run_stage('all'))
+        self.run_button=ttk.Button(controls,text='Preparar · Reconhecer · Agrupar',style='Primary.TButton',command=lambda:self.run_stage('all'))
         self.run_button.pack(fill='x',pady=8)
         self.cancel_button=ttk.Button(controls,text='Cancelar',command=self.cancel.set,state='disabled');self.cancel_button.pack(fill='x')
+        self.progress_label=tk.StringVar()
+        ttk.Label(controls,textvariable=self.progress_label,foreground='#153b50').pack(fill='x')
         self.progress=ttk.Progressbar(controls,mode='determinate');self.progress.pack(fill='x',pady=6)
         summary=ttk.Label(controls,textvariable=self.counts_summary);summary.pack(fill='x',pady=3)
         self.tip(summary,lambda:self.counts.get())
@@ -520,12 +526,28 @@ class Application:
         self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.viewer.suspended=True
         self.cancel_button.configure(state='normal' if cancellable else 'disabled')
+        self.progress_label.set('Iniciando…')
         self.progress.configure(mode='indeterminate');self.progress.start(12)
         self.status.set('Processando. Cancelamento é verificado entre lotes e etapas.')
         def worker():
             try:self.events.put(('ok',task(),done))
             except Exception as exc:self.events.put(('error',exc,traceback.format_exc()))
         threading.Thread(target=worker,daemon=True).start()
+
+    def show_copyable_error(self,title,detail):
+        popup=tk.Toplevel(self.root);popup.title(title);popup.transient(self.root)
+        popup.configure(background='#f5f8fb');popup.geometry('650x260')
+        frame=ttk.Frame(popup,padding=14);frame.pack(fill='both',expand=True)
+        ttk.Label(frame,text=title,font=(self.ui_font,12,'bold')).pack(anchor='w')
+        entry=tk.Text(frame,height=7,wrap='word');entry.pack(fill='both',expand=True,pady=8)
+        entry.insert('1.0',detail);entry.configure(state='disabled')
+        buttons=ttk.Frame(frame);buttons.pack(fill='x')
+        def copy():
+            popup.clipboard_clear();popup.clipboard_append(detail);popup.update()
+        ttk.Button(buttons,text='Copiar erro',command=copy).pack(side='left')
+        ttk.Button(buttons,text='Fechar',command=popup.destroy).pack(side='right')
+        popup.bind('<Escape>',lambda e:popup.destroy())
+        return popup
 
     def report_progress(self,current,total,stage):self.events.put(('progress',(current,total,stage),None))
 
@@ -534,19 +556,27 @@ class Application:
             while True:
                 kind,value,callback=self.events.get_nowait()
                 if kind=='progress':
-                    current,total,stage=value;self.progress.stop();self.progress.configure(mode='determinate',value=100*current/max(1,total));self.status.set(f'{stage}: {current}/{total}')
+                    current,total,stage=value
+                    if total:
+                        self.progress.stop();self.progress.configure(mode='determinate',value=100*current/total)
+                        label=f'{stage}: {current/1048576:.1f} de {total/1048576:.1f} MB' if stage.startswith('Baixando ') else f'{stage}: {current}/{total}'
+                    else:
+                        self.progress.configure(mode='indeterminate');self.progress.start(12)
+                        label=f'{stage}: {current/1048576:.1f} MB' if stage.startswith('Baixando ') else stage
+                    self.status.set(label);self.progress_label.set(label)
                 else:
                     self.busy=False;self.progress.stop();self.progress.configure(mode='determinate',value=0)
+                    self.progress_label.set('')
                     self.viewer.suspended=False
                     self.cancel_button.configure(state='disabled')
                     if kind=='ok':
                         try:
                             callback(value);self.status.set('Concluído.')
                         except Exception as exc:
-                            self.status.set(str(exc));messagebox.showerror('Interface',str(exc),parent=self.root)
+                            self.status.set(str(exc));self.show_copyable_error('Interface',str(exc))
                     elif isinstance(value,ProcessingCancelled):self.status.set('Cancelado. Etapas já concluídas foram preservadas.')
                     else:
-                        self.status.set(str(value));messagebox.showerror('Processamento',str(value),parent=self.root)
+                        self.status.set(str(value));self.show_copyable_error('Processamento',str(value))
                     self.refresh_points();self.refresh_validity()
                     if self.session:self.viewer.render()
         except queue.Empty:pass
@@ -608,7 +638,7 @@ class Application:
         if dialog.result is None:return
         name,connection=dialog.result;self.network_settings=connection
         def progress(received,total):
-            self.report_progress(received,total or max(1,received),f'Baixando {name}')
+            self.report_progress(received,total or 0,f'Baixando {name}')
         def done(model):
             # Source path is always explicit after download; no implicit network on OCR.
             self.refresh_models();self.model.set(model.name);self.local_models[model.name]=model
@@ -616,6 +646,8 @@ class Application:
             try:save_model_root(root)
             except OSError:pass
         self.start(lambda:download_model(name,root,connection,cancel=self.cancel,progress=progress),done)
+        self.progress_label.set(f'Baixando {name}…')
+        self.status.set(f'Baixando {name}…')
 
     def require_local_model(self,spec):
         name,path,_=spec

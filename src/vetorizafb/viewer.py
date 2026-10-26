@@ -170,8 +170,7 @@ class ChartViewer(ttk.Frame):
                 if b.x+b.w<x1 or b.x>x2 or b.y+b.h<y1 or b.y>y2:continue
                 if reason and not self.show_rejected.get():continue
                 self._visible_preview.append((b,reason))
-                if self.scale>=.6:box((b.x,b.y,b.x+b.w,b.y+b.h),'#c4c9ce' if reason else '#008879')
-            if self.scale<.6 and self.preview_boxes:self.inspection_text.set('Amplie para pelo menos 60% para visualizar as caixas.')
+                box((b.x,b.y,b.x+b.w,b.y+b.h),'#c4c9ce' if reason else '#008879')
         if self.measurement:box(self.measurement,'#007c91')
         if layer == 'Dígitos':
             digit_map = {d.index:d for d in self.session.digits or []}

@@ -1,4 +1,4 @@
-# VetorizaFB 4.0.2 user guide
+# VetorizaFB 4.0.3 user guide
 
 Updated 2026-10-26. Development branch: `ocr-modernization`, PR #1.
 The [0.1 guide](USER_GUIDE_0_1.md) is retained for historical reference.
@@ -391,7 +391,7 @@ ones, wide zeros and small decimal glyphs before setting the full range.
 **Caixas** reclassifies cached contours on parameter changes without
 OCR or mutation of the session, review, exports or stage signatures. Accepted
 boxes are green; rejected boxes have thin light-grey outlines. Toggle rejected
-visibility. At less than 60% zoom, outlines are hidden; hover at a useful zoom
+visibility. Outlines are displayed at any zoom; hover at a useful zoom
 shows native size and rejection reason and highlights only that box. Width,
 height and yellow-background controls update after a brief debounce. Changes to
 mask/ROI require stage 1 again; invalid or stale previews clear their boxes.
@@ -446,7 +446,7 @@ project OCR signatures are retained on open; selecting/re-running with a local
 path requires reviewing any replaced results as before.
 
 The download form selects one of the three supported recognition models and one
-connection mode: **Sistema** (Requests-recognized environment/static system proxy
+connection mode: **Automática** (Requests-recognized environment/static system proxy
 settings), **Direta** (ignore inherited proxy settings), or **Proxy** (explicit
 HTTP/HTTPS server:port, optionally username/password). Basic proxy authentication
 is supported; PAC execution, NTLM/Kerberos and integrated Windows authentication
@@ -495,7 +495,7 @@ explicitly running segmentation to apply the change, then rerun OCR/grouping.
 Numbers physically connected to lines remain a separate limitation.
 
 
-### 4.0.2 — native GeoTIFF loading and rejected-box visibility
+### 4.0.3 — native GeoTIFF loading and rejected-box visibility
 
 GeoTIFF RGB, indexed-palette and grayscale pixels, CRS, affine transform and TIFF
 resolution metadata are now read through Rasterio/GDAL. Pillow is no longer
@@ -507,7 +507,7 @@ converted to DPI; missing or invalid resolution remains unspecified. The native
 warning promoted to an exception, while Image.MAX_IMAGE_PIXELS remains 89,478,485.
 
 Light-grey rejected boxes appear in **Caixas**, with **Mostrar
-descartadas** enabled, from 60% zoom. The ordinary Caixas layer shows applied
+descartadas** enabled, at any zoom. The ordinary Caixas layer shows applied
 accepted boxes. A rejected box requires a detected foreground component; the
 historical external-contour omission never generated inner boxes to colour grey.
 The closed-frame fix addresses detection itself; size/colour rejection is a
@@ -516,16 +516,16 @@ before OCR/grouping to apply revised extraction to a historical project.
 
 To test this revision before freezing a Windows EXE, update the development
 branch, install editable dependencies and run `python -m vetorizafb.gui` from
-that environment. Confirm 4.0.2 in the title/About. The existing working local
+that environment. Confirm 4.0.3 in the title/About. The existing working local
 PyInstaller spec is not replaced by this source update.
 
 
-## Interface 4.0.2
+## Interface 4.0.3
 
 As abas são **Preparar → Reconhecer → Agrupar → Exportar**. As visualizações são
 **Original → Editada → Caixas → Dígitos → Sondagens**. Caixas reúne a prévia dos
 filtros e os descartes por tamanho ou cor; “Mostrar descartadas” exibe estes em
-cinza-claro a partir de 60% de zoom. O cursor informa o motivo do descarte.
+cinza-claro em qualquer zoom. O cursor informa o motivo do descarte.
 A prévia exige executar Preparar; mudanças no método, claridade, desfoque,
 dilatação ou área exigem executar Preparar novamente para renovar os contornos.
 
@@ -579,3 +579,29 @@ nonblank text to enable Incluir. Existing action-associated notes remain support
 clearing; No clears without saving; Cancel preserves the open project. Cancelling
 the save dialog or a save failure also preserves the project. The application
 stays open and the chart/review state is cleared only after discard or save success.
+
+
+## 4.0.3 interface and magenta marks
+
+The pale header separates the logo/name from Carta Náutica. The selected tab is
+larger and petroleum blue, with a gap below the header. About aligns its logos,
+text and buttons. The Help menu no longer offers loading a replacement icon.
+
+Caixas outlines are visible at every zoom level; narrow ones can visually
+collapse to a pixel at very low zoom. The **Ignorar traços magenta** option is
+on by default. Pixels with strong red and blue channels relative to green are
+excluded from the detection mask before blur and again after dilation. Original
+RGB pixels remain unchanged for the chart viewer and recognition crops. Black
+soundings are retained where chart markings pass nearby. Older saved boxes and
+review remain until the user explicitly prepares the chart again.
+
+**Preparar · Reconhecer · Agrupar** runs these stages, reusing valid results and
+never exporting. During a model download, the selected model is named before
+bytes arrive; the progress area shows bytes/total when known or an animated
+bar otherwise. Process and download failures open a selectable error dialog with
+**Copiar erro**.
+
+**Automática** uses proxy information recognized by Python Requests from the
+environment and, where exposed, Windows static system proxy settings; it does
+not interpret PAC scripts. **Direta** ignores proxy settings. **Proxy** uses
+the manually entered server and optional Basic credentials.

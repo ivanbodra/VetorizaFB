@@ -307,7 +307,7 @@ def test_measurement_uses_native_pixels_independent_of_zoom(app):
 def test_manual_about_and_preview_toggle(app,monkeypatch):
     from pathlib import Path
     from vetorizafb import __version__
-    assert __version__=='4.0.2' and '4.0.2' in app.root.title()
+    assert __version__=='4.0.3' and '4.0.3' in app.root.title()
     urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
     app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
     popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()
@@ -623,7 +623,7 @@ def test_cancel_save_or_failed_save_keeps_project_open(app,monkeypatch):
     monkeypatch.setattr('vetorizafb.gui.filedialog.asksaveasfilename',lambda **k:'unused.vfproject.json')
     def fail(path):raise OSError('Gravação indisponível')
     monkeypatch.setattr(session,'save_project',fail)
-    errors=[];monkeypatch.setattr('vetorizafb.gui.messagebox.showerror',lambda *a,**k:errors.append(a))
+    errors=[];monkeypatch.setattr(app,'show_copyable_error',lambda *a,**k:errors.append(a))
     app.close_project();finish(app)
     assert app.session is session and app.review_dirty and errors
 
@@ -639,3 +639,37 @@ def test_single_header_and_single_row_review_toolbar(app):
     assert app.chart_entry.bind('<Return>')
     assert app.actions_button.winfo_ismapped() and app.selection_button.winfo_ismapped()
     assert not app.review_buttons['insert'].winfo_ismapped()
+
+
+def test_low_zoom_keeps_preview_boxes_visible(app):
+    app.run_stage('segment');finish(app)
+    app.viewer.layer.set('Caixas');app.update_preview()
+    app.viewer.scale=.2;app.viewer.render()
+    assert app.viewer._visible_preview
+    assert 'Amplie' not in app.viewer.inspection_text.get()
+
+
+def test_error_dialog_can_copy_message(app):
+    popup=app.show_copyable_error('Processamento','Erro de teste: detalhes copiáveis')
+    buttons=[w for w in popup.winfo_children()[0].winfo_children() if hasattr(w,'winfo_children')]
+    bar=buttons[-1]
+    copy=next(w for w in bar.winfo_children() if w.cget('text')=='Copiar erro')
+    copy.invoke()
+    assert popup.clipboard_get()=='Erro de teste: detalhes copiáveis'
+    popup.destroy()
+
+
+def test_download_label_names_model_before_first_byte(app,monkeypatch):
+    from vetorizafb.models import ConnectionSettings
+    class Choice:
+        result=('PP-OCRv6_small_rec',ConnectionSettings(mode='direct'))
+    monkeypatch.setattr('vetorizafb.gui.ModelDownloadDialog',lambda *a,**k:Choice())
+    import threading
+    gate=threading.Event()
+    def download(*a,**k):gate.wait(3);raise RuntimeError('Download interrompido')
+    monkeypatch.setattr('vetorizafb.gui.download_model',download)
+    app.configure_model_download()
+    assert app.progress_label.get()=='Baixando PP-OCRv6_small_rec…'
+    gate.set()
+    monkeypatch.setattr(app,'show_copyable_error',lambda *a,**k:None)
+    finish(app)
