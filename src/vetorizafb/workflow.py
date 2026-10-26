@@ -32,6 +32,7 @@ class ChartSession:
         self.boxes = self.all_boxes = self.digits = self.review = None
         self.mask = None
         self.color_rejected=[]
+        self.contour_revision=2
         self.roi = None
         self.seg_key = self.ocr_key = self.group_key = None
         self.timings = {}
@@ -48,7 +49,7 @@ class ChartSession:
         return tuple(roi)
 
     def expected_seg_key(self, config, roi=None):
-        return signature(config, SEGMENT_KEYS), self.validate_roi(roi)
+        return signature(config, SEGMENT_KEYS), self.validate_roi(roi), self.contour_revision
 
     def expected_ocr_key(self, config, model_spec):
         return (self.seg_key, tuple(model_spec), config.ocr_batch_size, config.crop_padding,
@@ -76,6 +77,7 @@ class ChartSession:
         self.boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in boxes]
         self.color_rejected=[Box(b.x+x,b.y+y,b.w,b.h) for b in rejected]
         self.roi = roi
+        self.contour_revision=2
         self.seg_key = self.expected_seg_key(config,roi)
         self.digits = self.review = self.ocr_key = self.group_key = None
         self.config = Config(**asdict(config))
@@ -172,6 +174,7 @@ class ChartSession:
         data = {'format':'vetorizafb-project','version':1,'input_path':str(self.path),
                 'input_sha256':self.input_hash,'config':asdict(self.config),
                 'roi':self.roi,'model_spec':self.model_spec,'timings':self.timings,
+                'contour_revision':self.contour_revision,
                 'boxes':None if self.boxes is None else [asdict(b) for b in self.boxes],
                 'digits':None if self.digits is None else [asdict(d) for d in self.digits],
                 'review':None if self.review is None else self.review.items}
@@ -191,6 +194,9 @@ class ChartSession:
         # readings and review decisions valid under their original behaviour.
         options=dict(data['config']);options.setdefault('retry_one',False)
         session.config = config = Config(**options)
+        session.contour_revision=data.get('contour_revision',1)
+        if type(session.contour_revision) is not int or session.contour_revision not in (1,2):
+            raise ValueError('Revisão de contornos desconhecida no projeto')
         session.roi = session.validate_roi(tuple(data['roi']) if data['roi'] else None)
         session.model_spec = tuple(data['model_spec'])
         session.timings = data['timings']
@@ -201,7 +207,7 @@ class ChartSession:
                     raise ValueError("Caixa fora da imagem no projeto")
             session.seg_key = session.expected_seg_key(config,session.roi)
             x,y,w,h = session.roi or (0,0,session.rgb.shape[1],session.rgb.shape[0])
-            session.mask,all_boxes,_,rejected=segment_details(session.rgb[y:y+h,x:x+w],config,return_rejected=True)
+            session.mask,all_boxes,_,rejected=segment_details(session.rgb[y:y+h,x:x+w],config,return_rejected=True,contour_revision=session.contour_revision)
             session.color_rejected=[Box(b.x+x,b.y+y,b.w,b.h) for b in rejected]
             session.all_boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in all_boxes]
         if data['digits'] is not None:

@@ -475,3 +475,25 @@ messages, archive traversal/symlinks, cancellation/partial cleanup, existing-mod
 retention, selectors and real Tk connection forms. HTTP failure/download responses
 are simulated; an actual corporate proxy and rebuilt Windows executable still
 require deployment validation. No input chart is uploaded by model download.
+
+
+### Closed chart frames and nested contours
+
+Segmentation retains foreground components inside closed chart frames and contour
+lines. CCOMP's two-level hierarchy separates these components from background
+holes in 0/6/8/9; glyph holes do not become duplicate boxes. This is a different
+cause than blur erasing thin strokes. Use blur 1 for the documented 21010 example,
+then re-run segmentation, OCR and grouping.
+
+The native 21010 check, using the preceding screenshot settings with blur 1,
+recovers 443 candidate character boxes inside the recorded closed-frame region
+(previously zero), preserving all 3,615 previously accepted boxes unchanged. The
+whole chart now has 4,088 accepted boxes. These are component counts, not verified
+soundings or recall/precision measurements; no OCR was executed. Configuration,
+region, input hash and results are in experiments/21010-nested-contours.json.
+
+Projects record the contour extraction revision. Old projects without this field
+retain their saved boxes, OCR, decisions and historical preview; loading never
+adds candidates or claims the correction already ran. Save the review before
+explicitly running segmentation to apply the change, then rerun OCR/grouping.
+Numbers physically connected to lines remain a separate limitation.

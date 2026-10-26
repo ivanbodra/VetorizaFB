@@ -168,10 +168,17 @@ def yellow_background_fraction(rgb,box,config):
     return float(np.count_nonzero(yellow & background)/count)
 
 
-def segment_details(rgb, config, *, return_rejected=False):
+def segment_details(rgb, config, *, return_rejected=False, contour_revision=2):
     mask = segmentation_mask(rgb, config)
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    all_boxes = [Box(*cv2.boundingRect(c)) for c in contours]
+    if contour_revision not in (1,2):raise ValueError('Unknown contour revision')
+    # CCOMP places every foreground component at the top level, including
+    # digits inside closed chart frames. Children are background holes in
+    # glyphs/lines, not additional characters. EXTERNAL is kept only to
+    # reconstruct historical project previews without rewriting saved OCR.
+    mode=cv2.RETR_CCOMP if contour_revision==2 else cv2.RETR_EXTERNAL
+    contours,hierarchy = cv2.findContours(mask,mode,cv2.CHAIN_APPROX_SIMPLE)
+    all_boxes = [Box(*cv2.boundingRect(c)) for i,c in enumerate(contours)
+                 if contour_revision==1 or hierarchy[0,i,3]<0]
     s = config.scale
     boxes = [b for b in all_boxes if config.min_w*s < b.w < config.max_w*s
              and config.min_h*s < b.h < config.max_h*s]
