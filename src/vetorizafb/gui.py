@@ -67,6 +67,7 @@ class Application:
         root.geometry('1450x950');root.minsize(1050,720)
         self.configure_style()
         self.icon_path = apply_icon(root)
+        self.set_config(Config())
         self.build()
         for var in [*self.fields.values(),self.model,self.model_dir]:
             var.trace_add('write',lambda *args:self.refresh_validity())
@@ -194,18 +195,18 @@ class Application:
         try:
             result=self.preview.classify(self.session,self.config(),self.roi)
             self.viewer.preview_boxes=result
-            if self.viewer.layer.get()=='Prévia dos filtros':
+            if self.viewer.layer.get()=='Caixas':
                 kept=sum(not reason for _,reason in result)
                 self.viewer.inspection_text.set(f'{kept} aceitas • {len(result)-kept} descartadas • prévia, ainda não aplicada')
                 self.viewer.render()
         except (ValueError,TypeError) as exc:
             self.viewer.preview_boxes=[]
-            if self.viewer.layer.get()=='Prévia dos filtros':
+            if self.viewer.layer.get()=='Caixas':
                 self.viewer.inspection_text.set(str(exc));self.viewer.render()
 
     def measure_character(self):
         self.viewer.mode.set('Medir caractere')
-        self.viewer.layer.set('Prévia dos filtros');self.update_preview()
+        self.viewer.layer.set('Caixas');self.update_preview()
         self.status.set('Arraste um retângulo justo ao redor de um numeral; medidas em pixels originais.')
 
     def use_measurement(self,minimum):
@@ -213,10 +214,10 @@ class Application:
         try:
             cfg=self.config();w,h=self.measurement
             # Bounds are strict in the existing segmentation; leave one reference pixel of margin.
-            values=[max(1,math.floor(v/cfg.scale)-1) if minimum else math.ceil(v/cfg.scale)+1 for v in (w,h)]
+            values=[max(.01,math.floor(v)-1) if minimum else math.ceil(v)+1 for v in (w,h)]
             low='min_' if minimum else 'max_'
             for key,value in zip(('w','h'),values):self.fields[low+key].set(str(value))
-            self.viewer.layer.set('Prévia dos filtros');self.update_preview()
+            self.viewer.layer.set('Caixas');self.update_preview()
         except (ValueError,TypeError) as exc:self.status.set(str(exc))
 
     def build(self):
@@ -249,9 +250,9 @@ class Application:
         self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
         self.segment_panel=ScrollablePanel(self.tabs);seg=self.segment_panel.content
         ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(3)]
-        for frame,label in [(self.segment_panel,'1. Segmentar'),(ocr,'2. OCR'),(group,'3. Agrupar'),(export,'4. Exportar')]:
+        for frame,label in [(self.segment_panel,'1. Preparar'),(ocr,'2. Reconhecer'),(group,'3. Agrupar'),(export,'4. Exportar')]:
             self.tabs.add(frame,text=label,image=self.stage_icons['empty'],compound='left');frame.columnconfigure(1,weight=1)
-        self.stage_labels=['1 Segmentar','2 OCR','3 Agrupar','4 Exportar']
+        self.stage_labels=['Preparar','Reconhecer','Agrupar','Exportar']
         for i,label in enumerate(self.stage_labels):self.tabs.tab(i,text=label)
         self.tab_tip=self.tip(self.tabs,lambda:self.stage_tooltip())
         self.tabs.bind('<Motion>',self.tab_hover)
@@ -261,27 +262,26 @@ class Application:
             widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=13) if values else ttk.Entry(frame,textvariable=self.fields[key],width=14)
             widget.grid(row=row,column=1,sticky='ew',padx=(8,0),pady=2)
             hints={
-                'dpi':'DPI real da carta. As dimensões dos filtros são escaladas em relação ao DPI de referência.',
-                'reference_dpi':'DPI em que os limites de tamanho foram calibrados.',
-                'min_w':'Largura mínima no DPI de referência. O limite é estrito: a caixa deve ser maior.',
-                'max_w':'Largura máxima no DPI de referência. O limite é estrito: a caixa deve ser menor.',
-                'min_h':'Altura mínima no DPI de referência; preserve também os decímetros menores.',
-                'max_h':'Altura máxima no DPI de referência.',
-                'yellow_delta':'Diferença mínima R−B e G−B nos pixels de fundo; a tinta escura é ignorada.',
-                'yellow_min_fraction':'Fração mínima de fundo amarelo para rejeitar a caixa.',
+                'min_w':'Largura mínima em pixels da carta. O limite é estrito: a caixa deve ser maior.',
+                'max_w':'Largura máxima em pixels da carta. O limite é estrito: a caixa deve ser menor.',
+                'min_h':'Altura mínima em pixels da carta; preserve também os decímetros menores.',
+                'max_h':'Altura máxima em pixels da carta.',
+                'yellow_delta':'Aumente para incluir tons de amarelo mais suaves. O filtro usa a cor como indício de terra.',
+                'threshold':'Aumente para incluir traços mais claros. Valores altos podem acabar incluindo o fundo.',
+                'segmentation':'Realce: desfoque e dilatação dos traços. Bruto: seleção direta dos pixels escuros.',
+                'yellow_min_fraction':'Percentual mínimo de amarelo no fundo da caixa e sua margem para descartá-la; pixels escuros são ignorados.',
                 'crop_padding':'Margem em pixels originais ao redor do caractere para o OCR.',
                 'min_confidence':'Escore mínimo aceito; a releitura dirigida do numeral 1 exige pelo menos 0,80.'}
             if key in hints:self.tip(widget,hints[key])
         for row,(label,key,values) in enumerate([
-            ('DPI efetivo','dpi',None),('DPI de referência','reference_dpi',None),
-            ('Modo','segmentation',['legacy','black']),('Limiar (0–255)','threshold',None),
+            ('Modo','segmentation',['Realce','Bruto']),('Claridade (0–255)','threshold',None),
             ('Desfoque','blur_size',None),('Dilatação','kernel_size',None),
             ('Largura mínima','min_w',None),('Largura máxima','max_w',None),
             ('Altura mínima','min_h',None),('Altura máxima','max_h',None)]):setting(seg,row,label,key,values)
-        ttk.Checkbutton(seg,text='Excluir caixas com fundo amarelo',variable=self.fields['exclude_yellow']).grid(row=10,column=0,columnspan=2,sticky='w',pady=6)
-        setting(seg,11,'R−B e G−B mínimos','yellow_delta')
-        setting(seg,12,'Fração mínima do fundo','yellow_min_fraction')
-        self.seg_button=ttk.Button(seg,text='Segmentar',style='Primary.TButton',command=lambda:self.run_stage('segment'))
+        ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=10,column=0,columnspan=2,sticky='w',pady=6)
+        setting(seg,11,'Sensibilidade','yellow_delta')
+        setting(seg,12,'Cobertura (%)','yellow_min_fraction')
+        self.seg_button=ttk.Button(seg,text='Preparar',style='Primary.TButton',command=lambda:self.run_stage('segment'))
         self.seg_button.grid(row=14,column=0,columnspan=2,sticky='ew',pady=8)
         ttk.Button(seg,text='Dimensões',command=self.inspect_sizes).grid(row=15,column=0,columnspan=2,sticky='ew',pady=3)
         ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=16,column=0,columnspan=2,sticky='w',pady=8)
@@ -290,7 +290,6 @@ class Application:
         ttk.Label(seg,textvariable=self.measure_text,wraplength=285).grid(row=20,column=0,columnspan=2,sticky='w',pady=5)
         ttk.Button(seg,text='Definir mínimos',command=lambda:self.use_measurement(True)).grid(row=21,column=0,columnspan=2,sticky='ew')
         ttk.Button(seg,text='Definir máximos',command=lambda:self.use_measurement(False)).grid(row=22,column=0,columnspan=2,sticky='ew',pady=3)
-        ttk.Button(seg,text='Prévia dos filtros',command=lambda:(self.viewer.layer.set('Prévia dos filtros'),self.update_preview())).grid(row=23,column=0,columnspan=2,sticky='ew',pady=6)
         model_panel=ttk.Frame(ocr);model_panel.grid(row=0,column=0,columnspan=2,sticky='ew',pady=(0,10))
         model_panel.columnconfigure(1,weight=1)
         ttk.Label(model_panel,text='Pasta').grid(row=0,column=0,sticky='w',padx=(0,6),pady=4)
@@ -424,7 +423,7 @@ class Application:
 
     def config(self):
         defaults=asdict(Config());data={}
-        integers={'threshold','blur_size','kernel_size','min_w','max_w','min_h','max_h','ocr_batch_size','crop_padding','yellow_delta'}
+        integers={'threshold','ocr_batch_size','crop_padding','yellow_delta'}
         for key,var in self.fields.items():
             value=var.get()
             try:
@@ -433,12 +432,25 @@ class Application:
                 elif isinstance(defaults[key],str):data[key]=str(value)
                 else:data[key]=float(value)
             except (ValueError,TypeError):raise ValueError(f'Valor inválido em {key}')
+        scale=data['dpi']/data['reference_dpi']
+        for key in ('min_w','max_w','min_h','max_h','blur_size','kernel_size','tol_x','tol_y'):
+            data[key]=float(data[key])/scale
+            if data[key].is_integer():data[key]=int(data[key])
+        data['segmentation']={'Realce':'legacy','Bruto':'black'}.get(data['segmentation'],data['segmentation'])
+        data['yellow_min_fraction']/=100
+        data['yellow_delta']=256-data['yellow_delta']
         return Config(**data)
 
     def model_spec(self):return (self.model.get(),self.model_dir.get().strip() or None,'cpu')
 
     def set_config(self,config):
-        for k,v in asdict(config).items():self.fields[k].set(v)
+        for k,v in asdict(config).items():
+            if k in ('min_w','max_w','min_h','max_h','blur_size','kernel_size','tol_x','tol_y'):v=v*config.scale
+            elif k=='segmentation':v={'legacy':'Realce','black':'Bruto'}[v]
+            elif k=='yellow_min_fraction':v=v*100
+            elif k=='yellow_delta':v=256-v
+            if isinstance(v,float):v=format(v,'.15g')
+            self.fields[k].set(v)
 
     def tab_hover(self,event):
         try:index=self.tabs.index(f'@{event.x},{event.y}')
@@ -449,7 +461,7 @@ class Application:
     def stage_tooltip(self):
         index=getattr(self,'_hover_tab',0)
         if not self.stage_states:return 'Carregue uma carta para iniciar.'
-        names=['Segmentação','OCR','Agrupamento','Exportação']
+        names=['Segmentação','Dígitos','Agrupamento','Exportação']
         info={'empty':'carregue uma carta','pending':'precisa executar ou atualizar','ready':'atualizada','busy':'processando'}
         return names[index]+': '+info[self.stage_states[index]]+'.'
 
@@ -532,9 +544,6 @@ class Application:
             self.path.set(str(session.path))
             self.set_config(session.config);self.viewer.set_session(session)
             self.output.set(str(session.path.parent/'results'/session.path.stem))
-            if session.dpi is None:
-                dpi=simpledialog.askfloat('DPI ausente','Informe o DPI efetivo da carta antes de segmentar:',minvalue=1,parent=self.root)
-                self.fields['dpi'].set('' if dpi is None else str(dpi))
             self.roi_text.set('Área: carta inteira')
         self.start(lambda:ChartSession(path),done)
 
@@ -618,7 +627,8 @@ class Application:
             if stage=='group' or (stage=='all' and not session.valid_groups(cfg,spec,roi)):session.run_grouping(cfg,spec,roi,self.cancel)
         def done(_):
             if session.review is not previous_review:self.review_dirty=False
-            self.viewer.layer.set('Sondagens' if session.review is not None else 'OCR' if session.digits is not None else 'Caixas')
+            self.viewer.layer.set('Sondagens' if session.review is not None else 'Dígitos' if session.digits is not None else 'Caixas')
+            self.update_preview()
             self.viewer.selected_id=None
         self.start(task,done)
 
@@ -630,7 +640,7 @@ class Application:
         if self.session is None:
             self.select_point();return
         session=self.session;counts=session.review.counts if session.review else {}
-        timing_names={'segment':'Segmentação','ocr':'OCR','group':'Agrupamento'}
+        timing_names={'segment':'Segmentação','ocr':'Dígitos','group':'Agrupamento'}
         self.counts_summary.set(f"{len(session.boxes or [])} caixas · {sum(counts.values())} sondagens")
         self.counts.set(f"Caixas: {len(session.boxes or [])} | Cor: {len(session.color_rejected)} rejeitadas | Dígitos: {sum(d.text is not None for d in session.digits or [])}\nPendentes: {counts.get('unreviewed',0)} | Aprovados: {counts.get('accepted',0)} | Excluídos: {counts.get('rejected',0)}\n"+', '.join(f'{timing_names[k]}: {v:.3f}s' for k,v in session.timings.items()))
         if session.review is None:
@@ -797,11 +807,8 @@ class Application:
         if self.busy:return
         if action=='measure':
             self.measurement=xy
-            try:
-                scale=self.config().scale
-                self.measure_text.set(f'{xy[0]} × {xy[1]} px originais\n{xy[0]/scale:.1f} × {xy[1]/scale:.1f} px no DPI de referência')
-                self.viewer.inspection_text.set(self.measure_text.get().replace('\n',' • '))
-            except (ValueError,TypeError):self.measure_text.set('Corrija os parâmetros de DPI para converter a medida.')
+            self.measure_text.set(f'{xy[0]} × {xy[1]} px')
+            self.viewer.inspection_text.set(self.measure_text.get())
             return
         if action=='roi':self.set_roi(xy);return
         if action in {'Inserir ponto','Mover selecionado'}:
@@ -820,7 +827,7 @@ class Application:
                 except ValueError as exc:messagebox.showerror('Posição',str(exc));return
             if self._one_shot_mode:self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
             self.finish_position_edit(point_id);return
-        if self.session and self.viewer.layer.get()=='OCR' and self.session.digits:
+        if self.session and self.viewer.layer.get()=='Dígitos' and self.session.digits:
             px,py=xy
             nearby=[d for d in self.session.digits if d.box.x-3<=px<=d.box.x+d.box.w+3 and d.box.y-3<=py<=d.box.y+d.box.h+3]
             if nearby:self.inspect_digit(min(nearby,key=lambda d:math.hypot(d.box.center[0]-px,d.box.center[1]-py)))
@@ -909,7 +916,7 @@ class Application:
             if session.model_spec[1]:self.models_root.set(str(Path(session.model_spec[1]).parent))
             self.refresh_models(select=False)
             self.output.set(str(session.path.parent/'results'/session.path.stem));self.viewer.set_session(session)
-            self.viewer.layer.set('Sondagens' if session.review else 'OCR' if session.digits else 'Caixas')
+            self.viewer.layer.set('Sondagens' if session.review else 'Dígitos' if session.digits else 'Caixas')
             self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Área: carta inteira');self.review_dirty=False
         self.start(lambda:ChartSession.load_project(path,override),done)
 

@@ -1,4 +1,4 @@
-# VetorizaFB 4.0.1 user guide
+# VetorizaFB 4.0.2 user guide
 
 Updated 2026-10-26. Development branch: `ocr-modernization`, PR #1.
 The [0.1 guide](USER_GUIDE_0_1.md) is retained for historical reference.
@@ -61,22 +61,19 @@ Use a correctly georeferenced 8-bit GeoTIFF. The real experiments use RGB charts
 grayscale and palette reading paths also exist. CRS/geotransform control XY;
 DPI controls only character dimensions and is not a geographic scale.
 
-The effective TIFF DPI populates the field. If it is missing, the GUI asks for
-it; a cancelled answer leaves an invalid/empty field until you supply a value.
+DPI is handled internally for compatibility; the GUI shows native pixel measurements and never asks for DPI.
 The whole image is decoded into RAM. Region processing reduces OCR work, but
 it is not a windowed reader for a 135 MB historical FB.
 
 ## 2. Inspect and segment
 
-In **1. Segmentar**, adjust effective/reference DPI, segmentation mode, threshold,
-blur, dilation and character width/height limits. Dimensions are defined at
-`reference_dpi=600` and multiplied by effective DPI/reference DPI. Width/height
+In **1. Preparar**, adjust Realce/Bruto mode, Claridade, blur, dilation and character width/height limits in native chart pixels. Width/height
 limits are strict. The inspector reports actual-pixel dimensions and P98-clipped
 histograms with the applied minimum/maximum limits. Larger outliers are not all
 shown on the histogram axis.
 
 Choose **Executar etapa 1**. **Inspecionar dimensões / histogramas** opens the
-calibration inspector. The chart can be displayed as **Original**, **Máscara** or
+calibration inspector. The chart can be displayed as **Original**, **Editada** or
 **Caixas**. Change parameters and rerun segmentation to apply a new calibration.
 Later stages are marked pending; old reads cannot be exported under new settings.
 
@@ -96,7 +93,7 @@ Contour labels use the same digits as soundings and remain subject to review.
 
 ## 3. OCR and character inspection
 
-In **2. OCR**, select PP-OCRv6 small/medium or PP-OCRv5 server. Small remains the
+In **2. Reconhecer**, select PP-OCRv6 small/medium or PP-OCRv5 server. Small remains the
 provisional default. Optional local model folders must match the selected model
 and contain the extracted inference files, not a training checkpoint or archive.
 With an empty folder field, PaddleOCR may retrieve weights on first use.
@@ -137,7 +134,7 @@ batches cannot be interrupted midway. Cancellation is checked between batches
 and stages, preserving the last fully completed stage. A recognizer is reused
 for subsequent runs with the same model specification.
 
-Select **OCR** above the chart, zoom in and click a character box to view its
+Select **Dígitos** above the chart, zoom in and click a character box to view its
 crop, original text/score, selected reading, method and alternatives. Green
 character boxes have numeric readings; orange boxes are unresolved/unread.
 A numeric reading below the grouping confidence threshold can still be excluded
@@ -166,10 +163,9 @@ rule. Raw OCR can still confuse contour labels and sounding text.
 
 ## Optional yellow-background rejection
 
-In **1. Segmentar**, enable **Excluir caixas com fundo amarelo**. This is off by
+In **1. Preparar**, enable **Descartar caixas em terra**. This is off by
 default so existing calibrations remain unchanged. The scrollable panel exposes
-**R−B e G−B mínimos** (default 25 on the 0-255 channel scale) and **Fração mínima
-do fundo** (default 0.60). A box is rejected when enough non-dark background pixels
+**Sensibilidade** (default 231 on a 1–255 scale, higher includes softer yellow tones) and **Cobertura (%)** (default 60). A box is rejected when enough non-dark background pixels
 meet both channel-difference limits. A small surrounding margin helps estimate
 the background of narrow ones; dark numeral ink is ignored. Signed arithmetic
 prevents cyan/blue subtraction from wrapping into a false yellow result.
@@ -177,9 +173,9 @@ prevents cyan/blue subtraction from wrapping into a false yellow result.
 The rule includes some yellow-green tints. White, grey and cyan do not satisfy
 the default rule; mixed coast-boundary boxes can remain. Warm paper or a genuine
 sounding on yellow-tinted water can also satisfy it, so tune against the original
-chart. **Rejeitadas por cor** displays excluded boxes over their original pixels;
+chart. **Caixas (mostrar descartadas)** displays excluded boxes over their original pixels;
 the count appears beside accepted boxes. This is box filtering, not a rewrite of
-the original raster or the **Máscara** layer. Changing these settings invalidates
+the original raster or the **Editada** layer. Changing these settings invalidates
 segmentation and downstream stages; rerun 1 → 3. The JSON profile
 `configs/chart_300dpi_yellow_filter.json` is an optional 300-DPI starting point.
 
@@ -387,18 +383,18 @@ sources are retained. F1 and Help → Manual open the bundled offline Portuguese
 manual; Help → About identifies the running version.
 
 Run segmentation once, then use **Medir caractere** to drag a native-pixel
-rectangle independent of zoom. The panel shows native and reference-DPI sizes.
+rectangle independent of zoom. The panel shows native pixel sizes.
 Buttons can set minimum/maximum width and height, allowing one reference pixel
 of margin because existing size tests use strict inequalities. Measure narrow
 ones, wide zeros and small decimal glyphs before setting the full range.
 
-**Prévia dos filtros** reclassifies cached contours on parameter changes without
+**Caixas** reclassifies cached contours on parameter changes without
 OCR or mutation of the session, review, exports or stage signatures. Accepted
 boxes are green; rejected boxes have thin light-grey outlines. Toggle rejected
 visibility. At less than 60% zoom, outlines are hidden; hover at a useful zoom
 shows native size and rejection reason and highlights only that box. Width,
 height and yellow-background controls update after a brief debounce. Changes to
-mask/DPI/ROI require stage 1 again; invalid or stale previews clear their boxes.
+mask/ROI require stage 1 again; invalid or stale previews clear their boxes.
 Apply the chosen limits with stage 1 before OCR. The preview is calibration,
 not classification of soundings or a guarantee of accuracy.
 
@@ -499,7 +495,7 @@ explicitly running segmentation to apply the change, then rerun OCR/grouping.
 Numbers physically connected to lines remain a separate limitation.
 
 
-### 4.0.1 — native GeoTIFF loading and rejected-box visibility
+### 4.0.2 — native GeoTIFF loading and rejected-box visibility
 
 GeoTIFF RGB, indexed-palette and grayscale pixels, CRS, affine transform and TIFF
 resolution metadata are now read through Rasterio/GDAL. Pillow is no longer
@@ -510,7 +506,7 @@ converted to DPI; missing or invalid resolution remains unspecified. The native
 21010 raster (8,682 × 12,708 = 110,330,856 pixels) opens at 300 dpi with Pillow's
 warning promoted to an exception, while Image.MAX_IMAGE_PIXELS remains 89,478,485.
 
-Light-grey rejected boxes appear in **Prévia dos filtros**, with **Mostrar
+Light-grey rejected boxes appear in **Caixas**, with **Mostrar
 descartadas** enabled, from 60% zoom. The ordinary Caixas layer shows applied
 accepted boxes. A rejected box requires a detected foreground component; the
 historical external-contour omission never generated inner boxes to colour grey.
@@ -520,5 +516,31 @@ before OCR/grouping to apply revised extraction to a historical project.
 
 To test this revision before freezing a Windows EXE, update the development
 branch, install editable dependencies and run `python -m vetorizafb.gui` from
-that environment. Confirm 4.0.1 in the title/About. The existing working local
+that environment. Confirm 4.0.2 in the title/About. The existing working local
 PyInstaller spec is not replaced by this source update.
+
+
+## Interface 4.0.2
+
+As abas são **Preparar → Reconhecer → Agrupar → Exportar**. As visualizações são
+**Original → Editada → Caixas → Dígitos → Sondagens**. Caixas reúne a prévia dos
+filtros e os descartes por tamanho ou cor; “Mostrar descartadas” exibe estes em
+cinza-claro a partir de 60% de zoom. O cursor informa o motivo do descarte.
+A prévia exige executar Preparar; mudanças no método, claridade, desfoque,
+dilatação ou área exigem executar Preparar novamente para renovar os contornos.
+
+As medidas exibidas são pixels da própria carta. Os campos de DPI e a pergunta
+sobre DPI ausente foram retirados. Configurações e projetos antigos mantêm a
+referência internamente; as medidas são convertidas para apresentação sem
+alterar os resultados salvos. Arquivos de configuração continuam compatíveis
+com o formato anterior, com nomes técnicos internos preservados.
+
+Modo **Realce** corresponde ao método original com desfoque e dilatação;
+**Bruto** seleciona pixels escuros diretamente. **Claridade (0–255)**: aumente
+para incluir traços mais claros. Valores altos podem acabar incluindo o fundo.
+
+**Descartar caixas em terra** usa o fundo amarelo como indício de terra, sem
+classificação geográfica. **Sensibilidade** (1–255): valores maiores incluem
+tons mais suaves. **Cobertura (%)**: percentual mínimo de amarelo no fundo da
+caixa e sua pequena margem, ignorando pixels escuros. O armazenamento mantém
+os valores antigos; a interface converte sensibilidade e percentual.

@@ -30,7 +30,7 @@ class ChartViewer(ttk.Frame):
             Tooltip(button,{'Ajustar':'Mostrar a carta inteira','100%':'Um pixel da imagem por pixel da tela','−':'Reduzir zoom · roda do mouse','+':'Ampliar zoom · roda do mouse'}[text])
         ttk.Label(bar,textvariable=self.zoom_text,width=6).pack(side='left')
         layer = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=17,
-                             values=['Original','Máscara','Caixas','Prévia dos filtros','Rejeitadas por cor','OCR','Sondagens'])
+                             values=['Original','Editada','Caixas','Dígitos','Sondagens'])
         layer.pack(side='left',padx=4); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
         ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=17,
                      values=['Inspecionar','Selecionar área','Medir caractere','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
@@ -51,10 +51,10 @@ class ChartViewer(ttk.Frame):
 
         self.layer.trace_add('write',lambda *args:self.update_details())
         self.mode.trace_add('write',lambda *args:self.update_details())
-        Tooltip(layer,'Camada de visualização. Prévia dos filtros: verde = aceita, cinza-claro = descartada. Passe o cursor sobre as caixas para inspecionar.')
+        Tooltip(layer,'Visualização. Caixas: verde = aceita, cinza-claro = descartada. Passe o cursor sobre as caixas para inspecionar.')
 
     def update_details(self):
-        if self.layer.get()=='Prévia dos filtros' or self.mode.get()=='Medir caractere':
+        if self.layer.get()=='Caixas' or self.mode.get()=='Medir caractere':
             self.details.pack(fill='x',before=self.canvas)
         else:self.details.pack_forget()
 
@@ -129,7 +129,7 @@ class ChartViewer(ttk.Frame):
             self.on_action(action,(px,py))
 
     def hover(self,event):
-        if self.layer.get() != 'Prévia dos filtros' or self._press:return
+        if self.layer.get() != 'Caixas' or self._press:return
         x,y=self.pixel(event.x,event.y)
         matches=[(b,reason) for b,reason in self._visible_preview if b.x<=x<=b.x+b.w and b.y<=y<=b.y+b.h]
         self.canvas.delete('hover')
@@ -148,7 +148,7 @@ class ChartViewer(ttk.Frame):
         x1,y1 = math.floor(self.left),math.floor(self.top)
         x2,y2 = min(w,math.ceil(self.left+cw/self.scale)),min(h,math.ceil(self.top+ch/self.scale))
         image = Image.fromarray(self.session.rgb[y1:y2,x1:x2])
-        if self.layer.get() == 'Máscara' and self.session.mask is not None:
+        if self.layer.get() == 'Editada' and self.session.mask is not None:
             rx,ry,rw,rh = self.session.roi or (0,0,w,h)
             image = Image.new('RGB',image.size,'#343c42')
             ax,ay,bx,by = max(x1,rx),max(y1,ry),min(x2,rx+rw),min(y2,ry+rh)
@@ -165,7 +165,7 @@ class ChartViewer(ttk.Frame):
                 draw.text(point(a,max(0,b-12/self.scale)),str(label),fill=colour)
         layer = self.layer.get()
         self._visible_preview=[]
-        if layer=='Prévia dos filtros':
+        if layer=='Caixas':
             for b,reason in self.preview_boxes:
                 if b.x+b.w<x1 or b.x>x2 or b.y+b.h<y1 or b.y>y2:continue
                 if reason and not self.show_rejected.get():continue
@@ -173,14 +173,12 @@ class ChartViewer(ttk.Frame):
                 if self.scale>=.6:box((b.x,b.y,b.x+b.w,b.y+b.h),'#c4c9ce' if reason else '#008879')
             if self.scale<.6 and self.preview_boxes:self.inspection_text.set('Amplie para pelo menos 60% para visualizar as caixas.')
         if self.measurement:box(self.measurement,'#007c91')
-        if layer=='Rejeitadas por cor':
-            for b in self.session.color_rejected:box((b.x,b.y,b.x+b.w,b.y+b.h),'#df2040')
-        if layer in {'Caixas','OCR'}:
+        if layer == 'Dígitos':
             digit_map = {d.index:d for d in self.session.digits or []}
             for i,b in enumerate(self.session.boxes or []):
                 d = digit_map.get(i)
                 box((b.x,b.y,b.x+b.w,b.y+b.h),'#ffb020' if d is None or d.text is None else '#00b000',
-                    (d.text or '?') if layer == 'OCR' and d is not None else None)
+                    (d.text or '?') if layer == 'Dígitos' and d is not None else None)
         if layer == 'Sondagens' and self.session.review is not None:
             for item in self.session.review.items:
                 s = item['current']

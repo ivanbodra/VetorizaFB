@@ -87,7 +87,7 @@ def test_staged_gui_review_and_parameter_invalidation(app,monkeypatch):
 def test_zoom_roi_and_manual_point_tools(app,monkeypatch):
     app.run_stage('all');finish(app)
     app.viewer.zoom_to(2,50,50);app.viewer.focus(25,32.5)
-    for layer in ('Original','Máscara','Caixas','OCR','Sondagens'):
+    for layer in ('Original','Editada','Caixas','Dígitos','Sondagens'):
         app.viewer.layer.set(layer);app.viewer.render();app.root.update()
     monkeypatch.setattr('vetorizafb.gui.simpledialog.askfloat',lambda *a,**k:2.8)
     app.canvas_action('Inserir ponto',(100,70))
@@ -278,7 +278,7 @@ def test_review_controls_and_notes_remain_visible_at_minimum_window_size(app):
 def test_live_preview_is_non_mutating_and_clears_stale_mask(app):
     app.run_stage('all');finish(app)
     boxes=app.session.boxes;digits=app.session.digits;review=app.session.review
-    app.viewer.layer.set('Prévia dos filtros');app.update_preview()
+    app.viewer.layer.set('Caixas');app.update_preview()
     assert app.viewer.preview_boxes and not app.viewer.preview_boxes[0][1]
     app.fields['min_w'].set('15');app.update_preview()
     assert 'largura' in app.viewer.preview_boxes[0][1]
@@ -299,19 +299,19 @@ def test_measurement_uses_native_pixels_independent_of_zoom(app):
         assert app.measurement==(10,25)
     app.fields['dpi'].set('300')
     app.canvas_action('measure',(10,25))
-    assert '20.0 × 50.0' in app.measure_text.get()
+    assert app.measure_text.get()=='10 × 25 px'
     app.use_measurement(True)
-    assert app.fields['min_w'].get()=='19' and app.fields['min_h'].get()=='49'
+    assert app.fields['min_w'].get()=='9' and app.fields['min_h'].get()=='24'
 
 
 def test_manual_about_and_preview_toggle(app,monkeypatch):
     from pathlib import Path
     from vetorizafb import __version__
-    assert __version__=='4.0.1' and '4.0.1' in app.root.title()
+    assert __version__=='4.0.2' and '4.0.2' in app.root.title()
     urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
     app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
     popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()
-    app.run_stage('segment');finish(app);app.viewer.layer.set('Prévia dos filtros')
+    app.run_stage('segment');finish(app);app.viewer.layer.set('Caixas')
     app.fields['min_w'].set('15');app.update_preview()
     app.viewer.scale=2;app.viewer.render();assert app.viewer._visible_preview
     app.viewer.show_rejected.set(False);app.viewer.render();assert not app.viewer._visible_preview
@@ -395,7 +395,7 @@ def test_compact_toolbar_never_cuts_actions_and_details_are_contextual(app):
     app.viewer.layer.set('Original');app.viewer.mode.set('Inspecionar');app.root.update()
     assert not app.viewer.details.winfo_ismapped()
     assert app.viewer.canvas.winfo_height()>=220
-    app.viewer.layer.set('Prévia dos filtros');app.root.update()
+    app.viewer.layer.set('Caixas');app.root.update()
     assert app.viewer.details.winfo_ismapped()
     app.viewer.layer.set('Original');app.viewer.mode.set('Medir caractere');app.root.update()
     assert app.viewer.details.winfo_ismapped()
@@ -483,3 +483,54 @@ def test_real_proxy_dialog_validates_mode_and_keeps_credentials_in_memory(app):
     app.root.after(100,enter)
     dialog=ModelDownloadDialog(app.root,app.models_root.get(),ConnectionSettings())
     assert dialog.result[1].mode=='proxy' and dialog.result[1].password=='private-secret'
+
+
+def test_native_pixel_fields_preserve_historical_config(app):
+    from dataclasses import replace
+    from vetorizafb.core import Config, segment_details
+    old=Config(dpi=300,reference_dpi=600,segmentation='legacy',min_w=3,max_w=71,blur_size=5)
+    app.set_config(old)
+    assert app.fields['min_w'].get()=='1.5'
+    assert app.fields['max_w'].get()=='35.5'
+    assert app.fields['segmentation'].get()=='Realce'
+    assert app.fields['yellow_min_fraction'].get()=='60'
+    assert app.config()==old
+    a=segment_details(app.session.rgb,app.config());b=segment_details(app.session.rgb,old)
+    np.testing.assert_array_equal(a[0],b[0])
+    assert a[1:]==b[1:]
+    app.fields['min_w'].set('2')
+    assert app.config().min_w*app.config().scale==2
+    app.set_config(replace(old,dpi=450))
+    assert app.config()==replace(old,dpi=450)
+
+
+def test_color_controls_have_intuitive_direction(app):
+    from vetorizafb.core import Config
+    app.set_config(Config(yellow_delta=25,yellow_min_fraction=.6))
+    baseline=app.config()
+    app.fields['yellow_delta'].set(str(int(app.fields['yellow_delta'].get())+5))
+    app.fields['yellow_min_fraction'].set('75')
+    assert app.config().yellow_delta==baseline.yellow_delta-5
+    assert app.config().yellow_min_fraction==.75
+
+
+def test_compact_stage_names_and_native_pixel_controls(app):
+    from tkinter import ttk
+    assert [app.tabs.tab(i,'text') for i in range(4)]==['Preparar','Reconhecer','Agrupar','Exportar']
+    def descendants(parent):
+        for child in parent.winfo_children():
+            yield child
+            yield from descendants(child)
+    widgets=list(descendants(app.root))
+    labels=[str(w.cget('text')) for w in widgets if isinstance(w,ttk.Label)]
+    assert not any('DPI' in text for text in labels)
+    combos=[w for w in widgets if isinstance(w,ttk.Combobox)]
+    assert any(tuple(w.cget('values'))==('Original','Editada','Caixas','Dígitos','Sondagens') for w in combos)
+    assert any(tuple(w.cget('values'))==('Realce','Bruto') for w in combos)
+    app.root.geometry('1050x720');app.root.update()
+    import tkinter as tk
+    visible=set()
+    for x in range(app.tabs.winfo_width()):
+        try:visible.add(app.tabs.index(f'@{x},10'))
+        except tk.TclError:pass
+    assert visible=={0,1,2,3}

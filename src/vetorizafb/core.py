@@ -118,8 +118,7 @@ class Config:
             raise ValueError("segmentation must be legacy or black")
         if self.grouping not in {"fixed", "relative"}:
             raise ValueError("grouping must be fixed or relative")
-        for key in ("threshold", "blur_size", "kernel_size", "min_w", "max_w",
-                    "min_h", "max_h", "ocr_batch_size", "crop_padding", "yellow_delta"):
+        for key in ("threshold", "ocr_batch_size", "crop_padding", "yellow_delta"):
             if not isinstance(getattr(self, key), int) or isinstance(getattr(self, key), bool):
                 raise ValueError(f"{key} must be an integer")
         if not 1 <= self.ocr_batch_size <= 1024 or not 0 <= self.crop_padding <= 100:
