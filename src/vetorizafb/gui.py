@@ -62,6 +62,8 @@ class Application:
         self.review_note = tk.StringVar()
         self.follow_review = tk.BooleanVar(value=True)
         self.selection_text = tk.StringVar(value='0 selecionados')
+        self.show_tooltips=tk.BooleanVar(value=self.load_tooltips_preference())
+        Tooltip.set_enabled(root,self.show_tooltips.get())
         self._selection_anchor = self._last_followed = None
         self.fields = {k:tk.BooleanVar(value=v) if isinstance(v,bool) else tk.StringVar(value=str(v))
                        for k,v in asdict(Config()).items()}
@@ -117,14 +119,25 @@ class Application:
             im=Image.new('RGBA',(10,10))
             ImageDraw.Draw(im).ellipse((1,1,8,8),fill=colour)
             self.stage_icons[state]=ImageTk.PhotoImage(im,master=self.root)
-        with Image.open(Path(__file__).parent/'assets'/'logo_app.png') as source:
-            monitor=source.convert('RGBA').crop((62,16,438,361)).resize((19,18),Image.Resampling.LANCZOS)
-        alpha=monitor.getchannel('A')
-        monitor=Image.new('RGBA',monitor.size,'#7de1c1');monitor.putalpha(alpha)
-        self.stage_icons['selected']=ImageTk.PhotoImage(monitor,master=self.root)
 
     def tip(self,widget,text):
         item=Tooltip(widget,text);self.tooltips.append(item);return item
+
+    @staticmethod
+    def tooltip_preferences_path():
+        return Path(os.environ.get('APPDATA',Path.home()/'.config'))/'VetorizaFB'/'interface.json'
+
+    def load_tooltips_preference(self):
+        try:
+            value=json.loads(self.tooltip_preferences_path().read_text(encoding='utf-8'))
+            return value['show_tooltips'] if isinstance(value.get('show_tooltips'),bool) else True
+        except (OSError,ValueError,TypeError,KeyError):return True
+
+    def toggle_tooltips(self):
+        enabled=self.show_tooltips.get()
+        Tooltip.set_enabled(self.root,enabled)
+        try:write_json_atomic(self.tooltip_preferences_path(),{'show_tooltips':enabled})
+        except OSError:self.status.set('A preferência das dicas vale nesta sessão; não foi possível salvá-la.')
 
     def refresh_chart_prompt(self):
         if not hasattr(self,'chart_entry'):return
@@ -245,6 +258,8 @@ class Application:
         help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
         help_menu.add_command(label='Manual de uso (F1)',command=self.open_manual)
         help_menu.add_command(label='Atalhos de teclado…',command=self.show_shortcuts)
+        help_menu.add_checkbutton(label='Mostrar dicas ao passar o cursor',variable=self.show_tooltips,
+                                  command=self.toggle_tooltips)
         help_menu.add_separator();help_menu.add_command(label='Sobre o VetorizaFB',command=self.about)
         brand=ttk.Frame(self.root,padding=(12,5),style='Brand.TFrame');brand.pack(fill='x')
         self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(44,34))
@@ -258,7 +273,7 @@ class Application:
         self.chart_entry=ttk.Entry(header,textvariable=self.path,style='Required.TEntry')
         self.chart_entry.grid(row=0,column=1,sticky='ew',padx=6)
         self.chart_entry.bind('<Return>',lambda e:self.load_chart())
-        self.tip(self.chart_entry,'Escolha uma Carta Náutica em Abrir… ou digite o caminho e pressione Enter. O amarelo indica uma carta ainda não carregada.')
+        self.tip(self.chart_entry,'Digite o caminho e pressione Enter para abrir a carta.')
         ttk.Button(header,text='Abrir…',command=self.choose_chart).grid(row=0,column=2)
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
         left=ttk.Frame(split,width=355);split.add(left,weight=0)
@@ -271,23 +286,17 @@ class Application:
         for i,label in enumerate(self.stage_labels):self.tabs.tab(i,text=label)
         self.tab_tip=self.tip(self.tabs,lambda:self.stage_tooltip())
         self.tabs.bind('<Motion>',self.tab_hover)
-        self.tabs.bind('<<NotebookTabChanged>>',lambda event:self.refresh_tab_icons())
         seg.columnconfigure(1,weight=1)
         def setting(frame,row,label,key,values=None):
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
             widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=13) if values else ttk.Entry(frame,textvariable=self.fields[key],width=14)
             widget.grid(row=row,column=1,sticky='ew',padx=(8,0),pady=2)
             hints={
-                'min_w':'Largura mínima em pixels da carta. O limite é estrito: a caixa deve ser maior.',
-                'max_w':'Largura máxima em pixels da carta. O limite é estrito: a caixa deve ser menor.',
-                'min_h':'Altura mínima em pixels da carta; preserve também os decímetros menores.',
-                'max_h':'Altura máxima em pixels da carta.',
-                'yellow_delta':'Aumente para incluir tons de amarelo mais suaves. O filtro usa a cor como indício de terra.',
+                'yellow_delta':'Valor maior inclui tons de amarelo mais suaves.',
                 'threshold':'Aumente para incluir traços mais claros. Valores altos podem acabar incluindo o fundo.',
-                'segmentation':'Realce: desfoque e dilatação dos traços. Bruto: seleção direta dos pixels escuros.',
-                'yellow_min_fraction':'Percentual mínimo de amarelo no fundo da caixa e sua margem para descartá-la; pixels escuros são ignorados.',
-                'crop_padding':'Margem em pixels originais ao redor do caractere para o OCR.',
-                'min_confidence':'Escore mínimo aceito; a releitura dirigida do numeral 1 exige pelo menos 0,80.'}
+                'segmentation':'Realce suaviza e amplia os traços; Bruto usa os pixels escuros diretamente.',
+                'yellow_min_fraction':'Percentual de amarelo necessário para descartar a caixa.',
+                'min_confidence':'Escore mínimo para aceitar um dígito.'}
             if key in hints:self.tip(widget,hints[key])
         for row,(label,key,values) in enumerate([
             ('Modo','segmentation',['Realce','Bruto']),('Claridade (0–255)','threshold',None),
@@ -324,10 +333,7 @@ class Application:
         self.local_model_combo.bind('<<ComboboxSelected>>',lambda e:self.select_local_model())
         self.refresh_models_button=ttk.Button(model_panel,text='↻',width=2,command=self.refresh_models)
         self.refresh_models_button.grid(row=2,column=2,padx=(4,0),pady=4)
-        self.tip(self.models_entry,lambda:self.models_root.get()+'\nPasta com subpastas de modelos, ou a própria pasta de um modelo. Enter atualiza a lista; nenhum arquivo é movido.')
-        self.tip(self.local_model_combo,lambda:self.model_dir.get() or 'Nenhum modelo local selecionado. Escolha uma pasta ou baixe um modelo.')
-        self.tip(self.download_button,'Escolher o modelo e a conexão antes de baixar. Download separado do reconhecimento; credenciais apenas nesta sessão.')
-        self.tip(self.refresh_models_button,'Procurar novamente os modelos completos na pasta indicada.')
+        self.tip(self.local_model_combo,lambda:self.model_dir.get() or 'Nenhum modelo local selecionado.')
         self.refresh_models()
         for row,(label,key) in enumerate([('Tamanho do lote','ocr_batch_size'),('Margem do recorte (px)','crop_padding'),('Confiança mínima','min_confidence')],6):setting(ocr,row,label,key)
         ttk.Checkbutton(ocr,text='Reler possíveis “1”',variable=self.fields['retry_one']).grid(row=9,column=0,columnspan=2,sticky='w',pady=(8,2))
@@ -388,7 +394,7 @@ class Application:
         restore=ttk.Menubutton(bar,text='Restaurar',menu=self.restore_menu)
         restore.grid(row=0,column=len(self.review_buttons),padx=2,pady=2,sticky='w')
         self.review_buttons['restore']=restore
-        self.tip(restore,'Voltar ao valor ou à posição original, preservando o histórico. Pontos adicionados manualmente não têm leitura original.')
+        self.tip(restore,'Pontos adicionados manualmente não têm leitura original.')
         self.extra_actions=tk.Menu(self.root,tearoff=False,postcommand=self.update_actions_menu)
         for key in ('unreviewed','focus','insert','move','position','offset'):
             button=self.review_buttons[key]
@@ -437,22 +443,16 @@ class Application:
                 review_row._notes_position=target
         review_row.bind('<Configure>',fit_review_row)
         self.note_entry.bind('<Return>',lambda e:self.include_note())
-        self.tip(self.note_button,'Gravar a observação nos pontos selecionados, sem alterar valor, posição ou aprovação.')
+        self.tip(self.note_button,'Adiciona a observação aos pontos selecionados.')
         self.review_note.trace_add('write',lambda *args:self.refresh_review_controls())
         self.footer=ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=(8,3))
         self.footer.pack(side='bottom',fill='x',before=split)
         self.footer.bind('<Configure>',lambda e:self.footer.configure(wraplength=max(100,e.width-16)))
         for key,text in {
-            'accepted':'Aprovar selecionados · Ctrl+A', 'rejected':'Excluir selecionados · Ctrl+X',
-            'unreviewed':'Voltar selecionados para pendentes', 'edit':'Editar uma profundidade · Ctrl+E',
-            'focus':'Centralizar e ampliar o ponto ativo', 'insert':'Adicionar profundidade: clique na imagem. Esc cancela.',
-            'move':'Mover o ponto selecionado: clique na nova posição.', 'position':'Editar X/Y em pixels originais',
-            'offset':'Prévia e deslocamento de todos os pontos ou dos selecionados'}.items():self.tip(self.review_buttons[key],text)
-        self.tip(self.seg_button,'Aplicar os filtros e recalcular a segmentação. Requer uma carta carregada.')
-        self.tip(self.ocr_button,'Reconhecer as caixas da segmentação atual. A releitura preserva o texto e o escore originais.')
-        self.tip(self.group_button,'Agrupar dígitos em profundidades; reutiliza o OCR válido. Salve a revisão antes de reagrupar.')
-        self.tip(self.run_button,'Executar somente as etapas pendentes: segmentar, reconhecer e agrupar.')
-        self.tip(self.cancel_button,'Solicitar cancelamento ao término do lote ou etapa atual.')
+            'insert':'Clique na imagem para adicionar uma profundidade. Esc cancela.',
+            'move':'Clique na nova posição do ponto selecionado.',
+            'position':'Coordenadas em pixels da carta.',
+            'offset':'Deslocar todos os pontos ou apenas os selecionados.'}.items():self.tip(self.review_buttons[key],text)
         for widget in (self.tree,self.viewer.canvas):widget.bind('<Button-3>',self.show_review_menu)
         # Fit compact toolbar labels to their content rather than Tk's default width.
         def compact(widget):
@@ -534,14 +534,8 @@ class Application:
         self.local_model_combo.configure(state='disabled' if self.busy else 'readonly')
         self.refresh_chart_prompt()
         self.stage_states=[('empty' if self.session is None else 'busy' if self.busy else 'ready' if valid else 'pending') for valid in (seg,digits,groups,groups)]
-        self.refresh_tab_icons()
+        for index,state in enumerate(self.stage_states):self.tabs.tab(index,image=self.stage_icons[state])
         self.refresh_review_controls()
-
-    def refresh_tab_icons(self):
-        if not self.stage_states:return
-        selected=self.tabs.index('current')
-        for index,state in enumerate(self.stage_states):
-            self.tabs.tab(index,image=self.stage_icons['selected' if index==selected else state])
 
     def start(self,task,done=lambda result:None,cancellable=True):
         if self.busy:return
