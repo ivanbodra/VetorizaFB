@@ -369,7 +369,8 @@ class Application:
         filt=self.review_filter=ttk.Combobox(heading,textvariable=self.filter,state='readonly',width=12,values=['Todos','Pendentes','Aprovados','Excluídos']);filt.pack(side='left',padx=4)
         ttk.Label(heading,textvariable=self.selection_text).pack(side='right',padx=4)
         filt.bind('<<ComboboxSelected>>',lambda e:self.refresh_points())
-        bar=ttk.Frame(bottom);bar.pack(fill='x')
+        review_row=ttk.Frame(bottom);review_row.pack(fill='x')
+        bar=ttk.Frame(review_row);bar.grid(row=0,column=0,sticky='w')
         self.review_buttons={}
         for key,label,cmd in [('accepted','Aprovar',lambda:self.review_action('accepted')),('rejected','Excluir',lambda:self.review_action('rejected')),
                               ('unreviewed','Pendente',lambda:self.review_action('unreviewed')),('edit','Editar',self.correct_depth),('focus','Ampliar',self.focus_selected)]:
@@ -420,12 +421,21 @@ class Application:
                                 ('Control-e',self.correct_depth),('Control-Shift-A',self.select_all_points),
                                 ('Escape',self.clear_point_selection),('Control-space',self.toggle_active_point)]:
                 widget.bind(f'<{key}>',lambda e,cmd=command:self.review_shortcut(cmd))
-        notes=ttk.Frame(bottom);notes.pack(fill='x',before=self.tree)
+        notes=ttk.Frame(review_row)
         ttk.Label(notes,text='Observação').pack(side='left',padx=4)
         self.note_entry=ttk.Entry(notes,textvariable=self.review_note)
         self.note_entry.pack(side='left',fill='x',expand=True,padx=4,pady=3)
         self.note_button=ttk.Button(notes,text='Incluir',command=self.include_note)
         self.note_button.pack(side='left',padx=4)
+        review_row.columnconfigure(1,weight=1)
+        notes.grid(row=0,column=1,sticky='ew')
+        def fit_review_row(event):
+            same_line=event.width>=bar.winfo_reqwidth()+notes.winfo_reqwidth()
+            target=(0,1,1) if same_line else (1,0,2)
+            if getattr(review_row,'_notes_position',None)!=target:
+                notes.grid_configure(row=target[0],column=target[1],columnspan=target[2])
+                review_row._notes_position=target
+        review_row.bind('<Configure>',fit_review_row)
         self.note_entry.bind('<Return>',lambda e:self.include_note())
         self.tip(self.note_button,'Gravar a observação nos pontos selecionados, sem alterar valor, posição ou aprovação.')
         self.review_note.trace_add('write',lambda *args:self.refresh_review_controls())
