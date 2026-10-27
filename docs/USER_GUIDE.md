@@ -622,3 +622,12 @@ In Bruto mode, Desfoque and Dilatação are disabled because the algorithm does
 not use them. The separate gray details strip and idle progress bar are hidden;
 **Descartadas** is available in the image toolbar, and **Medir** sits by the
 size inputs.
+
+
+## 4.0.5 — panel fill and resize responsiveness
+
+The preparation panel now uses the same background through its full height.
+Its content fills the available height and scrolling appears only if required.
+Layout recalculation is coalesced while the window changes size; chart resizing
+also defers raster redraw until the resize settles. This reduces redundant work
+during maximize and tab/window layout changes.
