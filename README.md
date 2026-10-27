@@ -1,6 +1,8 @@
-# VetorizaFB 5.0.0
+# VetorizaFB 4.1.0
 
-PySide6 desktop with a separate Folha de bordo mode. See [installation, workflow and validation](docs/V5_DESKTOP.md).
+Classic version 4 interface with field-sheet preparation, multi-digit FB tokens,
+lower-decimetre grouping and reading/box review.
+See [4.1 installation and workflow](docs/V4_1.md).
 
 # VetorizaFB
 

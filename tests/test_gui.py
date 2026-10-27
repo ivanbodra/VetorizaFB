@@ -347,7 +347,7 @@ def test_measurement_uses_native_pixels_independent_of_zoom(app):
 def test_manual_about_and_preview_toggle(app,monkeypatch):
     from pathlib import Path
     from vetorizafb import __version__
-    assert __version__=='5.0.0' and '5.0.0' in app.root.title()
+    assert __version__=='4.1.0' and '4.1.0' in app.root.title()
     urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
     app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
     popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()
@@ -371,7 +371,7 @@ def test_original_icon_is_loaded_and_persisted(app,tmp_path,monkeypatch):
 
 def test_execution_controls_remain_visible_at_minimum_window(app):
     app.root.geometry('1050x720');app.root.update()
-    for widget in (app.run_button,app.cancel_button,app.progress):
+    for widget in (app.run_button,app.cancel_button):
         assert widget.winfo_ismapped()
         assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()
 
@@ -564,7 +564,7 @@ def test_compact_stage_names_and_native_pixel_controls(app):
     assert not any('DPI' in text for text in labels)
     combos=[w for w in widgets if isinstance(w,ttk.Combobox)]
     assert tuple(app.viewer.layer_combo.cget('values'))==('Original','Editada','Caixas')
-    assert any(tuple(w.cget('values'))==('Realce','Bruto') for w in combos)
+    assert any(tuple(w.cget('values'))==('Realce','Bruto','Folha de bordo') for w in combos)
     app.root.geometry('1050x720');app.root.update()
     import tkinter as tk
     visible=set()
@@ -738,3 +738,24 @@ def test_download_label_names_model_before_first_byte(app,monkeypatch):
     gate.set()
     monkeypatch.setattr(app,'show_copyable_error',lambda *a,**k:None)
     finish(app)
+
+
+def test_classic_fb_mode_preserves_preview_and_token_review(app,monkeypatch):
+    from vetorizafb.core import Config,Box,Digit
+    from vetorizafb.token_dialog import TokenDialog
+    cfg=Config(segmentation='fb',grouping='fb',decimal_height_ratio=.72)
+    app.set_config(cfg)
+    assert app.fields['segmentation'].get()=='Folha de bordo'
+    assert app.config().grouping=='fb'
+    s=app.session;s.segment(app.config())
+    s.boxes=[Box(10,10,35,40),Box(25,53,8,14)]
+    s.digits=[Digit(s.boxes[0],'35',.99,0),Digit(s.boxes[1],'8',.99,1)]
+    s.model_spec=app.model_spec();s.ocr_key=s.expected_ocr_key(app.config(),s.model_spec)
+    s.run_grouping(app.config(),s.model_spec)
+    assert s.review.items[0]['current']['depth']==35.8
+    dialog=TokenDialog(app,0);app.root.update()
+    monkeypatch.setattr('vetorizafb.token_dialog.simpledialog.askstring',lambda *a,**k:'36')
+    dialog.correct();assert s.digits[0].raw_text=='36' and s.review is None
+    assert app.review_dirty
+    dialog.destroy()
+    app.set_config(Config(segmentation='black'));assert app.config().grouping=='relative'

@@ -170,7 +170,7 @@ class Application:
         self.refresh_review_controls()
         if hasattr(self,'review_menu'):self.review_menu.destroy()
         menu=self.review_menu=tk.Menu(self.root,tearoff=False)
-        if event.widget is self.viewer.canvas and self.viewer.mode.get()=='Selecionar área':
+        if getattr(event,'widget',None) is self.viewer.canvas and self.viewer.mode.get()=='Selecionar área':
             shapes=tk.Menu(menu,tearoff=False)
             for shape in ('Retângulo','Polígono','Laço livre'):
                 shapes.add_radiobutton(label=shape,value=shape,variable=self.viewer.area_shape,
@@ -241,7 +241,7 @@ class Application:
             self.schedule_preview()
 
     def update_mode_controls(self):
-        state='disabled' if self.fields['segmentation'].get()=='Bruto' else 'normal'
+        state='normal' if self.fields['segmentation'].get()=='Realce' else 'disabled'
         for widget in (self.blur_entry,self.dilation_entry):widget.configure(state=state)
 
     def toggle_live_preview(self):
@@ -362,7 +362,7 @@ class Application:
             if key in hints:self.tip(widget,hints[key])
             return widget
         for row,(label,key,values) in enumerate([
-            ('Modo','segmentation',['Realce','Bruto']),('Claridade (0–255)','threshold',None),
+            ('Modo','segmentation',['Realce','Bruto','Folha de bordo']),('Claridade (0–255)','threshold',None),
             ('Desfoque','blur_size',None),('Dilatação','kernel_size',None)]):
             widget=setting(seg,row,label,key,values)
             if key=='blur_size':self.blur_entry=widget
@@ -416,8 +416,9 @@ class Application:
         ttk.Checkbutton(ocr,text='Reler ambíguos',variable=self.fields['retry_ambiguous']).grid(row=10,column=0,columnspan=2,sticky='w',pady=3)
         self.ocr_button=ttk.Button(ocr,text='Reconhecer',style='Primary.TButton',command=lambda:self.run_stage('ocr'))
         self.ocr_button.grid(row=12,column=0,columnspan=2,sticky='ew',pady=8)
+        ttk.Button(ocr,text='Revisar leituras…',command=self.review_tokens).grid(row=13,column=0,columnspan=2,sticky='ew',pady=4)
         for row,(label,key,values) in enumerate([
-            ('Modo','grouping',['relative','fixed']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
+            ('Modo','grouping',['relative','fixed','fb']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
             ('Razão altura decimal','decimal_height_ratio',None),('Queda decimal','decimal_drop',None),
             ('Inteiro máximo p/ decimal','decimal_max_integer',None),('Confiança mínima','min_confidence',None)]):setting(group,row,label,key,values)
         self.group_button=ttk.Button(group,text='Agrupar',style='Primary.TButton',command=lambda:self.run_stage('group'))
@@ -559,7 +560,9 @@ class Application:
         for key in ('min_w','max_w','min_h','max_h','blur_size','kernel_size','tol_x','tol_y'):
             data[key]=float(data[key])/scale
             if data[key].is_integer():data[key]=int(data[key])
-        data['segmentation']={'Realce':'legacy','Bruto':'black'}.get(data['segmentation'],data['segmentation'])
+        data['segmentation']={'Realce':'legacy','Bruto':'black','Folha de bordo':'fb'}.get(data['segmentation'],data['segmentation'])
+        if data['segmentation']=='fb':data['grouping']='fb'
+        elif data['grouping']=='fb':data['grouping']='relative'
         data['yellow_min_fraction']/=100
         data['yellow_delta']=256-data['yellow_delta']
         return Config(**data)
@@ -569,7 +572,7 @@ class Application:
     def set_config(self,config):
         for k,v in asdict(config).items():
             if k in ('min_w','max_w','min_h','max_h','blur_size','kernel_size','tol_x','tol_y'):v=v*config.scale
-            elif k=='segmentation':v={'legacy':'Realce','black':'Bruto'}[v]
+            elif k=='segmentation':v={'legacy':'Realce','black':'Bruto','fb':'Folha de bordo'}[v]
             elif k=='yellow_min_fraction':v=v*100
             elif k=='yellow_delta':v=256-v
             if isinstance(v,float):v=format(v,'.15g')
@@ -1102,7 +1105,14 @@ class Application:
                 if action!='range_point':self._selection_anchor=point_id
                 self.tree.focus(point_id);self.tree.see(point_id);self.select_point()
 
+    def review_tokens(self,index=None):
+        if self.busy or self.session is None or self.session.digits is None:
+            messagebox.showinfo('Leituras','Execute Reconhecer primeiro.',parent=self.root);return
+        from .token_dialog import TokenDialog
+        TokenDialog(self,index)
+
     def inspect_digit(self,digit):
+        if self.session.config.segmentation=='fb':self.review_tokens(digit.index);return
         popup=tk.Toplevel(self.root);popup.title(f'Caractere {digit.index} / leitura original e alternativas')
         b=digit.box;rgb=self.session.rgb
         crop=Image.fromarray(rgb[max(0,b.y-8):b.y+b.h+8,max(0,b.x-8):b.x+b.w+8])

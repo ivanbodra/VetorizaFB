@@ -244,8 +244,9 @@ class ChartViewer(ttk.Frame):
             digit_map = {d.index:d for d in self.session.digits or []}
             for i,b in enumerate(self.session.boxes or []):
                 d = digit_map.get(i)
-                box((b.x,b.y,b.x+b.w,b.y+b.h),'#ffb020' if d is None or d.text is None else '#00b000',
-                    (d.text or '?') if layer == 'Dígitos' and d is not None else None)
+                from .fieldbook import token
+                text=(token(d) if self.session.config.segmentation=='fb' else d.text) if d else None
+                box((b.x,b.y,b.x+b.w,b.y+b.h),'#ffb020' if text is None else '#00b000',text or '?')
         if layer == 'Sondagens' and self.session.review is not None:
             for item in self.session.review.items:
                 s = item['current']
