@@ -1,6 +1,56 @@
 """Small, local desktop helpers: contextual help without permanent legends."""
 import tkinter as tk
 from tkinter import ttk
+from PIL import Image, ImageDraw, ImageTk
+
+
+def rounded_controls(style, root):
+    """Image-backed clam elements keep native ttk controls and their keyboard behavior."""
+    if 'Rounded.border' in style.element_names():
+        return getattr(root,'_rounded_images',[])
+    images=[]
+
+    def surface(colour, *, top_only=False):
+        scale=3
+        im=Image.new('RGBA',(24*scale,24*scale))
+        draw=ImageDraw.Draw(im)
+        inset=2*scale if top_only else 0
+        draw.rounded_rectangle((inset,0,24*scale-1-inset,24*scale-1),radius=6*scale,fill=colour)
+        if top_only:
+            draw.rectangle((inset,7*scale,24*scale-1-inset,24*scale-1),fill=colour)
+        photo=ImageTk.PhotoImage(im.resize((24,24),Image.Resampling.LANCZOS),master=root)
+        images.append(photo)
+        return photo
+
+    def element(name, palette, top_only=False):
+        normal=surface(palette[0],top_only=top_only)
+        selected=surface(palette[1],top_only=top_only)
+        active=surface(palette[2],top_only=top_only)
+        disabled=surface(palette[3],top_only=top_only)
+        style.element_create(name,'image',normal,
+                             ('disabled',disabled),('selected',selected),
+                             ('pressed',active),('active',active),border=9,sticky='nsew')
+
+    def replace_border(layout, replacement):
+        name, options=layout[0]
+        return [(replacement,{**options,'children':options['children']})]
+
+    button_layout=style.layout('TButton')
+    for key,normal,hover in [('Rounded','#e5f1fb','#d2e8f9'),
+                              ('PrimaryRounded','#096fab','#085a8b'),
+                              ('ApproveRounded','#e1f4e9','#c9ead8'),
+                              ('RejectRounded','#fbe6e8','#f5cfd4')]:
+        element(key+'.border',(normal,hover,hover,'#eef1f4'))
+        button_children=[('Button.padding',{'sticky':'nsew','children':[('Button.label',{'sticky':'nsew'})]})]
+        style.layout({'Rounded':'TButton','PrimaryRounded':'Primary.TButton',
+                      'ApproveRounded':'Approve.TButton','RejectRounded':'Reject.TButton'}[key],
+                     [(key+'.border',{'sticky':'nsew','children':button_children})])
+    element('RoundedMenu.border',('#e5f1fb','#d2e8f9','#d2e8f9','#eef1f4'))
+    style.layout('TMenubutton',replace_border(style.layout('TMenubutton'),'RoundedMenu.border'))
+    element('RoundedTab.tab',('#e5f1fb','#153b50','#cee7f8','#eef1f4'),top_only=True)
+    style.layout('TNotebook.Tab',replace_border(style.layout('TNotebook.Tab'),'RoundedTab.tab'))
+    root._rounded_images=images
+    return images
 
 
 class Tooltip:
