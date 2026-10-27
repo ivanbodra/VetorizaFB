@@ -631,3 +631,7 @@ Its content fills the available height and scrolling appears only if required.
 Layout recalculation is coalesced while the window changes size; chart resizing
 also defers raster redraw until the resize settles. This reduces redundant work
 during maximize and tab/window layout changes.
+
+## 4.0.6 — estimativa das dimensões
+
+Na aba Preparar, **Auto** estima os limites de largura e altura a partir dos contornos da carta ou da área selecionada. Ele reutiliza os contornos da preparação/prévia quando compatíveis e calcula em segundo plano caso contrário. Usa o pico de alturas ponderado pela altura para evitar fragmentos muito pequenos, uma faixa em torno desse pico e os percentis 5–95 das dimensões compatíveis; os limites recebem um pixel de margem porque o filtro usa desigualdades estritas. Confira os descartes na prévia: caixas não são dígitos rotulados, e a estimativa é específica para cada carta. Os campos de largura ficam alinhados aos demais; Definir mín./máx. e Medir/Auto ocupam duas linhas.

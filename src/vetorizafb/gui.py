@@ -24,7 +24,8 @@ from .viewer import ChartViewer
 from .workflow import ChartSession
 from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
-from .calibration import CalibrationPreview
+from .calibration import CalibrationPreview, MASK_KEYS
+from .auto_bounds import suggest_bounds
 from .box_diagnostics import export_box_measurements
 from .branding import apply_icon, asset_photo
 from .ui import Tooltip, rounded_controls
@@ -67,6 +68,7 @@ class Application:
         Tooltip.set_enabled(root,self.show_tooltips.get())
         self.live_preview=tk.BooleanVar(value=False)
         self._preview_busy=False
+        self._auto_busy=False
         self._preview_revision=0
         self._selection_anchor = self._last_followed = None
         self.fields = {k:tk.BooleanVar(value=v) if isinstance(v,bool) else tk.StringVar(value=str(v))
@@ -278,6 +280,27 @@ class Application:
             if self.live_preview.get():self.update_preview()
         except (ValueError,TypeError) as exc:self.status.set(str(exc))
 
+    def auto_dimensions(self):
+        if not self.session or self.busy or self._auto_busy:return
+        try:cfg=self.config()
+        except (ValueError,TypeError) as exc:self.status.set(str(exc));return
+        session,roi=self.session,self.roi
+        self._auto_busy=True;self.auto_button.configure(state='disabled')
+        self.status.set('Analisando as dimensões das caixas…')
+        def worker():
+            try:
+                key=(id(session),tuple(getattr(cfg,k) for k in MASK_KEYS))
+                if session.valid_segments(cfg,roi) and session.all_boxes is not None:
+                    boxes=session.all_boxes
+                elif not self._preview_busy and self.preview.contour_key==(key,session.validate_roi(roi)):
+                    boxes=self.preview.contours
+                else:
+                    boxes=CalibrationPreview().contours_for(session,cfg,roi)
+                result=suggest_bounds(boxes,cfg.scale)
+                self.events.put(('auto_dimensions',(session,roi,key,result),None))
+            except Exception as exc:self.events.put(('auto_dimensions_error',str(exc),None))
+        threading.Thread(target=worker,daemon=True).start()
+
     def build(self):
         menu=tk.Menu(self.root);self.root.configure(menu=menu)
         files=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Arquivo',menu=files)
@@ -338,18 +361,18 @@ class Application:
             if key=='kernel_size':self.dilation_entry=widget
         self.update_mode_controls()
         def size_range(row,label,minimum,maximum):
-            ttk.Label(seg,text=label).grid(row=row,column=0,sticky='w',pady=2)
-            fields=ttk.Frame(seg);fields.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
-            ttk.Label(fields,text='Mín.').grid(row=0,column=0,padx=(0,2))
-            ttk.Entry(fields,textvariable=self.fields[minimum],width=5).grid(row=0,column=1,padx=(0,6))
-            ttk.Label(fields,text='Máx.').grid(row=0,column=2,padx=(0,2))
-            ttk.Entry(fields,textvariable=self.fields[maximum],width=5).grid(row=0,column=3)
+            ttk.Label(seg,text=f'{label} Mín.').grid(row=row,column=0,sticky='w',pady=2)
+            ttk.Entry(seg,textvariable=self.fields[minimum],width=6).grid(row=row,column=1,sticky='w',padx=(5,9),pady=2)
+            ttk.Label(seg,text='Máx.').grid(row=row,column=2,sticky='w',pady=2)
+            ttk.Entry(seg,textvariable=self.fields[maximum],width=6).grid(row=row,column=3,sticky='w',padx=(5,0),pady=2)
         size_range(4,'Largura', 'min_w','max_w')
         size_range(5,'Altura', 'min_h','max_h')
-        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=2,sticky='w',pady=(3,5))
-        ttk.Button(measuring,text='Medir',command=self.measure_character).pack(side='left')
-        ttk.Button(measuring,text='Definir mín.',command=lambda:self.use_measurement(True)).pack(side='left',padx=(5,0))
-        ttk.Button(measuring,text='Definir máx.',command=lambda:self.use_measurement(False)).pack(side='left',padx=(5,0))
+        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=4,sticky='w',pady=(3,5))
+        ttk.Button(measuring,text='Definir mín.',width=12,command=lambda:self.use_measurement(True)).grid(row=0,column=0,sticky='w',padx=(0,5),pady=(0,3))
+        ttk.Button(measuring,text='Definir máx.',width=12,command=lambda:self.use_measurement(False)).grid(row=0,column=1,sticky='w',pady=(0,3))
+        ttk.Button(measuring,text='Medir',width=12,command=self.measure_character).grid(row=1,column=0,sticky='w',padx=(0,5))
+        self.auto_button=ttk.Button(measuring,text='Auto',width=7,command=self.auto_dimensions)
+        self.auto_button.grid(row=1,column=1,sticky='w')
         ttk.Label(seg,textvariable=self.measure_text).grid(row=7,column=0,columnspan=2,sticky='w')
         ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=8,column=0,columnspan=2,sticky='w',pady=2)
         ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=9,column=0,columnspan=2,sticky='w',pady=2)
@@ -618,7 +641,20 @@ class Application:
         try:
             while True:
                 kind,value,callback=self.events.get_nowait()
-                if kind in ('preview','preview_error'):
+                if kind in ('auto_dimensions','auto_dimensions_error'):
+                    self._auto_busy=False;self.auto_button.configure(state='normal')
+                    if kind=='auto_dimensions_error':self.status.set(value)
+                    else:
+                        session,roi,key,bounds=value
+                        try:
+                            current=self.config()
+                            current_key=(id(self.session),tuple(getattr(current,k) for k in MASK_KEYS))
+                        except (ValueError,TypeError):current_key=None
+                        if session is self.session and roi==self.roi and key==current_key and not self.busy:
+                            for field,number in zip(('min_w','max_w','min_h','max_h'),bounds):
+                                self.fields[field].set(str(number))
+                            self.status.set('Limites estimados para esta carta. Confira as caixas na prévia.')
+                elif kind in ('preview','preview_error'):
                     self._preview_busy=False
                     revision=value[0]
                     if revision!=self._preview_revision:
