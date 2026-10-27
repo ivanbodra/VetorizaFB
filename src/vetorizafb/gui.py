@@ -27,7 +27,7 @@ from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
 from .calibration import CalibrationPreview
 from .branding import apply_icon, asset_photo
-from .ui import Tooltip
+from .ui import Tooltip, rounded_controls
 from .models import default_model_root,discover_models,download_model,ConnectionSettings,save_model_root,inspect_model
 from .model_dialog import ModelDownloadDialog
 
@@ -98,7 +98,7 @@ class Application:
             style.map(name+'.TButton',background=[('disabled','#eef1f4'),('pressed',hover),('active',hover)],foreground=[('disabled','#8d9baa')])
         style.configure('TNotebook',background='#f5f8fb',borderwidth=0,tabmargins=0)
         style.configure('TNotebook.Tab',padding=(7,7),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
-        style.map('TNotebook.Tab',padding=[('selected',(12,11)),('!selected',(7,6))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
+        style.map('TNotebook.Tab',padding=[('selected',(12,8)),('!selected',(7,6))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
         style.configure('TEntry',fieldbackground='white',padding=4,bordercolor='#cbd9e4')
         style.configure('Required.TEntry',fieldbackground='#fff2bf',bordercolor='#d9b650')
         style.configure('TCombobox',fieldbackground='white',background='#e5f1fb',arrowcolor='#17547e',padding=3)
@@ -106,6 +106,7 @@ class Application:
         style.configure('Treeview',rowheight=24,background='white',fieldbackground='white',borderwidth=0)
         style.configure('Treeview.Heading',font=(self.ui_font,9,'bold'),background='#e7eff5',foreground='#36576d',padding=5,relief='flat')
         style.map('Treeview',background=[('selected','#176b85')],foreground=[('selected','white')])
+        self._control_images=rounded_controls(style,self.root)
         style.configure('Brand.TFrame',background='#eaf4f8')
         style.configure('Brand.Field.TFrame',background='#eaf4f8')
         style.configure('Brand.Field.TLabel',background='#eaf4f8',foreground='#153b50',font=(self.ui_font,10,'bold'))
@@ -116,6 +117,11 @@ class Application:
             im=Image.new('RGBA',(10,10))
             ImageDraw.Draw(im).ellipse((1,1,8,8),fill=colour)
             self.stage_icons[state]=ImageTk.PhotoImage(im,master=self.root)
+        with Image.open(Path(__file__).parent/'assets'/'logo_app.png') as source:
+            monitor=source.convert('RGBA').crop((62,16,438,361)).resize((19,18),Image.Resampling.LANCZOS)
+        alpha=monitor.getchannel('A')
+        monitor=Image.new('RGBA',monitor.size,'#7de1c1');monitor.putalpha(alpha)
+        self.stage_icons['selected']=ImageTk.PhotoImage(monitor,master=self.root)
 
     def tip(self,widget,text):
         item=Tooltip(widget,text);self.tooltips.append(item);return item
@@ -256,7 +262,7 @@ class Application:
         ttk.Button(header,text='Abrir…',command=self.choose_chart).grid(row=0,column=2)
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
         left=ttk.Frame(split,width=355);split.add(left,weight=0)
-        self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True,pady=(8,0))
+        self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
         self.segment_panel=ScrollablePanel(self.tabs);seg=self.segment_panel.content
         ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(3)]
         for frame,label in [(self.segment_panel,'1. Preparar'),(ocr,'2. Reconhecer'),(group,'3. Agrupar'),(export,'4. Exportar')]:
@@ -265,6 +271,7 @@ class Application:
         for i,label in enumerate(self.stage_labels):self.tabs.tab(i,text=label)
         self.tab_tip=self.tip(self.tabs,lambda:self.stage_tooltip())
         self.tabs.bind('<Motion>',self.tab_hover)
+        self.tabs.bind('<<NotebookTabChanged>>',lambda event:self.refresh_tab_icons())
         seg.columnconfigure(1,weight=1)
         def setting(frame,row,label,key,values=None):
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
@@ -517,8 +524,14 @@ class Application:
         self.local_model_combo.configure(state='disabled' if self.busy else 'readonly')
         self.refresh_chart_prompt()
         self.stage_states=[('empty' if self.session is None else 'busy' if self.busy else 'ready' if valid else 'pending') for valid in (seg,digits,groups,groups)]
-        for index,state in enumerate(self.stage_states):self.tabs.tab(index,image=self.stage_icons[state])
+        self.refresh_tab_icons()
         self.refresh_review_controls()
+
+    def refresh_tab_icons(self):
+        if not self.stage_states:return
+        selected=self.tabs.index('current')
+        for index,state in enumerate(self.stage_states):
+            self.tabs.tab(index,image=self.stage_icons['selected' if index==selected else state])
 
     def start(self,task,done=lambda result:None,cancellable=True):
         if self.busy:return
