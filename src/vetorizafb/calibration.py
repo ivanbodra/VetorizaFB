@@ -1,5 +1,6 @@
-"""Non-mutating size preview over the last segmentation's native contours."""
-from .core import yellow_background_fraction
+"""Non-mutating box preview with reusable masks and contours."""
+import cv2
+from .core import Box, segmentation_mask, yellow_background_fraction
 
 MASK_KEYS = ('dpi', 'reference_dpi', 'segmentation', 'exclude_magenta', 'threshold', 'blur_size', 'kernel_size')
 
@@ -18,17 +19,40 @@ class CalibrationPreview:
     def __init__(self):
         self.source = None
         self.fractions = {}
+        self.mask_key = None
+        self.mask = None
+        self.contour_key = None
+        self.contours = []
+
+    def contours_for(self,session,config,roi):
+        roi=session.validate_roi(roi)
+        key=(id(session),tuple(getattr(config,k) for k in MASK_KEYS))
+        if self.mask_key!=key:
+            # Keep a full-chart mask so a different selection does not redo image treatment.
+            if session.mask is not None and session.roi is None and session.seg_key is not None and all(
+                getattr(config,k)==getattr(session.config,k) for k in MASK_KEYS):
+                self.mask=session.mask
+            else:self.mask=segmentation_mask(session.rgb,config)
+            self.mask_key=key;self.contour_key=None
+        contour_key=(key,roi)
+        if self.contour_key!=contour_key:
+            x,y,w,h=roi or (0,0,self.mask.shape[1],self.mask.shape[0])
+            crop=self.mask[y:y+h,x:x+w].copy()
+            mode=cv2.RETR_CCOMP if session.contour_revision==2 else cv2.RETR_EXTERNAL
+            contours,hierarchy=cv2.findContours(crop,mode,cv2.CHAIN_APPROX_SIMPLE)
+            self.contours=[Box(a+x,b+y,c,d) for i,contour in enumerate(contours)
+                if session.contour_revision==1 or hierarchy[0,i,3]<0
+                for a,b,c,d in [cv2.boundingRect(contour)]]
+            self.contour_key=contour_key
+        return self.contours
 
     def classify(self, session, config, roi):
-        if session.all_boxes is None or session.seg_key is None:
-            raise ValueError('Execute a etapa 1 para obter os contornos.')
-        if roi != session.roi or any(getattr(config, k) != getattr(session.config, k) for k in MASK_KEYS):
-            raise ValueError('Máscara ou área alterada: execute a etapa 1 para renovar a prévia.')
-        source = (id(session), id(session.all_boxes), config.scale, config.yellow_delta)
+        boxes=self.contours_for(session,config,roi)
+        source = (self.contour_key,config.scale, config.yellow_delta)
         if source != self.source:
             self.source, self.fractions = source, {}
         result = []
-        for b in session.all_boxes:
+        for b in boxes:
             reasons = size_reasons(b, config)
             if not reasons and config.exclude_yellow:
                 if b not in self.fractions:

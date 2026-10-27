@@ -1,4 +1,4 @@
-# VetorizaFB 4.0.3 user guide
+# VetorizaFB 4.0.4 user guide
 
 Updated 2026-10-26. Development branch: `ocr-modernization`, PR #1.
 The [0.1 guide](USER_GUIDE_0_1.md) is retained for historical reference.
@@ -495,7 +495,7 @@ explicitly running segmentation to apply the change, then rerun OCR/grouping.
 Numbers physically connected to lines remain a separate limitation.
 
 
-### 4.0.3 — native GeoTIFF loading and rejected-box visibility
+### 4.0.4 — native GeoTIFF loading and rejected-box visibility
 
 GeoTIFF RGB, indexed-palette and grayscale pixels, CRS, affine transform and TIFF
 resolution metadata are now read through Rasterio/GDAL. Pillow is no longer
@@ -516,11 +516,11 @@ before OCR/grouping to apply revised extraction to a historical project.
 
 To test this revision before freezing a Windows EXE, update the development
 branch, install editable dependencies and run `python -m vetorizafb.gui` from
-that environment. Confirm 4.0.3 in the title/About. The existing working local
+that environment. Confirm 4.0.4 in the title/About. The existing working local
 PyInstaller spec is not replaced by this source update.
 
 
-## Interface 4.0.3
+## Interface 4.0.4
 
 As abas são **Preparar → Reconhecer → Agrupar → Exportar**. As visualizações são
 **Original → Editada → Caixas → Dígitos → Sondagens**. Caixas reúne a prévia dos
@@ -581,7 +581,7 @@ the save dialog or a save failure also preserves the project. The application
 stays open and the chart/review state is cleared only after discard or save success.
 
 
-## 4.0.3 interface and magenta marks
+## 4.0.4 interface and magenta marks
 
 The pale header separates the logo/name from Carta Náutica. The selected tab is
 larger and petroleum blue, with a gap below the header. About aligns its logos,
@@ -595,7 +595,7 @@ RGB pixels remain unchanged for the chart viewer and recognition crops. Black
 soundings are retained where chart markings pass nearby. Older saved boxes and
 review remain until the user explicitly prepares the chart again.
 
-**Preparar · Reconhecer · Agrupar** runs these stages, reusing valid results and
+**Gerar sondagens** runs these stages, reusing valid results and
 never exporting. During a model download, the selected model is named before
 bytes arrive; the progress area shows bytes/total when known or an animated
 bar otherwise. Process and download failures open a selectable error dialog with
@@ -605,3 +605,29 @@ bar otherwise. Process and download failures open a selectable error dialog with
 environment and, where exposed, Windows static system proxy settings; it does
 not interpret PAC scripts. **Direta** ignores proxy settings. **Proxy** uses
 the manually entered server and optional Basic credentials.
+
+
+## 4.0.4 — preparation controls
+
+Enabling **Prévia** switches to Caixas and computes provisional boxes. Mask-changing
+parameters rebuild the image mask in the background; a change of region extracts
+contours from the cached mask; size/color filters reuse contours. The original
+chart image is not rebuilt for these box updates. Disabling Prévia stops background classification while
+**Preparar** still applies the settings explicitly. The size histogram is removed.
+Measurement and min/max shortcuts sit beside the width/height inputs.
+**Carta inteira** and **Selecionar área** choose the region in the preparation
+panel. **Gerar sondagens** prepares, recognizes, and groups without exporting.
+
+In Bruto mode, Desfoque and Dilatação are disabled because the algorithm does
+not use them. The separate gray details strip and idle progress bar are hidden;
+**Descartadas** is available in the image toolbar, and **Medir** sits by the
+size inputs.
+
+
+## 4.0.5 — panel fill and resize responsiveness
+
+The preparation panel now uses the same background through its full height.
+Its content fills the available height and scrolling appears only if required.
+Layout recalculation is coalesced while the window changes size; chart resizing
+also defers raster redraw until the resize settles. This reduces redundant work
+during maximize and tab/window layout changes.

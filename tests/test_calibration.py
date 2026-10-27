@@ -14,7 +14,8 @@ def session():
     rgb=np.full((80,120,3),255,np.uint8)
     rgb[10:30,10:13]=0;rgb[20:45,50:60]=0
     _,all_boxes,boxes=segment_details(rgb,cfg)
-    return SimpleNamespace(rgb=rgb,config=cfg,all_boxes=all_boxes,boxes=boxes,roi=None,seg_key=('test',),review={'unchanged':True})
+    return SimpleNamespace(rgb=rgb,config=cfg,all_boxes=all_boxes,boxes=boxes,roi=None,
+        seg_key=('test',),mask=None,contour_revision=2,validate_roi=lambda roi:roi,review={'unchanged':True})
 
 
 def test_preview_recovers_size_exclusions_without_mutation():
@@ -35,16 +36,18 @@ def test_preview_strict_boundary_and_scaled_dimensions():
 
 
 @pytest.mark.parametrize('key',MASK_KEYS)
-def test_preview_refuses_stale_mask(key):
+def test_preview_rebuilds_changed_mask(key):
     s=session();cfg=replace(s.config,**{key:('legacy' if key=='segmentation' else not getattr(s.config,key) if key=='exclude_magenta' else getattr(s.config,key)+2)})
-    with pytest.raises(ValueError,match='Máscara'):CalibrationPreview().classify(s,cfg,None)
+    result=CalibrationPreview().classify(s,cfg,None)
+    assert sorted((b for b,reason in result if not reason),key=lambda b:(b.x,b.y))==segment_details(s.rgb,cfg)[2]
 
 
-def test_preview_refuses_changed_roi_and_missing_contours():
+def test_preview_reuses_mask_for_changed_roi_and_missing_contours():
     s=session()
-    with pytest.raises(ValueError):CalibrationPreview().classify(s,s.config,(0,0,10,10))
+    preview=CalibrationPreview();preview.classify(s,s.config,None);mask=preview.mask
+    preview.classify(s,s.config,(0,0,10,10));assert preview.mask is mask
     s.all_boxes=None
-    with pytest.raises(ValueError):CalibrationPreview().classify(s,s.config,None)
+    assert preview.classify(s,s.config,None)
 
 
 def test_colour_cache_matches_processing_and_invalidates_on_new_contours(monkeypatch):
@@ -56,6 +59,6 @@ def test_colour_cache_matches_processing_and_invalidates_on_new_contours(monkeyp
     monkeypatch.setattr(module,'yellow_background_fraction',lambda *args:(calls.append(1),original(*args))[1])
     cfg=replace(s.config,exclude_yellow=True)
     result=preview.classify(s,cfg,None)
-    assert [b for b,r in result if not r]==segment_details(s.rgb,cfg)[2]
+    assert sorted((b for b,r in result if not r),key=lambda b:(b.x,b.y))==segment_details(s.rgb,cfg)[2]
     n=len(calls);preview.classify(s,replace(cfg,yellow_min_fraction=.8),None);assert len(calls)==n
-    s.all_boxes=list(s.all_boxes);preview.classify(s,cfg,None);assert len(calls)>n
+    s.all_boxes=list(s.all_boxes);preview.classify(s,cfg,None);assert len(calls)==n

@@ -6,14 +6,34 @@ from tkinter import ttk, simpledialog, messagebox
 class ScrollablePanel(ttk.Frame):
     def __init__(self,parent):
         super().__init__(parent)
-        self.canvas=tk.Canvas(self,highlightthickness=0,borderwidth=0,width=330)
-        scroll=ttk.Scrollbar(self,orient='vertical',command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=scroll.set)
-        scroll.pack(side='right',fill='y');self.canvas.pack(side='left',fill='both',expand=True)
+        self.canvas=tk.Canvas(self,highlightthickness=0,borderwidth=0,width=330,bg='#f5f8fb')
+        self.scroll=ttk.Scrollbar(self,orient='vertical',command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scroll.set)
+        self.canvas.pack(side='left',fill='both',expand=True)
         self.content=ttk.Frame(self.canvas,padding=9)
         window=self.canvas.create_window((0,0),window=self.content,anchor='nw')
-        self.canvas.bind('<Configure>',lambda e:self.canvas.itemconfigure(window,width=e.width))
-        self.content.bind('<Configure>',lambda e:self.canvas.configure(scrollregion=self.canvas.bbox('all')))
+        self._layout_pending=False
+        def queue_layout(event=None):
+            if not self._layout_pending:
+                self._layout_pending=True
+                self.after_idle(layout)
+        def layout():
+            self._layout_pending=False
+            height=max(1,self.canvas.winfo_height())
+            requested=self.content.winfo_reqheight()
+            need_scroll=requested>height
+            if need_scroll and not self.scroll.winfo_manager():
+                self.scroll.pack(side='right',fill='y',before=self.canvas)
+            elif not need_scroll and self.scroll.winfo_manager():
+                self.scroll.pack_forget();self.canvas.yview_moveto(0)
+            width=max(1,self.canvas.winfo_width())
+            target_height=max(height,requested)
+            if self.canvas.itemcget(window,'width')!=str(width) or self.canvas.itemcget(window,'height')!=str(target_height):
+                self.canvas.itemconfigure(window,width=width,height=target_height)
+            self.canvas.configure(scrollregion=(0,0,width,target_height))
+        self.canvas.bind('<Configure>',queue_layout)
+        self.content.bind('<Configure>',queue_layout)
+        queue_layout()
 
 
 def number(variable):

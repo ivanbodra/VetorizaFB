@@ -17,7 +17,6 @@ from .runtime import configure_gis_runtime
 configure_gis_runtime()
 
 from PIL import Image, ImageDraw, ImageTk
-import numpy as np
 
 from .core import Config, ProcessingCancelled
 from .pipeline import write_json_atomic
@@ -57,11 +56,17 @@ class Application:
         self.sort_column=None
         self.sort_reverse=False
         self.tooltips=[]
-        self.roi_text = tk.StringVar(value='Área: carta inteira')
+        self.roi_text = tk.StringVar(value='Carta inteira')
+        self.area_mode = tk.StringVar(value='whole')
         self.filter = tk.StringVar(value='Todos')
         self.review_note = tk.StringVar()
         self.follow_review = tk.BooleanVar(value=True)
         self.selection_text = tk.StringVar(value='0 selecionados')
+        self.show_tooltips=tk.BooleanVar(value=self.load_tooltips_preference())
+        Tooltip.set_enabled(root,self.show_tooltips.get())
+        self.live_preview=tk.BooleanVar(value=False)
+        self._preview_busy=False
+        self._preview_revision=0
         self._selection_anchor = self._last_followed = None
         self.fields = {k:tk.BooleanVar(value=v) if isinstance(v,bool) else tk.StringVar(value=str(v))
                        for k,v in asdict(Config()).items()}
@@ -71,8 +76,9 @@ class Application:
         self.icon_path = apply_icon(root)
         self.set_config(Config())
         self.build()
-        for var in [*self.fields.values(),self.model,self.model_dir]:
-            var.trace_add('write',lambda *args:self.refresh_validity())
+        for key,var in self.fields.items():
+            var.trace_add('write',lambda *args,k=key:self.field_changed(k))
+        for var in (self.model,self.model_dir):var.trace_add('write',lambda *args:self.refresh_validity())
         root.protocol('WM_DELETE_WINDOW',self.close)
         root.bind('<F1>',lambda e:self.open_manual())
         root.bind('<Control-o>',lambda e:self.choose_chart())
@@ -89,7 +95,7 @@ class Application:
         tkfont.nametofont('TkTextFont').configure(family=self.ui_font,size=10)
         if 'clam' in style.theme_names():style.theme_use('clam')
         style.configure('.',font=(self.ui_font,10),background='#f5f8fb',foreground='#19364a')
-        style.configure('TButton',padding=(8,4),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9',focusthickness=1,focuscolor='#0a70b5')
+        style.configure('TButton',padding=(8,3),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9',focusthickness=1,focuscolor='#0a70b5')
         style.map('TButton',background=[('disabled','#eef1f4'),('pressed','#c4dfef'),('active','#d2e8f9')],foreground=[('disabled','#8d9baa')],bordercolor=[('disabled','#e0e6ec'),('active','#468eb9')])
         style.configure('TMenubutton',padding=(8,4),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9')
         style.map('TMenubutton',background=[('disabled','#eef1f4'),('active','#d2e8f9')],foreground=[('disabled','#8d9baa')])
@@ -97,8 +103,8 @@ class Application:
             style.configure(name+'.TButton',background=bg,foreground=fg,bordercolor=bg)
             style.map(name+'.TButton',background=[('disabled','#eef1f4'),('pressed',hover),('active',hover)],foreground=[('disabled','#8d9baa')])
         style.configure('TNotebook',background='#f5f8fb',borderwidth=0,tabmargins=0)
-        style.configure('TNotebook.Tab',padding=(7,7),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
-        style.map('TNotebook.Tab',padding=[('selected',(12,8)),('!selected',(7,6))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
+        style.configure('TNotebook.Tab',font=(self.ui_font,9),padding=(4,5),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
+        style.map('TNotebook.Tab',padding=[('selected',(4,6)),('!selected',(2,4))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
         style.configure('TEntry',fieldbackground='white',padding=4,bordercolor='#cbd9e4')
         style.configure('Required.TEntry',fieldbackground='#fff2bf',bordercolor='#d9b650')
         style.configure('TCombobox',fieldbackground='white',background='#e5f1fb',arrowcolor='#17547e',padding=3)
@@ -110,21 +116,32 @@ class Application:
         style.configure('Brand.TFrame',background='#eaf4f8')
         style.configure('Brand.Field.TFrame',background='#eaf4f8')
         style.configure('Brand.Field.TLabel',background='#eaf4f8',foreground='#153b50',font=(self.ui_font,10,'bold'))
-        style.configure('Brand.TLabel',background='#eaf4f8',foreground='#153b50',font=(self.ui_font,18,'bold'))
+        style.configure('Brand.TLabel',background='#eaf4f8',foreground='#153b50',font=(self.ui_font,16,'bold'))
         style.configure('Tooltip.TLabel',background='#17374b',foreground='white',font=(self.ui_font,9))
         self.stage_icons={}
         for state,colour in [('empty','#afbdc8'),('pending','#f1b747'),('ready','#57cba1'),('busy','#5eb5ff')]:
-            im=Image.new('RGBA',(10,10))
-            ImageDraw.Draw(im).ellipse((1,1,8,8),fill=colour)
+            im=Image.new('RGBA',(7,7))
+            ImageDraw.Draw(im).ellipse((1,1,6,6),fill=colour)
             self.stage_icons[state]=ImageTk.PhotoImage(im,master=self.root)
-        with Image.open(Path(__file__).parent/'assets'/'logo_app.png') as source:
-            monitor=source.convert('RGBA').crop((62,16,438,361)).resize((19,18),Image.Resampling.LANCZOS)
-        alpha=monitor.getchannel('A')
-        monitor=Image.new('RGBA',monitor.size,'#7de1c1');monitor.putalpha(alpha)
-        self.stage_icons['selected']=ImageTk.PhotoImage(monitor,master=self.root)
 
     def tip(self,widget,text):
         item=Tooltip(widget,text);self.tooltips.append(item);return item
+
+    @staticmethod
+    def tooltip_preferences_path():
+        return Path(os.environ.get('APPDATA',Path.home()/'.config'))/'VetorizaFB'/'interface.json'
+
+    def load_tooltips_preference(self):
+        try:
+            value=json.loads(self.tooltip_preferences_path().read_text(encoding='utf-8'))
+            return value['show_tooltips'] if isinstance(value,dict) and isinstance(value.get('show_tooltips'),bool) else True
+        except (OSError,ValueError,TypeError,KeyError):return True
+
+    def toggle_tooltips(self):
+        enabled=self.show_tooltips.get()
+        Tooltip.set_enabled(self.root,enabled)
+        try:write_json_atomic(self.tooltip_preferences_path(),{'show_tooltips':enabled})
+        except OSError:self.status.set('A preferência das dicas vale nesta sessão; não foi possível salvá-la.')
 
     def refresh_chart_prompt(self):
         if not hasattr(self,'chart_entry'):return
@@ -200,24 +217,48 @@ class Application:
         except (OSError,ValueError) as exc:messagebox.showerror('Ícone',str(exc),parent=self.root)
 
     def schedule_preview(self):
+        if not self.live_preview.get():return
+        self._preview_revision+=1
         if self._preview_id:self.root.after_cancel(self._preview_id)
-        self._preview_id=self.root.after(180,self.update_preview)
+        self._preview_id=self.root.after(300,self.update_preview)
+
+    def field_changed(self,key):
+        if key=='segmentation' and hasattr(self,'blur_entry'):self.update_mode_controls()
+        self.refresh_validity()
+        if key in ('dpi','reference_dpi','segmentation','exclude_magenta','threshold','blur_size','kernel_size',
+                   'min_w','max_w','min_h','max_h','exclude_yellow','yellow_delta','yellow_min_fraction'):
+            self.schedule_preview()
+
+    def update_mode_controls(self):
+        state='disabled' if self.fields['segmentation'].get()=='Bruto' else 'normal'
+        for widget in (self.blur_entry,self.dilation_entry):widget.configure(state=state)
+
+    def toggle_live_preview(self):
+        if self.live_preview.get():
+            self.viewer.layer.set('Caixas')
+            self.viewer.render()
+            if not self.session or self.busy:return
+            self.schedule_preview()
+        else:
+            self._preview_revision+=1
+            if self._preview_id:self.root.after_cancel(self._preview_id);self._preview_id=None
 
     def update_preview(self):
         if self._preview_id:self.root.after_cancel(self._preview_id)
         self._preview_id=None
         if self.busy or not self.session:return
         try:
-            result=self.preview.classify(self.session,self.config(),self.roi)
-            self.viewer.preview_boxes=result
-            if self.viewer.layer.get()=='Caixas':
-                kept=sum(not reason for _,reason in result)
-                self.viewer.inspection_text.set(f'{kept} aceitas • {len(result)-kept} descartadas • prévia, ainda não aplicada')
-                self.viewer.render()
+            cfg=self.config()
+            if self._preview_busy:return
+            self._preview_busy=True;revision=self._preview_revision;session=self.session;roi=self.roi
+            def worker():
+                try:self.events.put(('preview',(revision,session,self.preview.classify(session,cfg,roi),cfg,roi),None))
+                except Exception as exc:self.events.put(('preview_error',(revision,str(exc)),None))
+            threading.Thread(target=worker,daemon=True).start()
         except (ValueError,TypeError) as exc:
             self.viewer.preview_boxes=[]
             if self.viewer.layer.get()=='Caixas':
-                self.viewer.inspection_text.set(str(exc));self.viewer.render()
+                self.viewer.inspection_text.set(str(exc));self.viewer.render_preview_boxes()
 
     def measure_character(self):
         self.viewer.mode.set('Medir caractere')
@@ -232,7 +273,8 @@ class Application:
             values=[max(.01,math.floor(v)-1) if minimum else math.ceil(v)+1 for v in (w,h)]
             low='min_' if minimum else 'max_'
             for key,value in zip(('w','h'),values):self.fields[low+key].set(str(value))
-            self.viewer.layer.set('Caixas');self.update_preview()
+            self.viewer.layer.set('Caixas')
+            if self.live_preview.get():self.update_preview()
         except (ValueError,TypeError) as exc:self.status.set(str(exc))
 
     def build(self):
@@ -245,23 +287,25 @@ class Application:
         help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
         help_menu.add_command(label='Manual de uso (F1)',command=self.open_manual)
         help_menu.add_command(label='Atalhos de teclado…',command=self.show_shortcuts)
+        help_menu.add_checkbutton(label='Mostrar dicas ao passar o cursor',variable=self.show_tooltips,
+                                  command=self.toggle_tooltips)
         help_menu.add_separator();help_menu.add_command(label='Sobre o VetorizaFB',command=self.about)
-        brand=ttk.Frame(self.root,padding=(12,5),style='Brand.TFrame');brand.pack(fill='x')
-        self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(44,34))
+        brand=ttk.Frame(self.root,padding=(12,3),style='Brand.TFrame');brand.pack(fill='x')
+        self.header_logo=asset_photo(self.root,'logo_vetorizaFB.png',(36,28))
         self.brand_icon=ttk.Label(brand,image=self.header_logo,style='Brand.TLabel')
         self.brand_icon.pack(side='left',padx=(0,10))
         ttk.Label(brand,text='VetorizaFB',style='Brand.TLabel').pack(side='left')
-        ttk.Separator(brand,orient='vertical').pack(side='left',fill='y',padx=18,pady=4)
+        ttk.Separator(brand,orient='vertical').pack(side='left',fill='y',padx=14,pady=2)
         header=ttk.Frame(brand,style='Brand.Field.TFrame');header.pack(side='right',fill='x',expand=True)
         header.columnconfigure(1,weight=1)
         ttk.Label(header,text='Carta Náutica:',style='Brand.Field.TLabel').grid(row=0,column=0,sticky='w')
         self.chart_entry=ttk.Entry(header,textvariable=self.path,style='Required.TEntry')
         self.chart_entry.grid(row=0,column=1,sticky='ew',padx=6)
         self.chart_entry.bind('<Return>',lambda e:self.load_chart())
-        self.tip(self.chart_entry,'Escolha uma Carta Náutica em Abrir… ou digite o caminho e pressione Enter. O amarelo indica uma carta ainda não carregada.')
+        self.tip(self.chart_entry,'Digite o caminho e pressione Enter para abrir a carta.')
         ttk.Button(header,text='Abrir…',command=self.choose_chart).grid(row=0,column=2)
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
-        left=ttk.Frame(split,width=355);split.add(left,weight=0)
+        left=ttk.Frame(split,width=365);split.add(left,weight=0)
         self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
         self.segment_panel=ScrollablePanel(self.tabs);seg=self.segment_panel.content
         ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(3)]
@@ -271,42 +315,50 @@ class Application:
         for i,label in enumerate(self.stage_labels):self.tabs.tab(i,text=label)
         self.tab_tip=self.tip(self.tabs,lambda:self.stage_tooltip())
         self.tabs.bind('<Motion>',self.tab_hover)
-        self.tabs.bind('<<NotebookTabChanged>>',lambda event:self.refresh_tab_icons())
         seg.columnconfigure(1,weight=1)
         def setting(frame,row,label,key,values=None):
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
-            widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=13) if values else ttk.Entry(frame,textvariable=self.fields[key],width=14)
-            widget.grid(row=row,column=1,sticky='ew',padx=(8,0),pady=2)
+            widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=9) if values else ttk.Entry(frame,textvariable=self.fields[key],width=6)
+            widget.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
             hints={
-                'min_w':'Largura mínima em pixels da carta. O limite é estrito: a caixa deve ser maior.',
-                'max_w':'Largura máxima em pixels da carta. O limite é estrito: a caixa deve ser menor.',
-                'min_h':'Altura mínima em pixels da carta; preserve também os decímetros menores.',
-                'max_h':'Altura máxima em pixels da carta.',
-                'yellow_delta':'Aumente para incluir tons de amarelo mais suaves. O filtro usa a cor como indício de terra.',
+                'yellow_delta':'Valor maior inclui tons de amarelo mais suaves.',
                 'threshold':'Aumente para incluir traços mais claros. Valores altos podem acabar incluindo o fundo.',
-                'segmentation':'Realce: desfoque e dilatação dos traços. Bruto: seleção direta dos pixels escuros.',
-                'yellow_min_fraction':'Percentual mínimo de amarelo no fundo da caixa e sua margem para descartá-la; pixels escuros são ignorados.',
-                'crop_padding':'Margem em pixels originais ao redor do caractere para o OCR.',
-                'min_confidence':'Escore mínimo aceito; a releitura dirigida do numeral 1 exige pelo menos 0,80.'}
+                'segmentation':'Realce suaviza e amplia os traços; Bruto usa os pixels escuros diretamente.',
+                'yellow_min_fraction':'Percentual de amarelo necessário para descartar a caixa.',
+                'min_confidence':'Escore mínimo para aceitar um dígito.'}
             if key in hints:self.tip(widget,hints[key])
+            return widget
         for row,(label,key,values) in enumerate([
             ('Modo','segmentation',['Realce','Bruto']),('Claridade (0–255)','threshold',None),
-            ('Desfoque','blur_size',None),('Dilatação','kernel_size',None),
-            ('Largura mínima','min_w',None),('Largura máxima','max_w',None),
-            ('Altura mínima','min_h',None),('Altura máxima','max_h',None)]):setting(seg,row,label,key,values)
-        ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=13,column=0,columnspan=2,sticky='w',pady=3)
-        ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=10,column=0,columnspan=2,sticky='w',pady=6)
-        setting(seg,11,'Sensibilidade','yellow_delta')
-        setting(seg,12,'Cobertura (%)','yellow_min_fraction')
-        self.seg_button=ttk.Button(seg,text='Preparar',style='Primary.TButton',command=lambda:self.run_stage('segment'))
-        self.seg_button.grid(row=14,column=0,columnspan=2,sticky='ew',pady=8)
-        ttk.Button(seg,text='Dimensões',command=self.inspect_sizes).grid(row=15,column=0,columnspan=2,sticky='ew',pady=3)
-        ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=16,column=0,columnspan=2,sticky='w',pady=8)
-        ttk.Button(seg,text='Usar carta inteira',command=lambda:self.set_roi(None)).grid(row=17,column=0,columnspan=2,sticky='ew')
-        ttk.Button(seg,text='Medir caractere',command=self.measure_character).grid(row=19,column=0,columnspan=2,sticky='ew',pady=5)
-        ttk.Label(seg,textvariable=self.measure_text,wraplength=285).grid(row=20,column=0,columnspan=2,sticky='w',pady=5)
-        ttk.Button(seg,text='Definir mínimos',command=lambda:self.use_measurement(True)).grid(row=21,column=0,columnspan=2,sticky='ew')
-        ttk.Button(seg,text='Definir máximos',command=lambda:self.use_measurement(False)).grid(row=22,column=0,columnspan=2,sticky='ew',pady=3)
+            ('Desfoque','blur_size',None),('Dilatação','kernel_size',None)]):
+            widget=setting(seg,row,label,key,values)
+            if key=='blur_size':self.blur_entry=widget
+            if key=='kernel_size':self.dilation_entry=widget
+        self.update_mode_controls()
+        def size_range(row,label,minimum,maximum):
+            ttk.Label(seg,text=label).grid(row=row,column=0,sticky='w',pady=2)
+            fields=ttk.Frame(seg);fields.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
+            ttk.Label(fields,text='Mín.').grid(row=0,column=0,padx=(0,2))
+            ttk.Entry(fields,textvariable=self.fields[minimum],width=5).grid(row=0,column=1,padx=(0,6))
+            ttk.Label(fields,text='Máx.').grid(row=0,column=2,padx=(0,2))
+            ttk.Entry(fields,textvariable=self.fields[maximum],width=5).grid(row=0,column=3)
+        size_range(4,'Largura', 'min_w','max_w')
+        size_range(5,'Altura', 'min_h','max_h')
+        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=2,sticky='w',pady=(3,5))
+        ttk.Button(measuring,text='Medir',command=self.measure_character).pack(side='left')
+        ttk.Button(measuring,text='Definir mín.',command=lambda:self.use_measurement(True)).pack(side='left',padx=(5,0))
+        ttk.Button(measuring,text='Definir máx.',command=lambda:self.use_measurement(False)).pack(side='left',padx=(5,0))
+        ttk.Label(seg,textvariable=self.measure_text).grid(row=7,column=0,columnspan=2,sticky='w')
+        ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=8,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=9,column=0,columnspan=2,sticky='w',pady=2)
+        setting(seg,10,'Sensibilidade','yellow_delta')
+        setting(seg,11,'Cobertura (%)','yellow_min_fraction')
+        ttk.Checkbutton(seg,text='Prévia',variable=self.live_preview,command=self.toggle_live_preview).grid(row=12,column=0,columnspan=2,sticky='w',pady=2)
+        self.seg_button=ttk.Button(seg,text='Preparar',width=14,style='Primary.TButton',command=lambda:self.run_stage('segment'))
+        self.seg_button.grid(row=13,column=0,columnspan=2,sticky='w',pady=(5,3))
+        area=ttk.Frame(seg);area.grid(row=14,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Radiobutton(area,text='Carta inteira',variable=self.area_mode,value='whole',command=lambda:self.set_roi(None)).pack(side='left')
+        ttk.Radiobutton(area,text='Selecionar área',variable=self.area_mode,value='select',command=self.select_area).pack(side='left',padx=(10,0))
         model_panel=ttk.Frame(ocr);model_panel.grid(row=0,column=0,columnspan=2,sticky='ew',pady=(0,10))
         model_panel.columnconfigure(1,weight=1)
         ttk.Label(model_panel,text='Pasta').grid(row=0,column=0,sticky='w',padx=(0,6),pady=4)
@@ -324,10 +376,7 @@ class Application:
         self.local_model_combo.bind('<<ComboboxSelected>>',lambda e:self.select_local_model())
         self.refresh_models_button=ttk.Button(model_panel,text='↻',width=2,command=self.refresh_models)
         self.refresh_models_button.grid(row=2,column=2,padx=(4,0),pady=4)
-        self.tip(self.models_entry,lambda:self.models_root.get()+'\nPasta com subpastas de modelos, ou a própria pasta de um modelo. Enter atualiza a lista; nenhum arquivo é movido.')
-        self.tip(self.local_model_combo,lambda:self.model_dir.get() or 'Nenhum modelo local selecionado. Escolha uma pasta ou baixe um modelo.')
-        self.tip(self.download_button,'Escolher o modelo e a conexão antes de baixar. Download separado do reconhecimento; credenciais apenas nesta sessão.')
-        self.tip(self.refresh_models_button,'Procurar novamente os modelos completos na pasta indicada.')
+        self.tip(self.local_model_combo,lambda:self.model_dir.get() or 'Nenhum modelo local selecionado.')
         self.refresh_models()
         for row,(label,key) in enumerate([('Tamanho do lote','ocr_batch_size'),('Margem do recorte (px)','crop_padding'),('Confiança mínima','min_confidence')],6):setting(ocr,row,label,key)
         ttk.Checkbutton(ocr,text='Reler possíveis “1”',variable=self.fields['retry_one']).grid(row=9,column=0,columnspan=2,sticky='w',pady=(8,2))
@@ -352,13 +401,13 @@ class Application:
         ttk.Button(export,text='Salvar projeto',command=self.save_project).grid(row=6,column=0,columnspan=2,sticky='ew',pady=10)
         ttk.Button(export,text='Abrir projeto',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
         controls=ttk.Frame(left);controls.pack(side='bottom',fill='x',before=self.tabs)
-        self.run_button=ttk.Button(controls,text='Preparar · Reconhecer · Agrupar',style='Primary.TButton',command=lambda:self.run_stage('all'))
-        self.run_button.pack(fill='x',pady=8)
-        self.cancel_button=ttk.Button(controls,text='Cancelar',command=self.cancel.set,state='disabled');self.cancel_button.pack(fill='x')
+        self.run_button=ttk.Button(controls,text='Gerar sondagens',style='Primary.TButton',command=lambda:self.run_stage('all'))
+        self.run_button.pack(anchor='w',pady=8)
+        self.cancel_button=ttk.Button(controls,text='Cancelar',width=14,command=self.cancel.set,state='disabled');self.cancel_button.pack(anchor='w')
         self.progress_label=tk.StringVar()
-        ttk.Label(controls,textvariable=self.progress_label,foreground='#153b50').pack(fill='x')
-        self.progress=ttk.Progressbar(controls,mode='determinate');self.progress.pack(fill='x',pady=6)
-        summary=ttk.Label(controls,textvariable=self.counts_summary);summary.pack(fill='x',pady=3)
+        self.progress_caption=ttk.Label(controls,textvariable=self.progress_label,foreground='#153b50')
+        self.progress=ttk.Progressbar(controls,mode='determinate')
+        summary=self.counts_summary_label=ttk.Label(controls,textvariable=self.counts_summary);summary.pack(fill='x',pady=3)
         self.tip(summary,lambda:self.counts.get())
         right=ttk.Panedwindow(split,orient='vertical');split.add(right,weight=1)
         self.viewer=ChartViewer(right,self.canvas_action);right.add(self.viewer,weight=3)
@@ -388,7 +437,7 @@ class Application:
         restore=ttk.Menubutton(bar,text='Restaurar',menu=self.restore_menu)
         restore.grid(row=0,column=len(self.review_buttons),padx=2,pady=2,sticky='w')
         self.review_buttons['restore']=restore
-        self.tip(restore,'Voltar ao valor ou à posição original, preservando o histórico. Pontos adicionados manualmente não têm leitura original.')
+        self.tip(restore,'Pontos adicionados manualmente não têm leitura original.')
         self.extra_actions=tk.Menu(self.root,tearoff=False,postcommand=self.update_actions_menu)
         for key in ('unreviewed','focus','insert','move','position','offset'):
             button=self.review_buttons[key]
@@ -437,27 +486,21 @@ class Application:
                 review_row._notes_position=target
         review_row.bind('<Configure>',fit_review_row)
         self.note_entry.bind('<Return>',lambda e:self.include_note())
-        self.tip(self.note_button,'Gravar a observação nos pontos selecionados, sem alterar valor, posição ou aprovação.')
+        self.tip(self.note_button,'Adiciona a observação aos pontos selecionados.')
         self.review_note.trace_add('write',lambda *args:self.refresh_review_controls())
         self.footer=ttk.Label(self.root,textvariable=self.status,wraplength=1400,padding=(8,3))
         self.footer.pack(side='bottom',fill='x',before=split)
         self.footer.bind('<Configure>',lambda e:self.footer.configure(wraplength=max(100,e.width-16)))
         for key,text in {
-            'accepted':'Aprovar selecionados · Ctrl+A', 'rejected':'Excluir selecionados · Ctrl+X',
-            'unreviewed':'Voltar selecionados para pendentes', 'edit':'Editar uma profundidade · Ctrl+E',
-            'focus':'Centralizar e ampliar o ponto ativo', 'insert':'Adicionar profundidade: clique na imagem. Esc cancela.',
-            'move':'Mover o ponto selecionado: clique na nova posição.', 'position':'Editar X/Y em pixels originais',
-            'offset':'Prévia e deslocamento de todos os pontos ou dos selecionados'}.items():self.tip(self.review_buttons[key],text)
-        self.tip(self.seg_button,'Aplicar os filtros e recalcular a segmentação. Requer uma carta carregada.')
-        self.tip(self.ocr_button,'Reconhecer as caixas da segmentação atual. A releitura preserva o texto e o escore originais.')
-        self.tip(self.group_button,'Agrupar dígitos em profundidades; reutiliza o OCR válido. Salve a revisão antes de reagrupar.')
-        self.tip(self.run_button,'Executar somente as etapas pendentes: segmentar, reconhecer e agrupar.')
-        self.tip(self.cancel_button,'Solicitar cancelamento ao término do lote ou etapa atual.')
+            'insert':'Clique na imagem para adicionar uma profundidade. Esc cancela.',
+            'move':'Clique na nova posição do ponto selecionado.',
+            'position':'Coordenadas em pixels da carta.',
+            'offset':'Deslocar todos os pontos ou apenas os selecionados.'}.items():self.tip(self.review_buttons[key],text)
         for widget in (self.tree,self.viewer.canvas):widget.bind('<Button-3>',self.show_review_menu)
         # Fit compact toolbar labels to their content rather than Tk's default width.
         def compact(widget):
             for child in widget.winfo_children():
-                if isinstance(child,ttk.Button):child.configure(width=0)
+                if isinstance(child,ttk.Button) and not str(child.cget('width')).strip():child.configure(width=0)
                 compact(child)
         compact(self.root)
 
@@ -513,7 +556,6 @@ class Application:
         return names[index]+': '+info[self.stage_states[index]]+'.'
 
     def refresh_validity(self):
-        if hasattr(self,"viewer"):self.schedule_preview()
         if not hasattr(self,'seg_button'):return
         seg=digits=groups=False
         try:
@@ -534,14 +576,8 @@ class Application:
         self.local_model_combo.configure(state='disabled' if self.busy else 'readonly')
         self.refresh_chart_prompt()
         self.stage_states=[('empty' if self.session is None else 'busy' if self.busy else 'ready' if valid else 'pending') for valid in (seg,digits,groups,groups)]
-        self.refresh_tab_icons()
+        for index,state in enumerate(self.stage_states):self.tabs.tab(index,image=self.stage_icons[state])
         self.refresh_review_controls()
-
-    def refresh_tab_icons(self):
-        if not self.stage_states:return
-        selected=self.tabs.index('current')
-        for index,state in enumerate(self.stage_states):
-            self.tabs.tab(index,image=self.stage_icons['selected' if index==selected else state])
 
     def start(self,task,done=lambda result:None,cancellable=True):
         if self.busy:return
@@ -549,6 +585,8 @@ class Application:
         self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.viewer.suspended=True
         self.cancel_button.configure(state='normal' if cancellable else 'disabled')
+        self.progress_caption.pack(fill='x',before=self.counts_summary_label)
+        self.progress.pack(fill='x',pady=6,before=self.counts_summary_label)
         self.progress_label.set('Iniciando…')
         self.progress.configure(mode='indeterminate');self.progress.start(12)
         self.status.set('Processando. Cancelamento é verificado entre lotes e etapas.')
@@ -578,7 +616,23 @@ class Application:
         try:
             while True:
                 kind,value,callback=self.events.get_nowait()
-                if kind=='progress':
+                if kind in ('preview','preview_error'):
+                    self._preview_busy=False
+                    revision=value[0]
+                    if revision!=self._preview_revision:
+                        if self.live_preview.get():self.schedule_preview()
+                        continue
+                    if kind=='preview_error':
+                        self.viewer.preview_boxes=[];self.viewer.inspection_text.set(value[1])
+                    else:
+                        _,session,result,cfg,roi=value
+                        if session is not self.session:continue
+                        self.viewer.preview_boxes=result
+                        kept=sum(not reason for _,reason in result)
+                        state='caixas preparadas' if session.valid_segments(cfg,roi) else 'prévia, ainda não aplicada'
+                        self.viewer.inspection_text.set(f'{kept} mantidas • {len(result)-kept} descartadas • {state}')
+                    self.viewer.render_preview_boxes()
+                elif kind=='progress':
                     current,total,stage=value
                     if total:
                         self.progress.stop();self.progress.configure(mode='determinate',value=100*current/total)
@@ -589,7 +643,7 @@ class Application:
                     self.status.set(label);self.progress_label.set(label)
                 else:
                     self.busy=False;self.progress.stop();self.progress.configure(mode='determinate',value=0)
-                    self.progress_label.set('')
+                    self.progress_label.set('');self.progress.pack_forget();self.progress_caption.pack_forget()
                     self.viewer.suspended=False
                     self.cancel_button.configure(state='disabled')
                     if kind=='ok':
@@ -621,7 +675,7 @@ class Application:
             self.path.set(str(session.path))
             self.set_config(session.config);self.viewer.set_session(session)
             self.output.set(str(session.path.parent/'results'/session.path.stem))
-            self.roi_text.set('Área: carta inteira')
+            self.area_mode.set('whole');self.roi_text.set('Carta inteira')
         self.start(lambda:ChartSession(path),done)
 
     def choose_model(self):
@@ -684,10 +738,19 @@ class Application:
         raise ValueError('Selecione um modelo local completo ou use Conexão / baixar antes de executar o OCR.')
 
     def set_roi(self,roi):
-        if self.busy:return
+        if self.busy:
+            self.area_mode.set('select' if self.roi else 'whole');return
         self.roi=roi;self.viewer.roi=roi
-        self.roi_text.set(f'Área em pixels: {roi}' if roi else 'Área: carta inteira')
-        self.refresh_validity();self.viewer.render()
+        self.area_mode.set('select' if roi else 'whole')
+        self.roi_text.set(f'Área em pixels: {roi}' if roi else 'Carta inteira')
+        if not roi and self.viewer.mode.get()=='Selecionar área':self.viewer.mode.set('Inspecionar')
+        self.refresh_validity();self.viewer.render();self.schedule_preview()
+
+    def select_area(self):
+        if self.busy:
+            self.area_mode.set('select' if self.roi else 'whole');return
+        self.viewer.mode.set('Selecionar área')
+        self.status.set('Arraste na carta para selecionar a área.')
 
     def run_stage(self,stage):
         if self.busy or self.session is None:return
@@ -706,6 +769,7 @@ class Application:
             if stage=='group' or (stage=='all' and not session.valid_groups(cfg,spec,roi)):session.run_grouping(cfg,spec,roi,self.cancel)
         def done(_):
             if session.review is not previous_review:self.review_dirty=False
+            self.viewer.refresh_layers()
             self.viewer.layer.set('Sondagens' if session.review is not None else 'Dígitos' if session.digits is not None else 'Caixas')
             self.update_preview()
             self.viewer.selected_id=None
@@ -996,31 +1060,6 @@ class Application:
         text=f"Texto original: {digit.raw_text!r}\nEscore original: {digit.confidence:.4f}\nLeitura usada: {digit.text!r}\nMétodo: {digit.method}\nCaixa: {b}\nAlternativas: {digit.alternatives}"
         ttk.Label(popup,text=text,wraplength=650,padding=12).pack()
 
-    def inspect_sizes(self):
-        if self.busy or not self.session:return
-        boxes=self.session.all_boxes
-        if boxes is None:messagebox.showinfo('Dimensões','Execute a etapa 1 para atualizar o inspetor.');return
-        popup=tk.Toplevel(self.root);popup.title('Dimensões de contornos / calibração');popup.geometry('760x550')
-        ttk.Label(popup,text=f'{len(boxes)} contornos; {len(self.session.boxes)} caixas aceitas. Dimensões em pixels reais.',padding=10).pack()
-        canvas=tk.Canvas(popup,bg='white');canvas.pack(fill='both',expand=True)
-        if not boxes:return
-        def draw(event=None):
-            canvas.delete('all');cw,ch=max(1,canvas.winfo_width()),max(1,canvas.winfo_height())
-            for offset,key in [(0,'w'),(ch/2,'h')]:
-                vals=[getattr(b,key) for b in boxes];limit=max(20,float(np.percentile(vals,98)))
-                hist,edges=np.histogram(vals,bins=35,range=(0,limit));maxv=max(1,max(hist))
-                canvas.create_text(15,offset+15,text=('Largura' if key=='w' else 'Altura')+f' (até P98={limit:.1f}px)',anchor='w')
-                for i,value in enumerate(hist):
-                    x=35+i*(cw-65)/35;y=offset+ch/2-25
-                    canvas.create_rectangle(x,y-(ch/2-65)*value/maxv,x+(cw-65)/35-1,y,fill='#368a9b',outline='')
-                cfg=self.session.config
-                for name,colour in [('min_'+key,'#00a000'),('max_'+key,'#c00000')]:
-                    value=getattr(cfg,name)*cfg.scale
-                    if value<=limit:
-                        x=35+value/limit*(cw-65);canvas.create_line(x,offset+35,x,offset+ch/2-25,fill=colour,width=2)
-                        canvas.create_text(x,offset+ch/2-13,text=f'{value:g}',fill=colour)
-        canvas.bind('<Configure>',draw)
-
     def export(self,accepted_only):
         if not self.review_ready():return
         if not self.output.get():messagebox.showerror('Saída','Selecione uma pasta de saída.');return
@@ -1051,9 +1090,10 @@ class Application:
         self.session=None;self.roi=None;self.review_dirty=False;self.measurement=None
         self.path.set('');self.output.set('');self.review_note.set('');self.measure_text.set('')
         self.counts.set('');self.counts_summary.set('');self.filter.set('Todos')
-        self.roi_text.set('Área: carta inteira');self.sort_column=None;self.sort_reverse=False
+        self.area_mode.set('whole');self.roi_text.set('Carta inteira');self.sort_column=None;self.sort_reverse=False
         self._selection_anchor=self._last_followed=None
         self.viewer.session=None;self.viewer.preview_boxes=[];self.viewer.measurement=None
+        self.viewer.refresh_layers()
         self.viewer.selected_id=None;self.viewer.selected_ids=set();self.viewer.roi=None
         self.viewer.canvas.delete('all');self.viewer.photo=None
         self.viewer.layer.set('Original');self.viewer.mode.set('Inspecionar')
@@ -1083,7 +1123,8 @@ class Application:
             self.refresh_models(select=False)
             self.output.set(str(session.path.parent/'results'/session.path.stem));self.viewer.set_session(session)
             self.viewer.layer.set('Sondagens' if session.review else 'Dígitos' if session.digits else 'Caixas')
-            self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Área: carta inteira');self.review_dirty=False
+            if session.all_boxes is not None:self.update_preview()
+            self.area_mode.set('select' if self.roi else 'whole');self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Carta inteira');self.review_dirty=False
         self.start(lambda:ChartSession.load_project(path,override),done)
 
     def save_config(self):

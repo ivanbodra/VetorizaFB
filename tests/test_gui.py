@@ -63,6 +63,14 @@ def finish(app):
     assert not app.busy
 
 
+def finish_preview(app):
+    until=time.monotonic()+5
+    while (app._preview_busy or app._preview_id) and time.monotonic()<until:
+        app.root.update();time.sleep(.01)
+    app.root.update()
+    assert not app._preview_busy and app._preview_id is None
+
+
 def test_staged_gui_review_and_parameter_invalidation(app,monkeypatch):
     app.run_stage('all');finish(app)
     assert len(app.tree.get_children())==1
@@ -275,17 +283,19 @@ def test_review_controls_and_notes_remain_visible_at_minimum_window_size(app):
         assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()
 
 
-def test_live_preview_is_non_mutating_and_clears_stale_mask(app):
+def test_live_preview_reuses_contours_and_updates_mask_without_mutating_review(app):
+    from vetorizafb.calibration import MASK_KEYS
     app.run_stage('all');finish(app)
     boxes=app.session.boxes;digits=app.session.digits;review=app.session.review
-    app.viewer.layer.set('Caixas');app.update_preview()
+    app.viewer.layer.set('Caixas');app.update_preview();finish_preview(app)
     assert app.viewer.preview_boxes and not app.viewer.preview_boxes[0][1]
-    app.fields['min_w'].set('15');app.update_preview()
+    app.live_preview.set(True);app.fields['min_w'].set('15');finish_preview(app)
     assert 'largura' in app.viewer.preview_boxes[0][1]
     assert app.session.boxes is boxes and app.session.digits is digits and app.session.review is review
     assert not app.session.valid_segments(app.config())
-    app.fields['threshold'].set('100');app.update_preview()
-    assert app.viewer.preview_boxes==[] and 'etapa 1' in app.viewer.inspection_text.get()
+    app.fields['threshold'].set('100');finish_preview(app)
+    assert app.session.digits is digits and app.session.review is review
+    assert app.preview.mask_key[1][MASK_KEYS.index('threshold')]==100
 
 
 def test_measurement_uses_native_pixels_independent_of_zoom(app):
@@ -307,12 +317,12 @@ def test_measurement_uses_native_pixels_independent_of_zoom(app):
 def test_manual_about_and_preview_toggle(app,monkeypatch):
     from pathlib import Path
     from vetorizafb import __version__
-    assert __version__=='4.0.3' and '4.0.3' in app.root.title()
+    assert __version__=='4.0.5' and '4.0.5' in app.root.title()
     urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
     app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
     popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()
     app.run_stage('segment');finish(app);app.viewer.layer.set('Caixas')
-    app.fields['min_w'].set('15');app.update_preview()
+    app.fields['min_w'].set('15');app.update_preview();finish_preview(app)
     app.viewer.scale=2;app.viewer.render();assert app.viewer._visible_preview
     app.viewer.show_rejected.set(False);app.viewer.render();assert not app.viewer._visible_preview
 
@@ -386,19 +396,17 @@ def test_cn_prompt_distinguishes_loaded_and_new_paths(app):
     app.path.set('');assert app.chart_entry.cget('style')=='Required.TEntry'
 
 
-def test_compact_toolbar_never_cuts_actions_and_details_are_contextual(app):
+def test_compact_toolbar_never_cuts_actions_and_has_no_details_strip(app):
     app.root.geometry('1050x720');app.root.update()
     bar=app.review_buttons['accepted'].master
     for button in app.toolbar_widgets:
         assert button.winfo_x()>=0
         assert button.winfo_x()+button.winfo_width()<=bar.winfo_width()
     app.viewer.layer.set('Original');app.viewer.mode.set('Inspecionar');app.root.update()
-    assert not app.viewer.details.winfo_ismapped()
+    assert not hasattr(app.viewer,'details')
     assert app.viewer.canvas.winfo_height()>=220
     app.viewer.layer.set('Caixas');app.root.update()
-    assert app.viewer.details.winfo_ismapped()
     app.viewer.layer.set('Original');app.viewer.mode.set('Medir caractere');app.root.update()
-    assert app.viewer.details.winfo_ismapped()
 
 
 def test_context_help_preserves_review_selection_and_tooltip_lifecycle(app,monkeypatch):
@@ -525,7 +533,7 @@ def test_compact_stage_names_and_native_pixel_controls(app):
     labels=[str(w.cget('text')) for w in widgets if isinstance(w,ttk.Label)]
     assert not any('DPI' in text for text in labels)
     combos=[w for w in widgets if isinstance(w,ttk.Combobox)]
-    assert any(tuple(w.cget('values'))==('Original','Editada','Caixas','Dígitos','Sondagens') for w in combos)
+    assert tuple(app.viewer.layer_combo.cget('values'))==('Original','Editada','Caixas')
     assert any(tuple(w.cget('values'))==('Realce','Bruto') for w in combos)
     app.root.geometry('1050x720');app.root.update()
     import tkinter as tk
@@ -534,6 +542,33 @@ def test_compact_stage_names_and_native_pixel_controls(app):
         try:visible.add(app.tabs.index(f'@{x},10'))
         except tk.TclError:pass
     assert visible=={0,1,2,3}
+
+
+def test_preview_is_opt_in_and_digit_layer_requires_ocr(app):
+    assert not app.live_preview.get()
+    assert app._preview_id is None
+    app.fields['min_w'].set('4')
+    assert app._preview_id is None
+    app.run_stage('segment');finish(app)
+    assert app.viewer.layer.get()=='Caixas' and app.viewer.preview_boxes
+    assert 'Dígitos' not in app.viewer.layer_combo.cget('values')
+    app.live_preview.set(True);app.toggle_live_preview()
+    assert app._preview_id is not None
+    app.live_preview.set(False);app.toggle_live_preview()
+    assert app._preview_id is None
+    app.run_stage('ocr');finish(app)
+    assert 'Dígitos' in app.viewer.layer_combo.cget('values')
+
+
+def test_enabling_preview_prepares_boxes_and_opens_layer(app):
+    assert app.session.all_boxes is None
+    app.live_preview.set(True);app.toggle_live_preview();finish_preview(app)
+    assert app.viewer.layer.get()=='Caixas'
+    assert app.session.all_boxes is None
+    assert app.viewer.preview_boxes
+    app.live_preview.set(False);app.toggle_live_preview()
+    app.fields['min_w'].set('4')
+    assert app._preview_id is None
 
 
 def test_review_header_sort_is_numeric_and_persists_without_mutating_model(app):
@@ -643,7 +678,7 @@ def test_single_header_and_single_row_review_toolbar(app):
 
 def test_low_zoom_keeps_preview_boxes_visible(app):
     app.run_stage('segment');finish(app)
-    app.viewer.layer.set('Caixas');app.update_preview()
+    app.viewer.layer.set('Caixas');app.update_preview();finish_preview(app)
     app.viewer.scale=.2;app.viewer.render()
     assert app.viewer._visible_preview
     assert 'Amplie' not in app.viewer.inspection_text.get()
