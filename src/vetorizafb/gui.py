@@ -17,7 +17,6 @@ from .runtime import configure_gis_runtime
 configure_gis_runtime()
 
 from PIL import Image, ImageDraw, ImageTk
-import numpy as np
 
 from .core import Config, ProcessingCancelled
 from .pipeline import write_json_atomic
@@ -57,7 +56,8 @@ class Application:
         self.sort_column=None
         self.sort_reverse=False
         self.tooltips=[]
-        self.roi_text = tk.StringVar(value='Área: carta inteira')
+        self.roi_text = tk.StringVar(value='Carta inteira')
+        self.area_mode = tk.StringVar(value='whole')
         self.filter = tk.StringVar(value='Todos')
         self.review_note = tk.StringVar()
         self.follow_review = tk.BooleanVar(value=True)
@@ -219,7 +219,18 @@ class Application:
         self._preview_id=self.root.after(180,self.update_preview)
 
     def toggle_live_preview(self):
-        if self.live_preview.get():self.schedule_preview()
+        if self.live_preview.get():
+            self.viewer.layer.set('Caixas')
+            if not self.session or self.busy:return
+            try:
+                cfg=self.config()
+                needs_mask=(self.session.all_boxes is None or self.session.seg_key is None or
+                    self.roi != self.session.roi or any(getattr(cfg,k)!=getattr(self.session.config,k)
+                    for k in ('dpi','reference_dpi','segmentation','exclude_magenta','threshold','blur_size','kernel_size')))
+            except (ValueError,TypeError):
+                self.update_preview();return
+            if needs_mask:self.run_stage('segment')
+            else:self.update_preview()
         elif self._preview_id:
             self.root.after_cancel(self._preview_id)
             self._preview_id=None
@@ -314,29 +325,27 @@ class Application:
         def size_range(row,label,minimum,maximum):
             ttk.Label(seg,text=label).grid(row=row,column=0,sticky='w',pady=2)
             fields=ttk.Frame(seg);fields.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
-            fields.columnconfigure(1,weight=1);fields.columnconfigure(3,weight=1)
             ttk.Label(fields,text='Mín.').grid(row=0,column=0,padx=(0,2))
-            ttk.Entry(fields,textvariable=self.fields[minimum],width=5).grid(row=0,column=1,sticky='ew',padx=(0,3))
+            ttk.Entry(fields,textvariable=self.fields[minimum],width=5).grid(row=0,column=1,padx=(0,6))
             ttk.Label(fields,text='Máx.').grid(row=0,column=2,padx=(0,2))
-            ttk.Entry(fields,textvariable=self.fields[maximum],width=5).grid(row=0,column=3,sticky='ew')
+            ttk.Entry(fields,textvariable=self.fields[maximum],width=5).grid(row=0,column=3)
         size_range(4,'Largura', 'min_w','max_w')
         size_range(5,'Altura', 'min_h','max_h')
-        ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=6,column=0,columnspan=2,sticky='w',pady=2)
-        ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=7,column=0,columnspan=2,sticky='w',pady=2)
-        setting(seg,8,'Sensibilidade','yellow_delta')
-        setting(seg,9,'Cobertura (%)','yellow_min_fraction')
-        ttk.Checkbutton(seg,text='Prévia',variable=self.live_preview,command=self.toggle_live_preview).grid(row=10,column=0,columnspan=2,sticky='w',pady=2)
+        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=2,sticky='w',pady=(3,5))
+        ttk.Button(measuring,text='Medir caractere',command=self.measure_character).pack(side='left')
+        ttk.Button(measuring,text='Definir mín.',command=lambda:self.use_measurement(True)).pack(side='left',padx=(5,0))
+        ttk.Button(measuring,text='Definir máx.',command=lambda:self.use_measurement(False)).pack(side='left',padx=(5,0))
+        ttk.Label(seg,textvariable=self.measure_text).grid(row=7,column=0,columnspan=2,sticky='w')
+        ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=8,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=9,column=0,columnspan=2,sticky='w',pady=2)
+        setting(seg,10,'Sensibilidade','yellow_delta')
+        setting(seg,11,'Cobertura (%)','yellow_min_fraction')
+        ttk.Checkbutton(seg,text='Prévia',variable=self.live_preview,command=self.toggle_live_preview).grid(row=12,column=0,columnspan=2,sticky='w',pady=2)
         self.seg_button=ttk.Button(seg,text='Preparar',width=14,style='Primary.TButton',command=lambda:self.run_stage('segment'))
-        self.seg_button.grid(row=11,column=0,columnspan=2,sticky='w',pady=(5,3))
-        auxiliary=ttk.Frame(seg);auxiliary.grid(row=12,column=0,columnspan=2,sticky='w',pady=2)
-        ttk.Button(auxiliary,text='Dimensões',width=14,command=self.inspect_sizes).grid(row=0,column=0,padx=(0,3))
-        ttk.Button(auxiliary,text='Carta inteira',width=14,command=lambda:self.set_roi(None)).grid(row=0,column=1,padx=(3,0))
-        ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=13,column=0,columnspan=2,sticky='w',pady=2)
-        ttk.Button(seg,text='Medir caractere',width=18,command=self.measure_character).grid(row=14,column=0,columnspan=2,sticky='w',pady=2)
-        ttk.Label(seg,textvariable=self.measure_text,wraplength=285).grid(row=15,column=0,columnspan=2,sticky='w',pady=2)
-        limits=ttk.Frame(seg);limits.grid(row=16,column=0,columnspan=2,sticky='w',pady=2)
-        ttk.Button(limits,text='Definir mínimos',width=14,command=lambda:self.use_measurement(True)).grid(row=0,column=0,padx=(0,3))
-        ttk.Button(limits,text='Definir máximos',width=14,command=lambda:self.use_measurement(False)).grid(row=0,column=1,padx=(3,0))
+        self.seg_button.grid(row=13,column=0,columnspan=2,sticky='w',pady=(5,3))
+        area=ttk.Frame(seg);area.grid(row=14,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Radiobutton(area,text='Carta inteira',variable=self.area_mode,value='whole',command=lambda:self.set_roi(None)).pack(side='left')
+        ttk.Radiobutton(area,text='Selecionar área',variable=self.area_mode,value='select',command=self.select_area).pack(side='left',padx=(10,0))
         model_panel=ttk.Frame(ocr);model_panel.grid(row=0,column=0,columnspan=2,sticky='ew',pady=(0,10))
         model_panel.columnconfigure(1,weight=1)
         ttk.Label(model_panel,text='Pasta').grid(row=0,column=0,sticky='w',padx=(0,6),pady=4)
@@ -379,7 +388,7 @@ class Application:
         ttk.Button(export,text='Salvar projeto',command=self.save_project).grid(row=6,column=0,columnspan=2,sticky='ew',pady=10)
         ttk.Button(export,text='Abrir projeto',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
         controls=ttk.Frame(left);controls.pack(side='bottom',fill='x',before=self.tabs)
-        self.run_button=ttk.Button(controls,text='Preparar · Reconhecer · Agrupar',style='Primary.TButton',command=lambda:self.run_stage('all'))
+        self.run_button=ttk.Button(controls,text='Gerar sondagens',style='Primary.TButton',command=lambda:self.run_stage('all'))
         self.run_button.pack(anchor='w',pady=8)
         self.cancel_button=ttk.Button(controls,text='Cancelar',width=14,command=self.cancel.set,state='disabled');self.cancel_button.pack(anchor='w')
         self.progress_label=tk.StringVar()
@@ -636,7 +645,7 @@ class Application:
             self.path.set(str(session.path))
             self.set_config(session.config);self.viewer.set_session(session)
             self.output.set(str(session.path.parent/'results'/session.path.stem))
-            self.roi_text.set('Área: carta inteira')
+            self.area_mode.set('whole');self.roi_text.set('Carta inteira')
         self.start(lambda:ChartSession(path),done)
 
     def choose_model(self):
@@ -699,10 +708,19 @@ class Application:
         raise ValueError('Selecione um modelo local completo ou use Conexão / baixar antes de executar o OCR.')
 
     def set_roi(self,roi):
-        if self.busy:return
+        if self.busy:
+            self.area_mode.set('select' if self.roi else 'whole');return
         self.roi=roi;self.viewer.roi=roi
-        self.roi_text.set(f'Área em pixels: {roi}' if roi else 'Área: carta inteira')
+        self.area_mode.set('select' if roi else 'whole')
+        self.roi_text.set(f'Área em pixels: {roi}' if roi else 'Carta inteira')
+        if not roi and self.viewer.mode.get()=='Selecionar área':self.viewer.mode.set('Inspecionar')
         self.refresh_validity();self.viewer.render()
+
+    def select_area(self):
+        if self.busy:
+            self.area_mode.set('select' if self.roi else 'whole');return
+        self.viewer.mode.set('Selecionar área')
+        self.status.set('Arraste na carta para selecionar a área.')
 
     def run_stage(self,stage):
         if self.busy or self.session is None:return
@@ -1012,31 +1030,6 @@ class Application:
         text=f"Texto original: {digit.raw_text!r}\nEscore original: {digit.confidence:.4f}\nLeitura usada: {digit.text!r}\nMétodo: {digit.method}\nCaixa: {b}\nAlternativas: {digit.alternatives}"
         ttk.Label(popup,text=text,wraplength=650,padding=12).pack()
 
-    def inspect_sizes(self):
-        if self.busy or not self.session:return
-        boxes=self.session.all_boxes
-        if boxes is None:messagebox.showinfo('Dimensões','Execute a etapa 1 para atualizar o inspetor.');return
-        popup=tk.Toplevel(self.root);popup.title('Dimensões de contornos / calibração');popup.geometry('760x550')
-        ttk.Label(popup,text=f'{len(boxes)} contornos; {len(self.session.boxes)} caixas aceitas. Dimensões em pixels reais.',padding=10).pack()
-        canvas=tk.Canvas(popup,bg='white');canvas.pack(fill='both',expand=True)
-        if not boxes:return
-        def draw(event=None):
-            canvas.delete('all');cw,ch=max(1,canvas.winfo_width()),max(1,canvas.winfo_height())
-            for offset,key in [(0,'w'),(ch/2,'h')]:
-                vals=[getattr(b,key) for b in boxes];limit=max(20,float(np.percentile(vals,98)))
-                hist,edges=np.histogram(vals,bins=35,range=(0,limit));maxv=max(1,max(hist))
-                canvas.create_text(15,offset+15,text=('Largura' if key=='w' else 'Altura')+f' (até P98={limit:.1f}px)',anchor='w')
-                for i,value in enumerate(hist):
-                    x=35+i*(cw-65)/35;y=offset+ch/2-25
-                    canvas.create_rectangle(x,y-(ch/2-65)*value/maxv,x+(cw-65)/35-1,y,fill='#368a9b',outline='')
-                cfg=self.session.config
-                for name,colour in [('min_'+key,'#00a000'),('max_'+key,'#c00000')]:
-                    value=getattr(cfg,name)*cfg.scale
-                    if value<=limit:
-                        x=35+value/limit*(cw-65);canvas.create_line(x,offset+35,x,offset+ch/2-25,fill=colour,width=2)
-                        canvas.create_text(x,offset+ch/2-13,text=f'{value:g}',fill=colour)
-        canvas.bind('<Configure>',draw)
-
     def export(self,accepted_only):
         if not self.review_ready():return
         if not self.output.get():messagebox.showerror('Saída','Selecione uma pasta de saída.');return
@@ -1067,7 +1060,7 @@ class Application:
         self.session=None;self.roi=None;self.review_dirty=False;self.measurement=None
         self.path.set('');self.output.set('');self.review_note.set('');self.measure_text.set('')
         self.counts.set('');self.counts_summary.set('');self.filter.set('Todos')
-        self.roi_text.set('Área: carta inteira');self.sort_column=None;self.sort_reverse=False
+        self.area_mode.set('whole');self.roi_text.set('Carta inteira');self.sort_column=None;self.sort_reverse=False
         self._selection_anchor=self._last_followed=None
         self.viewer.session=None;self.viewer.preview_boxes=[];self.viewer.measurement=None
         self.viewer.refresh_layers()
@@ -1101,7 +1094,7 @@ class Application:
             self.output.set(str(session.path.parent/'results'/session.path.stem));self.viewer.set_session(session)
             self.viewer.layer.set('Sondagens' if session.review else 'Dígitos' if session.digits else 'Caixas')
             if session.all_boxes is not None:self.update_preview()
-            self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Área: carta inteira');self.review_dirty=False
+            self.area_mode.set('select' if self.roi else 'whole');self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Carta inteira');self.review_dirty=False
         self.start(lambda:ChartSession.load_project(path,override),done)
 
     def save_config(self):
