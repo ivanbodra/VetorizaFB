@@ -1,6 +1,7 @@
 """Small, local desktop helpers: contextual help without permanent legends."""
 import tkinter as tk
 from tkinter import ttk
+from weakref import WeakSet
 from PIL import Image, ImageDraw, ImageTk
 
 
@@ -54,9 +55,12 @@ def rounded_controls(style, root):
 
 
 class Tooltip:
+    _instances=WeakSet()
+
     def __init__(self, widget, text, delay=550):
         self.widget, self.text, self.delay = widget, text, delay
         self.pending = self.popup = None
+        self._instances.add(self)
         widget.bind('<Enter>', self.schedule, add='+')
         widget.bind('<Leave>', self.hide, add='+')
         widget.bind('<ButtonPress>', self.hide, add='+')
@@ -64,10 +68,12 @@ class Tooltip:
 
     def schedule(self, event=None):
         self.hide()
+        if not getattr(self.widget._root(),'_vetorizafb_tooltips_enabled',True):return
         self.pending = self.widget.after(self.delay, self.show)
 
     def show(self):
         self.pending = None
+        if not getattr(self.widget._root(),'_vetorizafb_tooltips_enabled',True):return
         text = self.text() if callable(self.text) else self.text
         if not text or not self.widget.winfo_exists():return
         self.popup=tk.Toplevel(self.widget)
@@ -84,3 +90,10 @@ class Tooltip:
         if self.popup:
             if self.popup.winfo_exists():self.popup.destroy()
             self.popup=None
+
+    @classmethod
+    def set_enabled(cls,root,enabled):
+        root._vetorizafb_tooltips_enabled=bool(enabled)
+        if not enabled:
+            for item in tuple(cls._instances):
+                if item.widget._root() is root:item.hide()
