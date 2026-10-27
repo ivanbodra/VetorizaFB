@@ -70,7 +70,6 @@ class ModernWindow(FunctionalWindow):
             former_tabs.removeTab(0)
             page.setParent(None)
             pages.append(page)
-        former_tabs.setParent(old_root)
         former_tabs.hide()
 
         root = QWidget()
@@ -196,9 +195,12 @@ class ModernWindow(FunctionalWindow):
 
         layout.addWidget(body, 1)
         layout.addWidget(progress)
+        # Qt processing methods still call self.tabs.setEnabled(...).
+        # Preserve the original tabs object under the new root, hidden.
+        former_tabs.setParent(root)
+        former_tabs.hide()
         self.setCentralWidget(root)
         self._unused_tabs = former_tabs
-        self._original_root = old_root
 
         # A compact review toggle sits in the chart's existing toolbar.
         chart_widget = former_work.widget(0)
