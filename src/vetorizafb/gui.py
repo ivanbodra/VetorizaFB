@@ -24,7 +24,10 @@ from .viewer import ChartViewer
 from .workflow import ChartSession
 from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
-from .calibration import CalibrationPreview
+from .calibration import CalibrationPreview, MASK_KEYS
+from .auto_bounds import suggest_bounds
+from .area import is_polygon
+from .box_diagnostics import export_box_measurements
 from .branding import apply_icon, asset_photo
 from .ui import Tooltip, rounded_controls
 from .models import default_model_root,discover_models,download_model,ConnectionSettings,save_model_root,inspect_model
@@ -66,6 +69,7 @@ class Application:
         Tooltip.set_enabled(root,self.show_tooltips.get())
         self.live_preview=tk.BooleanVar(value=False)
         self._preview_busy=False
+        self._auto_busy=False
         self._preview_revision=0
         self._selection_anchor = self._last_followed = None
         self.fields = {k:tk.BooleanVar(value=v) if isinstance(v,bool) else tk.StringVar(value=str(v))
@@ -166,6 +170,13 @@ class Application:
         self.refresh_review_controls()
         if hasattr(self,'review_menu'):self.review_menu.destroy()
         menu=self.review_menu=tk.Menu(self.root,tearoff=False)
+        if event.widget is self.viewer.canvas and self.viewer.mode.get()=='Selecionar área':
+            shapes=tk.Menu(menu,tearoff=False)
+            for shape in ('Retângulo','Polígono','Laço livre'):
+                shapes.add_radiobutton(label=shape,value=shape,variable=self.viewer.area_shape,
+                                       command=self.viewer.cancel_area)
+            menu.add_cascade(label='Formato da área',menu=shapes)
+            menu.add_separator()
         for key,label,shortcut in [('accepted','Aprovar','Ctrl+A'),('rejected','Excluir','Ctrl+X'),('edit','Editar','Ctrl+E'),('unreviewed','Marcar pendente','')]:
             button=self.review_buttons[key]
             menu.add_command(label=label,accelerator=shortcut,command=button.invoke,state='disabled' if button.instate(['disabled']) else 'normal')
@@ -277,12 +288,34 @@ class Application:
             if self.live_preview.get():self.update_preview()
         except (ValueError,TypeError) as exc:self.status.set(str(exc))
 
+    def auto_dimensions(self):
+        if not self.session or self.busy or self._auto_busy:return
+        try:cfg=self.config()
+        except (ValueError,TypeError) as exc:self.status.set(str(exc));return
+        session,roi=self.session,self.roi
+        self._auto_busy=True;self.auto_button.configure(state='disabled')
+        self.status.set('Analisando as dimensões das caixas…')
+        def worker():
+            try:
+                key=(id(session),tuple(getattr(cfg,k) for k in MASK_KEYS))
+                if session.valid_segments(cfg,roi) and session.all_boxes is not None:
+                    boxes=session.all_boxes
+                elif not self._preview_busy and self.preview.contour_key==(key,session.validate_roi(roi)):
+                    boxes=self.preview.contours
+                else:
+                    boxes=CalibrationPreview().contours_for(session,cfg,roi)
+                result=suggest_bounds(boxes,cfg.scale)
+                self.events.put(('auto_dimensions',(session,roi,key,result),None))
+            except Exception as exc:self.events.put(('auto_dimensions_error',str(exc),None))
+        threading.Thread(target=worker,daemon=True).start()
+
     def build(self):
         menu=tk.Menu(self.root);self.root.configure(menu=menu)
         files=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Arquivo',menu=files)
         for label,command in [('Abrir carta (Ctrl+O)',self.choose_chart),('Abrir projeto',self.open_project),
                               ('Salvar projeto (Ctrl+S)',self.save_project),('Fechar projeto',self.close_project),('Carregar parâmetros',self.load_config),
-                              ('Salvar parâmetros',self.save_config),('Sair',self.close)]:
+                              ('Salvar parâmetros',self.save_config),('Exportar medidas das caixas…',self.export_box_measurements),
+                              ('Sair',self.close)]:
             files.add_command(label=label,command=command)
         help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
         help_menu.add_command(label='Manual de uso (F1)',command=self.open_manual)
@@ -336,18 +369,18 @@ class Application:
             if key=='kernel_size':self.dilation_entry=widget
         self.update_mode_controls()
         def size_range(row,label,minimum,maximum):
-            ttk.Label(seg,text=label).grid(row=row,column=0,sticky='w',pady=2)
-            fields=ttk.Frame(seg);fields.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
-            ttk.Label(fields,text='Mín.').grid(row=0,column=0,padx=(0,2))
-            ttk.Entry(fields,textvariable=self.fields[minimum],width=5).grid(row=0,column=1,padx=(0,6))
-            ttk.Label(fields,text='Máx.').grid(row=0,column=2,padx=(0,2))
-            ttk.Entry(fields,textvariable=self.fields[maximum],width=5).grid(row=0,column=3)
+            ttk.Label(seg,text=f'{label} Mín.').grid(row=row,column=0,sticky='w',pady=2)
+            ttk.Entry(seg,textvariable=self.fields[minimum],width=6).grid(row=row,column=1,sticky='w',padx=(5,9),pady=2)
+            ttk.Label(seg,text='Máx.').grid(row=row,column=2,sticky='w',pady=2)
+            ttk.Entry(seg,textvariable=self.fields[maximum],width=6).grid(row=row,column=3,sticky='w',padx=(5,0),pady=2)
         size_range(4,'Largura', 'min_w','max_w')
         size_range(5,'Altura', 'min_h','max_h')
-        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=2,sticky='w',pady=(3,5))
-        ttk.Button(measuring,text='Medir',command=self.measure_character).pack(side='left')
-        ttk.Button(measuring,text='Definir mín.',command=lambda:self.use_measurement(True)).pack(side='left',padx=(5,0))
-        ttk.Button(measuring,text='Definir máx.',command=lambda:self.use_measurement(False)).pack(side='left',padx=(5,0))
+        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=4,sticky='w',pady=(3,5))
+        ttk.Button(measuring,text='Definir mín.',width=12,command=lambda:self.use_measurement(True)).grid(row=0,column=0,sticky='w',padx=(0,5),pady=(0,3))
+        ttk.Button(measuring,text='Definir máx.',width=12,command=lambda:self.use_measurement(False)).grid(row=0,column=1,sticky='w',pady=(0,3))
+        ttk.Button(measuring,text='Medir',width=12,command=self.measure_character).grid(row=1,column=0,sticky='w',padx=(0,5))
+        self.auto_button=ttk.Button(measuring,text='Auto',width=7,command=self.auto_dimensions)
+        self.auto_button.grid(row=1,column=1,sticky='w')
         ttk.Label(seg,textvariable=self.measure_text).grid(row=7,column=0,columnspan=2,sticky='w')
         ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=8,column=0,columnspan=2,sticky='w',pady=2)
         ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=9,column=0,columnspan=2,sticky='w',pady=2)
@@ -616,7 +649,20 @@ class Application:
         try:
             while True:
                 kind,value,callback=self.events.get_nowait()
-                if kind in ('preview','preview_error'):
+                if kind in ('auto_dimensions','auto_dimensions_error'):
+                    self._auto_busy=False;self.auto_button.configure(state='normal')
+                    if kind=='auto_dimensions_error':self.status.set(value)
+                    else:
+                        session,roi,key,bounds=value
+                        try:
+                            current=self.config()
+                            current_key=(id(self.session),tuple(getattr(current,k) for k in MASK_KEYS))
+                        except (ValueError,TypeError):current_key=None
+                        if session is self.session and roi==self.roi and key==current_key and not self.busy:
+                            for field,number in zip(('min_w','max_w','min_h','max_h'),bounds):
+                                self.fields[field].set(str(number))
+                            self.status.set('Limites estimados para esta carta. Confira as caixas na prévia.')
+                elif kind in ('preview','preview_error'):
                     self._preview_busy=False
                     revision=value[0]
                     if revision!=self._preview_revision:
@@ -740,9 +786,12 @@ class Application:
     def set_roi(self,roi):
         if self.busy:
             self.area_mode.set('select' if self.roi else 'whole');return
+        if self.session:
+            try:roi=self.session.validate_roi(roi)
+            except ValueError as exc:self.status.set(str(exc));return
         self.roi=roi;self.viewer.roi=roi
         self.area_mode.set('select' if roi else 'whole')
-        self.roi_text.set(f'Área em pixels: {roi}' if roi else 'Carta inteira')
+        self.roi_text.set(f'Área poligonal: {len(roi)} vértices' if is_polygon(roi) else f'Área em pixels: {roi}' if roi else 'Carta inteira')
         if not roi and self.viewer.mode.get()=='Selecionar área':self.viewer.mode.set('Inspecionar')
         self.refresh_validity();self.viewer.render();self.schedule_preview()
 
@@ -958,6 +1007,8 @@ class Application:
 
     def clear_point_selection(self):
         if self.busy:return
+        if self.viewer.mode.get()=='Selecionar área' and (self.viewer._area_points or self.viewer._press):
+            self.viewer.cancel_area();self.status.set('Seleção de área cancelada.');return
         self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.tree.selection_remove(self.tree.selection());self.tree.focus('')
         self._selection_anchor=None;self.select_point()
@@ -1070,6 +1121,30 @@ class Application:
         self.start(lambda:self.session.export(directory,target_crs=crs,accepted_only=accepted_only),
                    lambda meta:messagebox.showinfo('Exportação',f"{meta['soundings']} pontos gravados em {directory}\n{meta['status']}",parent=self.root),cancellable=False)
 
+    def export_box_measurements(self):
+        if self.busy:return
+        if self.session is None:
+            messagebox.showinfo('Medidas das caixas','Abra uma carta e clique em Preparar primeiro.',parent=self.root)
+            return
+        try:ready=self.session.valid_segments(self.config(),self.roi)
+        except (ValueError,TypeError) as exc:
+            messagebox.showerror('Parâmetros',str(exc),parent=self.root)
+            return
+        if not ready:
+            messagebox.showinfo('Medidas das caixas','Clique em Preparar com os parâmetros atuais antes de exportar.',parent=self.root)
+            return
+        destination=filedialog.asksaveasfilename(
+            title='Exportar medidas de todas as caixas',defaultextension='.csv',
+            initialdir=str(self.session.path.parent),
+            initialfile=f'{self.session.path.stem}.medidas-caixas.csv',
+            filetypes=[('Tabela CSV','*.csv')])
+        if not destination:return
+        session=self.session
+        self.start(lambda:export_box_measurements(session,destination),
+                   lambda counts:messagebox.showinfo('Medidas das caixas',
+                       f"{sum(counts.values())} caixas exportadas para {destination}",parent=self.root),
+                   cancellable=False)
+
     def save_project(self,after_save=None):
         if self.busy or not self.session:return
         path=filedialog.asksaveasfilename(defaultextension='.vfproject.json',filetypes=[('Projeto VetorizaFB','*.vfproject.json')])
@@ -1124,7 +1199,7 @@ class Application:
             self.output.set(str(session.path.parent/'results'/session.path.stem));self.viewer.set_session(session)
             self.viewer.layer.set('Sondagens' if session.review else 'Dígitos' if session.digits else 'Caixas')
             if session.all_boxes is not None:self.update_preview()
-            self.area_mode.set('select' if self.roi else 'whole');self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Carta inteira');self.review_dirty=False
+            self.area_mode.set('select' if self.roi else 'whole');self.roi_text.set(f'Área poligonal: {len(self.roi)} vértices' if is_polygon(self.roi) else f'Área em pixels: {self.roi}' if self.roi else 'Carta inteira');self.review_dirty=False
         self.start(lambda:ChartSession.load_project(path,override),done)
 
     def save_config(self):

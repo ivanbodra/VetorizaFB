@@ -64,6 +64,32 @@ def test_roi_keeps_original_pixel_and_geographic_coordinates(session,tmp_path):
     assert list(map(float,row))==[410,35,0]
 
 
+def test_polygon_limits_segmentation_ocr_grouping_and_project_reload(session,tmp_path):
+    cfg=Config(segmentation='black')
+    # Both black glyphs lie inside the polygon's bounding rectangle; only
+    # the left one lies within its actual contour.
+    area=((10,10),(190,10),(70,110),(10,110))
+    session.segment(cfg,area)
+    assert len(session.boxes)==1 and session.boxes[0].x==20
+    assert session.valid_segments(cfg,area)
+    assert not session.valid_segments(cfg,(10,10,181,101))
+    session.run_ocr(cfg,SPEC,area,engine=Reader())
+    session.run_grouping(cfg,SPEC,area)
+    assert len(session.review.items)==1
+    path=tmp_path/'selection.vfproject.json'
+    session.save_project(path)
+    restored=ChartSession.load_project(path)
+    assert restored.roi==area and restored.valid_groups(cfg,SPEC,area)
+    assert len(restored.boxes)==1 and len(restored.review.items)==1
+
+
+def test_polygon_requires_three_valid_image_vertices(session):
+    cfg=Config(segmentation='black')
+    for area in (((10,10),(11,11),(12,12)), ((-1,0),(20,0),(20,20)),
+                 ((0,0),(201,0),(20,20))):
+        with pytest.raises(ValueError):session.segment(cfg,area)
+
+
 def test_reviewed_export_excludes_pending_and_rejected_and_keeps_audit(session,tmp_path):
     ready(session)
     session.review.change(0,'correct_depth',depth=8.7)

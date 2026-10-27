@@ -115,9 +115,9 @@ class Config:
             raise ValueError("Invalid grouping geometry")
         if self.decimal_drop < 0 or self.decimal_max_integer < 0 or not 0 <= self.min_confidence <= 1:
             raise ValueError("Invalid decimal/confidence setting")
-        if self.segmentation not in {"legacy", "black"}:
+        if self.segmentation not in {"legacy", "black", "fb"}:
             raise ValueError("segmentation must be legacy or black")
-        if self.grouping not in {"fixed", "relative"}:
+        if self.grouping not in {"fixed", "relative", "fb"}:
             raise ValueError("grouping must be fixed or relative")
         for key in ("threshold", "ocr_batch_size", "crop_padding", "yellow_delta"):
             if not isinstance(getattr(self, key), int) or isinstance(getattr(self, key), bool):
@@ -138,6 +138,9 @@ def segmentation_mask(rgb, config):
     """Foreground mask shared by processing and the parameter inspector."""
     if rgb.dtype != np.uint8 or rgb.ndim != 3 or rgb.shape[2] != 3:
         raise ValueError("Expected an RGB uint8 image")
+    if config.segmentation == "fb":
+        from .fieldbook import mask
+        return mask(rgb, config)
     s = config.scale
     magenta=None
     if config.exclude_magenta:
@@ -175,8 +178,11 @@ def yellow_background_fraction(rgb,box,config):
     return float(np.count_nonzero(yellow & background)/count)
 
 
-def segment_details(rgb, config, *, return_rejected=False, contour_revision=2):
+def segment_details(rgb, config, *, return_rejected=False, contour_revision=2, area_mask=None):
     mask = segmentation_mask(rgb, config)
+    if area_mask is not None:
+        if area_mask.shape!=mask.shape:raise ValueError('Area mask dimensions do not match image')
+        mask=cv2.bitwise_and(mask,area_mask)
     if contour_revision not in (1,2):raise ValueError('Unknown contour revision')
     # CCOMP places every foreground component at the top level, including
     # digits inside closed chart frames. Children are background holes in
@@ -352,6 +358,9 @@ def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False, retry_on
 
 
 def group(digits, config):
+    if config.grouping == "fb":
+        from .fieldbook import group as fb_group
+        return fb_group(digits, config)
     """Baseline-style chart grouping with typed digits and retained provenance.
 
     This is a geometric candidate generator, not a cartographic classifier.

@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageDraw, ImageTk
 from .ui import Tooltip
+from .area import is_polygon, bounds as area_bounds
 
 
 class ChartViewer(ttk.Frame):
@@ -22,6 +23,8 @@ class ChartViewer(ttk.Frame):
         self.inspection_text = tk.StringVar()
         self.layer = tk.StringVar(value='Original')
         self.mode = tk.StringVar(value='Inspecionar')
+        self.area_shape=tk.StringVar(value='Retângulo')
+        self._area_points=[]
         self.zoom_text = tk.StringVar()
         bar = ttk.Frame(self); bar.pack(fill='x')
         for text, cmd in [('Ajustar',self.fit),('100%',lambda:self.zoom_to(1)),
@@ -43,6 +46,7 @@ class ChartViewer(ttk.Frame):
         self.canvas.bind('<ButtonPress-1>',self.press)
         self.canvas.bind('<B1-Motion>',self.drag)
         self.canvas.bind('<ButtonRelease-1>',self.release)
+        self.canvas.bind('<Double-Button-1>',self.finish_polygon)
         self.canvas.bind('<MouseWheel>',lambda e:self.zoom_to(self.scale*(1.3 if e.delta>0 else 1/1.3),e.x,e.y))
         self.canvas.bind('<Button-4>',lambda e:self.zoom_to(self.scale*1.3,e.x,e.y))
         self.canvas.bind('<Button-5>',lambda e:self.zoom_to(self.scale/1.3,e.x,e.y))
@@ -76,6 +80,7 @@ class ChartViewer(ttk.Frame):
         self.preview_boxes = []; self.measurement = None
         self.session, self.roi, self.selected_id = session,session.roi,None
         self.selected_ids=set()
+        self.cancel_area()
         self.refresh_layers()
         self.after_idle(self.fit)
 
@@ -116,12 +121,53 @@ class ChartViewer(ttk.Frame):
 
     def pixel(self,x,y):return self.left+x/self.scale,self.top+y/self.scale
 
+    def image_point(self,x,y):
+        px,py=self.pixel(x,y)
+        h,w=self.session.rgb.shape[:2]
+        return (max(0,min(w-1,round(px))),max(0,min(h-1,round(py))))
+
+    def draw_area_draft(self, cursor=None):
+        self.canvas.delete('selection')
+        if not self._area_points:return
+        points=self._area_points+([cursor] if cursor else [])
+        screen=[((x-self.left)*self.scale,(y-self.top)*self.scale) for x,y in points]
+        for x,y in screen:self.canvas.create_oval(x-2,y-2,x+2,y+2,fill='#00b6dd',outline='',tags='selection')
+        if len(screen)>1:self.canvas.create_line(*[v for p in screen for v in p],fill='#00b6dd',width=2,tags='selection')
+
+    def cancel_area(self):
+        self._area_points=[];self._press=None;self.canvas.delete('selection')
+
+    def finish_polygon(self,event):
+        if self.session is None or self.mode.get()!='Selecionar área' or self.area_shape.get()!='Polígono':return
+        point=self.image_point(event.x,event.y)
+        if not self._area_points or self._area_points[-1]!=point:self._area_points.append(point)
+        self.commit_area();return 'break'
+
+    def commit_area(self):
+        points=tuple(dict.fromkeys(self._area_points))
+        if len(points)>=3:
+            self.on_action('roi',points)
+            self.cancel_area()
+        else:self.cancel_area()
+
     def press(self,event):
         self.canvas.focus_set();self._press = event.x,event.y,self.left,self.top
+        if self.session is not None and self.mode.get()=='Selecionar área':
+            shape=self.area_shape.get()
+            if shape=='Polígono':
+                point=self.image_point(event.x,event.y)
+                if not self._area_points or self._area_points[-1]!=point:self._area_points.append(point)
+                self.draw_area_draft()
+            elif shape=='Laço livre':self._area_points=[self.image_point(event.x,event.y)]
 
     def drag(self,event):
         if not self._press:return
         x,y,left,top = self._press
+        if self.mode.get()=='Selecionar área' and self.area_shape.get()=='Polígono':return
+        if self.mode.get()=='Selecionar área' and self.area_shape.get()=='Laço livre':
+            point=self.image_point(event.x,event.y)
+            if point!=self._area_points[-1]:self._area_points.append(point)
+            self.draw_area_draft();return
         if self.mode.get() in {'Selecionar área','Medir caractere'}:
             self.canvas.delete('selection')
             self.canvas.create_rectangle(x,y,event.x,event.y,outline='#00d5ff',width=2,tags='selection')
@@ -134,6 +180,11 @@ class ChartViewer(ttk.Frame):
         sx,sy,left,top = self._press; self._press = None
         px,py = self.pixel(event.x,event.y)
         h,w = self.session.rgb.shape[:2]
+        if self.mode.get()=='Selecionar área' and self.area_shape.get()=='Polígono':return
+        if self.mode.get()=='Selecionar área' and self.area_shape.get()=='Laço livre':
+            point=self.image_point(event.x,event.y)
+            if not self._area_points or self._area_points[-1]!=point:self._area_points.append(point)
+            self.commit_area();return
         if self.mode.get() in {'Selecionar área','Medir caractere'}:
             ax,ay = left+sx/self.scale,top+sy/self.scale
             x1,y1 = max(0,math.floor(min(ax,px))),max(0,math.floor(min(ay,py)))
@@ -151,6 +202,8 @@ class ChartViewer(ttk.Frame):
             self.on_action(action,(px,py))
 
     def hover(self,event):
+        if self.mode.get()=='Selecionar área' and self.area_shape.get()=='Polígono' and self._area_points:
+            self.draw_area_draft(self.image_point(event.x,event.y));return
         if self.layer.get() != 'Caixas' or self._press:return
         x,y=self.pixel(event.x,event.y)
         matches=[(b,reason) for b,reason in self._visible_preview if b.x<=x<=b.x+b.w and b.y<=y<=b.y+b.h]
@@ -171,7 +224,7 @@ class ChartViewer(ttk.Frame):
         x2,y2 = min(w,math.ceil(self.left+cw/self.scale)),min(h,math.ceil(self.top+ch/self.scale))
         image = Image.fromarray(self.session.rgb[y1:y2,x1:x2])
         if self.layer.get() == 'Editada' and self.session.mask is not None:
-            rx,ry,rw,rh = self.session.roi or (0,0,w,h)
+            rx,ry,rw,rh = area_bounds(self.session.roi,w,h)
             image = Image.new('RGB',image.size,'#343c42')
             ax,ay,bx,by = max(x1,rx),max(y1,ry),min(x2,rx+rw),min(y2,ry+rh)
             if bx>ax and by>ay:
@@ -206,9 +259,12 @@ class ChartViewer(ttk.Frame):
                     if item['id']==self.selected_id:draw.ellipse((px-7,py-7,px+7,py+7),outline=colour,width=2)
                     if self.scale>=.45:draw.text((px+5,py-15),f"{s['depth']:g}",fill=colour)
         if self.roi:
-            x,y,rw,rh = self.roi;box((x,y,x+rw,y+rh),'#0068ff')
+            if is_polygon(self.roi):draw.line([point(x,y) for x,y in (*self.roi,self.roi[0])],fill='#0068ff',width=2)
+            else:
+                x,y,rw,rh = self.roi;box((x,y,x+rw,y+rh),'#0068ff')
         self.photo = ImageTk.PhotoImage(image)
         self.canvas.delete('all')
         self.canvas.create_image((x1-self.left)*self.scale,(y1-self.top)*self.scale,image=self.photo,anchor='nw')
         self.render_preview_boxes()
+        self.draw_area_draft()
         self.zoom_text.set(f'{self.scale*100:.0f}%')

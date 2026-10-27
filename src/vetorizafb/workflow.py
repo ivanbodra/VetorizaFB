@@ -4,12 +4,15 @@ import json
 import math
 from pathlib import Path
 import time
+import cv2
+import numpy as np
 
 from .core import Box, Config, Digit, check_cancel, group, recognize, segment_details
 from .ocr import PaddleRecognizer
 from .pipeline import export_results, read_chart, sha256, write_json_atomic
 from .review import ReviewSet
 from .geospatial import offset_to_pixels
+from .area import bounds as area_bounds, is_polygon, polygon_mask, inside
 
 SEGMENT_KEYS = ('reference_dpi','dpi','segmentation','threshold','blur_size','kernel_size',
                 'min_w','max_w','min_h','max_h','exclude_yellow','exclude_magenta','yellow_delta','yellow_min_fraction')
@@ -43,6 +46,15 @@ class ChartSession:
     def validate_roi(self, roi):
         if roi is None:
             return None
+        if is_polygon(roi):
+            points=tuple(tuple(p) for p in roi)
+            if (len(points)<3 or any(type(v) is not int or v<0 for p in points for v in p)
+                    or any(x>=self.rgb.shape[1] or y>=self.rgb.shape[0] for x,y in points)
+                    or cv2.contourArea(np.asarray(points,dtype=np.float32))<=0):
+                raise ValueError('Polígono inválido ou fora da carta')
+            return points
+        if len(roi)!=4 or any(type(v) is not int for v in roi):
+            raise ValueError('Área inválida')
         x,y,w,h = roi
         if any(not isinstance(v,int) for v in roi) or min(x,y)<0 or min(w,h)<1 or x+w>self.rgb.shape[1] or y+h>self.rgb.shape[0]:
             raise ValueError("A área deve estar inteiramente dentro da carta")
@@ -69,8 +81,9 @@ class ChartSession:
         roi = self.validate_roi(roi)
         check_cancel(cancel)
         start = time.perf_counter()
-        x,y,w,h = roi or (0,0,self.rgb.shape[1],self.rgb.shape[0])
-        mask, all_boxes, boxes, rejected = segment_details(self.rgb[y:y+h,x:x+w],config,return_rejected=True)
+        x,y,w,h = area_bounds(roi,self.rgb.shape[1],self.rgb.shape[0])
+        mask, all_boxes, boxes, rejected = segment_details(self.rgb[y:y+h,x:x+w],config,return_rejected=True,
+                                            area_mask=polygon_mask(roi,(x,y,w,h)))
         check_cancel(cancel)
         self.mask = mask
         self.all_boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in all_boxes]
@@ -93,7 +106,10 @@ class ChartSession:
                 self._engine = PaddleRecognizer(*model_spec)
                 self._engine_spec = tuple(model_spec)
             engine = self._engine
-        digits = recognize(self.rgb,self.boxes,engine,config.ocr_batch_size,config.crop_padding,
+        reader = recognize
+        if config.segmentation == "fb":
+            from .fieldbook import recognize as reader
+        digits = reader(self.rgb,self.boxes,engine,config.ocr_batch_size,config.crop_padding,
                            retry=config.retry_ambiguous,retry_one=config.retry_one,min_confidence=config.min_confidence,
                            progress=progress,cancel=cancel)
         check_cancel(cancel)
@@ -110,7 +126,7 @@ class ChartSession:
             raise ValueError("Leituras ausentes ou parâmetros OCR mudaram. Execute a etapa 2.")
         check_cancel(cancel)
         start = time.perf_counter()
-        review = ReviewSet(group(self.digits,config))
+        review = ReviewSet([s for s in group(self.digits,config) if inside(roi,s.pixel_x,s.pixel_y)])
         check_cancel(cancel)
         self.review = review
         self.group_key = (self.ocr_key,signature(config,GROUP_KEYS))
@@ -206,8 +222,9 @@ class ChartSession:
                 if min(b.x,b.y)<0 or min(b.w,b.h)<1 or b.x+b.w>session.rgb.shape[1] or b.y+b.h>session.rgb.shape[0]:
                     raise ValueError("Caixa fora da imagem no projeto")
             session.seg_key = session.expected_seg_key(config,session.roi)
-            x,y,w,h = session.roi or (0,0,session.rgb.shape[1],session.rgb.shape[0])
-            session.mask,all_boxes,_,rejected=segment_details(session.rgb[y:y+h,x:x+w],config,return_rejected=True,contour_revision=session.contour_revision)
+            x,y,w,h = area_bounds(session.roi,session.rgb.shape[1],session.rgb.shape[0])
+            session.mask,all_boxes,_,rejected=segment_details(session.rgb[y:y+h,x:x+w],config,return_rejected=True,contour_revision=session.contour_revision,
+                                              area_mask=polygon_mask(session.roi,(x,y,w,h)))
             session.color_rejected=[Box(b.x+x,b.y+y,b.w,b.h) for b in rejected]
             session.all_boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in all_boxes]
         if data['digits'] is not None:

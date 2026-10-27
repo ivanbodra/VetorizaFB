@@ -15,6 +15,8 @@ import time
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
+from vetorizafb.runtime import configure_gis_runtime
+configure_gis_runtime()
 import rasterio
 from rasterio.windows import Window
 from rasterio.warp import transform
