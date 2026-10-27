@@ -16,7 +16,8 @@ test = ["pytest>=8,<10"]
 
 [project.scripts]
 vetorizafb = "vetorizafb.cli:main"
-vetorizafb-gui = "vetorizafb.qt_gui:main"
+vetorizafb-gui = "vetorizafb.qt_modern:main"
+vetorizafb-qt-legacy = "vetorizafb.qt_gui:main"
 vetorizafb-classic = "vetorizafb.gui:main"
 
 [tool.pytest.ini_options]
