@@ -307,7 +307,7 @@ def test_measurement_uses_native_pixels_independent_of_zoom(app):
 def test_manual_about_and_preview_toggle(app,monkeypatch):
     from pathlib import Path
     from vetorizafb import __version__
-    assert __version__=='4.0.3' and '4.0.3' in app.root.title()
+    assert __version__=='4.0.4' and '4.0.4' in app.root.title()
     urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
     app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
     popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()
@@ -550,6 +550,17 @@ def test_preview_is_opt_in_and_digit_layer_requires_ocr(app):
     assert app._preview_id is None
     app.run_stage('ocr');finish(app)
     assert 'Dígitos' in app.viewer.layer_combo.cget('values')
+
+
+def test_enabling_preview_prepares_boxes_and_opens_layer(app):
+    assert app.session.all_boxes is None
+    app.live_preview.set(True);app.toggle_live_preview();finish(app)
+    assert app.viewer.layer.get()=='Caixas'
+    assert app.session.all_boxes is not None
+    assert app.viewer.preview_boxes
+    app.live_preview.set(False);app.toggle_live_preview()
+    app.fields['min_w'].set('4')
+    assert app._preview_id is None
 
 
 def test_review_header_sort_is_numeric_and_persists_without_mutating_model(app):
