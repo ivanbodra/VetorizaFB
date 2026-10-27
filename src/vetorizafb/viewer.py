@@ -33,9 +33,7 @@ class ChartViewer(ttk.Frame):
         layer.pack(side='left',padx=3); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
         ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=16,
                      values=['Inspecionar','Selecionar área','Medir caractere','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
-        self.details = details = ttk.Frame(self)
-        ttk.Checkbutton(details,text='Mostrar descartadas',variable=self.show_rejected,command=self.render).pack(side='left',padx=5)
-        ttk.Label(details,textvariable=self.inspection_text).pack(side='left',padx=8)
+        ttk.Checkbutton(bar,text='Descartadas',variable=self.show_rejected,command=self.render_preview_boxes).pack(side='left',padx=5)
         self.canvas = tk.Canvas(self,bg='#e2eaf0',highlightthickness=0)
         self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar área','Medir caractere'} else ''))
         self.canvas.pack(fill='both',expand=True)
@@ -48,14 +46,21 @@ class ChartViewer(ttk.Frame):
         self.canvas.bind('<Button-4>',lambda e:self.zoom_to(self.scale*1.3,e.x,e.y))
         self.canvas.bind('<Button-5>',lambda e:self.zoom_to(self.scale/1.3,e.x,e.y))
 
-        self.layer.trace_add('write',lambda *args:self.update_details())
-        self.mode.trace_add('write',lambda *args:self.update_details())
         Tooltip(layer,'Caixas: verde = mantida; cinza = descartada.')
 
-    def update_details(self):
-        if self.layer.get()=='Caixas' or self.mode.get()=='Medir caractere':
-            self.details.pack(fill='x',before=self.canvas)
-        else:self.details.pack_forget()
+    def render_preview_boxes(self):
+        self.canvas.delete('preview','hover')
+        self._visible_preview=[]
+        if self.session is None or self.layer.get()!='Caixas':return
+        cw,ch=max(1,self.canvas.winfo_width()),max(1,self.canvas.winfo_height())
+        x1,y1=self.left,self.top;x2,y2=x1+cw/self.scale,y1+ch/self.scale
+        for b,reason in self.preview_boxes:
+            if b.x+b.w<x1 or b.x>x2 or b.y+b.h<y1 or b.y>y2:continue
+            if reason and not self.show_rejected.get():continue
+            self._visible_preview.append((b,reason))
+            self.canvas.create_rectangle((b.x-x1)*self.scale,(b.y-y1)*self.scale,
+                (b.x+b.w-x1)*self.scale,(b.y+b.h-y1)*self.scale,
+                outline='#c4c9ce' if reason else '#008879',width=1,tags='preview')
 
     def set_session(self,session):
         self.preview_boxes = []; self.measurement = None
@@ -171,13 +176,6 @@ class ChartViewer(ttk.Frame):
             if label is not None and self.scale>=.45:
                 draw.text(point(a,max(0,b-12/self.scale)),str(label),fill=colour)
         layer = self.layer.get()
-        self._visible_preview=[]
-        if layer=='Caixas':
-            for b,reason in self.preview_boxes:
-                if b.x+b.w<x1 or b.x>x2 or b.y+b.h<y1 or b.y>y2:continue
-                if reason and not self.show_rejected.get():continue
-                self._visible_preview.append((b,reason))
-                box((b.x,b.y,b.x+b.w,b.y+b.h),'#c4c9ce' if reason else '#008879')
         if self.measurement:box(self.measurement,'#007c91')
         if layer == 'Dígitos' and self.session.digits is not None:
             digit_map = {d.index:d for d in self.session.digits or []}
@@ -202,4 +200,5 @@ class ChartViewer(ttk.Frame):
         self.photo = ImageTk.PhotoImage(image)
         self.canvas.delete('all')
         self.canvas.create_image((x1-self.left)*self.scale,(y1-self.top)*self.scale,image=self.photo,anchor='nw')
+        self.render_preview_boxes()
         self.zoom_text.set(f'{self.scale*100:.0f}%')
