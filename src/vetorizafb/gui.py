@@ -130,7 +130,7 @@ class Application:
     def load_tooltips_preference(self):
         try:
             value=json.loads(self.tooltip_preferences_path().read_text(encoding='utf-8'))
-            return value['show_tooltips'] if isinstance(value.get('show_tooltips'),bool) else True
+            return value['show_tooltips'] if isinstance(value,dict) and isinstance(value.get('show_tooltips'),bool) else True
         except (OSError,ValueError,TypeError,KeyError):return True
 
     def toggle_tooltips(self):
