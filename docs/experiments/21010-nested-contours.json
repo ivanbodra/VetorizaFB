@@ -1,0 +1,72 @@
+{
+  "input": "21010geotiff.tif",
+  "sha256": "f9ec237ab915a7eff4a5736581f48f768726f03c1ddc05d68795cc38b3b91378",
+  "config": {
+    "reference_dpi": 300,
+    "dpi": 300,
+    "segmentation": "legacy",
+    "grouping": "relative",
+    "threshold": 120,
+    "blur_size": 1,
+    "kernel_size": 2,
+    "min_w": 5,
+    "max_w": 25,
+    "min_h": 8,
+    "max_h": 25,
+    "tol_x": 30,
+    "tol_y": 6,
+    "decimal_height_ratio": 0.95,
+    "decimal_drop": 0.1,
+    "decimal_max_integer": 31,
+    "min_confidence": 0.35,
+    "ocr_batch_size": 64,
+    "crop_padding": 3,
+    "retry_ambiguous": false,
+    "retry_one": true,
+    "exclude_yellow": true,
+    "yellow_delta": 15,
+    "yellow_min_fraction": 0.2
+  },
+  "region_pixels": {
+    "x_min_exclusive": 650,
+    "x_max_exclusive": 4440,
+    "y_min_exclusive": 4620,
+    "y_max_exclusive": 7160
+  },
+  "comparison": [
+    {
+      "revision": 1,
+      "all_boxes": 7182,
+      "accepted": 3615,
+      "colour_rejected": 1009,
+      "region_boxes": 0,
+      "example39": [],
+      "seconds": 1.141
+    },
+    {
+      "revision": 2,
+      "all_boxes": 8493,
+      "accepted": 4088,
+      "colour_rejected": 1539,
+      "region_boxes": 443,
+      "example39": [
+        [
+          2792,
+          6223,
+          16,
+          21
+        ],
+        [
+          2809,
+          6223,
+          16,
+          21
+        ]
+      ],
+      "seconds": 1.084
+    }
+  ],
+  "old_candidates_retained": true,
+  "ocr_executed": false,
+  "interpretation": "Character boxes are not verified soundings or an accuracy reference."
+}

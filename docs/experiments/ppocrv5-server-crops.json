@@ -1,0 +1,4643 @@
+{
+  "model": "PP-OCRv5_server_rec",
+  "packages": {
+    "paddleocr": "3.7.0",
+    "paddlepaddle": "3.3.1",
+    "paddlex": "3.7.2"
+  },
+  "model_files_sha256": {
+    "inference.pdiparams": "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77",
+    ".inference.pdiparams.SYSYCB": "b4fe72b9409a87e1c3fde6e36076fa7ffb4dea878f7ed42090da0286165784b3",
+    "inference.yml": "2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d",
+    "inference.json": "8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb"
+  },
+  "scope": "crop-level diagnostic set, manually read by assistant, not independently reviewed; not full-chart ground truth",
+  "input_files": {
+    "21300plano.tif": {
+      "sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+      "size_bytes": 2160982
+    },
+    "1410geotiff.tif": {
+      "sha256": "c222eb9dad7e616e659d8fe588987ca4836b530a681154bef168c605439a4107",
+      "size_bytes": 13290263
+    },
+    "1822geotiff.tif": {
+      "sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+      "size_bytes": 20128269
+    }
+  },
+  "summary": {
+    "legacy_fixed": {
+      "correct_positive_crops": 4,
+      "positive_crops": 19,
+      "false_positive_negative_crops": 2,
+      "negative_crops": 2
+    },
+    "legacy_relative": {
+      "correct_positive_crops": 16,
+      "positive_crops": 19,
+      "false_positive_negative_crops": 2,
+      "negative_crops": 2
+    },
+    "black_fixed": {
+      "correct_positive_crops": 4,
+      "positive_crops": 19,
+      "false_positive_negative_crops": 2,
+      "negative_crops": 2
+    },
+    "black_relative": {
+      "correct_positive_crops": 16,
+      "positive_crops": 19,
+      "false_positive_negative_crops": 2,
+      "negative_crops": 2
+    }
+  },
+  "elapsed_seconds_excluding_model_load": 6.7565355680008,
+  "records": [
+    {
+      "id": "s01",
+      "image": "21300plano.tif",
+      "box": [
+        2420,
+        1450,
+        2510,
+        1520
+      ],
+      "expected_depth": 8.7,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "87",
+        "confidence": 0.9969702363014221
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            8.0,
+            7.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 10,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9997926354408264,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 29,
+                "w": 21,
+                "h": 29
+              },
+              "raw_text": "7",
+              "confidence": 0.9997836947441101,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 10,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9997926354408264,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 29,
+                "w": 21,
+                "h": 29
+              },
+              "raw_text": "7",
+              "confidence": 0.9997836947441101,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            8.0,
+            7.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "8",
+              "confidence": 0.9996445178985596,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 29,
+                "w": 20,
+                "h": 28
+              },
+              "raw_text": "7",
+              "confidence": 0.9998118281364441,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "8",
+              "confidence": 0.9996445178985596,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 29,
+                "w": 20,
+                "h": 28
+              },
+              "raw_text": "7",
+              "confidence": 0.9998118281364441,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s02",
+      "image": "21300plano.tif",
+      "box": [
+        1980,
+        1670,
+        2070,
+        1750
+      ],
+      "expected_depth": 8.4,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "84",
+        "confidence": 0.9950524568557739
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            8.0,
+            4.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 18,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9997864365577698,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 36,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "4",
+              "confidence": 0.9990397095680237,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            8.4
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 18,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9997864365577698,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 36,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "4",
+              "confidence": 0.9990397095680237,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            8.0,
+            4.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 17,
+                "w": 26,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9994632601737976,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 37,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "4",
+              "confidence": 0.9989539384841919,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            8.4
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 17,
+                "w": 26,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9994632601737976,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 51,
+                "y": 37,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "4",
+              "confidence": 0.9989539384841919,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s03",
+      "image": "21300plano.tif",
+      "box": [
+        2630,
+        1960,
+        2725,
+        2025
+      ],
+      "expected_depth": 8.9,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "8g",
+        "confidence": 0.9693996906280518
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            8.0,
+            9.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 27,
+                "y": 12,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9996261596679688,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 31,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "9",
+              "confidence": 0.9988226294517517,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            8.9
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 27,
+                "y": 12,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9996261596679688,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 31,
+                "w": 23,
+                "h": 29
+              },
+              "raw_text": "9",
+              "confidence": 0.9988226294517517,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            8.0,
+            9.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 28,
+                "y": 13,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "8",
+              "confidence": 0.9996315240859985,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 31,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "9",
+              "confidence": 0.9990009665489197,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            8.9
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 28,
+                "y": 13,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "8",
+              "confidence": 0.9996315240859985,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 60,
+                "y": 31,
+                "w": 22,
+                "h": 28
+              },
+              "raw_text": "9",
+              "confidence": 0.9990009665489197,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s04",
+      "image": "21300plano.tif",
+      "box": [
+        2960,
+        1990,
+        3050,
+        2070
+      ],
+      "expected_depth": 8.7,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "87",
+        "confidence": 0.9992402195930481
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            8.0,
+            7.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9996626377105713,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 44,
+                "y": 33,
+                "w": 21,
+                "h": 30
+              },
+              "raw_text": "7",
+              "confidence": 0.9998114705085754,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "8",
+              "confidence": 0.9996626377105713,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 44,
+                "y": 33,
+                "w": 21,
+                "h": 30
+              },
+              "raw_text": "7",
+              "confidence": 0.9998114705085754,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            8.0,
+            7.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "8",
+              "confidence": 0.9994977712631226,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 44,
+                "y": 33,
+                "w": 20,
+                "h": 28
+              },
+              "raw_text": "7",
+              "confidence": 0.9998031258583069,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            8.7
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 10,
+                "y": 15,
+                "w": 26,
+                "h": 34
+              },
+              "raw_text": "8",
+              "confidence": 0.9994977712631226,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 44,
+                "y": 33,
+                "w": 20,
+                "h": 28
+              },
+              "raw_text": "7",
+              "confidence": 0.9998031258583069,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s05",
+      "image": "21300plano.tif",
+      "box": [
+        2600,
+        2300,
+        2690,
+        2370
+      ],
+      "expected_depth": 9,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "9",
+        "confidence": 0.751653790473938
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            9.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 32,
+                "y": 8,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "9",
+              "confidence": 0.9979402422904968,
+              "index": 0
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            9.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 32,
+                "y": 8,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "9",
+              "confidence": 0.9979402422904968,
+              "index": 0
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            9.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 32,
+                "y": 8,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "9",
+              "confidence": 0.9979402422904968,
+              "index": 0
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            9.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 600.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 32,
+                "y": 8,
+                "w": 28,
+                "h": 36
+              },
+              "raw_text": "9",
+              "confidence": 0.9979402422904968,
+              "index": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s06",
+      "image": "1410geotiff.tif",
+      "box": [
+        6270,
+        5510,
+        6350,
+        5570
+      ],
+      "expected_depth": 23.5,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "235",
+        "confidence": 0.9826142191886902
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            2.0,
+            3.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 22,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9997853636741638,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 34,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9971154928207397,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 50,
+                "y": 32,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9996638298034668,
+              "index": 2
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            23.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 22,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9997853636741638,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 34,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9971154928207397,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 50,
+                "y": 32,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9996638298034668,
+              "index": 2
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            23.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9997029900550842,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 34,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9971154928207397,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 50,
+                "y": 32,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.999739944934845,
+              "index": 2
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            23.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 19,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9997029900550842,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 34,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9971154928207397,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 50,
+                "y": 32,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.999739944934845,
+              "index": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s07",
+      "image": "1410geotiff.tif",
+      "box": [
+        5870,
+        5690,
+        5930,
+        5750
+      ],
+      "expected_depth": 32,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "32",
+        "confidence": 0.9987775683403015
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            32.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 14,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9991181492805481,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 29,
+                "y": 28,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9994704127311707,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            32.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 14,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9991181492805481,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 29,
+                "y": 28,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9994704127311707,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            32.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 14,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9991181492805481,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 29,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.999441921710968,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            32.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 14,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9991181492805481,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 29,
+                "y": 28,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.999441921710968,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s08",
+      "image": "1410geotiff.tif",
+      "box": [
+        5685,
+        5800,
+        5750,
+        5850
+      ],
+      "expected_depth": 34,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "34",
+        "confidence": 0.9992357492446899
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            34.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 20,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9977066516876221,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 23,
+                "w": 13,
+                "h": 16
+              },
+              "raw_text": "4",
+              "confidence": 0.9984618425369263,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            34.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 20,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9977066516876221,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 23,
+                "w": 13,
+                "h": 16
+              },
+              "raw_text": "4",
+              "confidence": 0.9984618425369263,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            34.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 20,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9977066516876221,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 22,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9973849654197693,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            34.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 20,
+                "y": 22,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9977066516876221,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 35,
+                "y": 22,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9973849654197693,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s09",
+      "image": "1410geotiff.tif",
+      "box": [
+        6255,
+        5990,
+        6315,
+        6040
+      ],
+      "expected_depth": 31,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "31",
+        "confidence": 0.9681633710861206
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            3.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 19,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9987958669662476,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 20,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "/",
+              "confidence": 0.9971537590026855,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            3.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 19,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9987958669662476,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 20,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "/",
+              "confidence": 0.9971537590026855,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            3.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 19,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9987958669662476,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 20,
+                "w": 6,
+                "h": 17
+              },
+              "raw_text": "/",
+              "confidence": 0.9975530505180359,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            3.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 19,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9987958669662476,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 20,
+                "w": 6,
+                "h": 17
+              },
+              "raw_text": "/",
+              "confidence": 0.9975530505180359,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s10",
+      "image": "1410geotiff.tif",
+      "box": [
+        6620,
+        6100,
+        6700,
+        6160
+      ],
+      "expected_depth": 26.5,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "265",
+        "confidence": 0.9849122166633606
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            26.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998067021369934,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9990872144699097,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 48,
+                "y": 24,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9996638298034668,
+              "index": 2
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            26.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998067021369934,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 15,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9990872144699097,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 48,
+                "y": 24,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9996638298034668,
+              "index": 2
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            26.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9996633529663086,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9979795813560486,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 48,
+                "y": 24,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.999739944934845,
+              "index": 2
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            26.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9996633529663086,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9979795813560486,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 48,
+                "y": 24,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.999739944934845,
+              "index": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s11",
+      "image": "1410geotiff.tif",
+      "box": [
+        6390,
+        6300,
+        6480,
+        6360
+      ],
+      "expected_depth": 26.5,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "265",
+        "confidence": 0.9932427406311035
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            26.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998067021369934,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9990872144699097,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 47,
+                "y": 36,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9996638298034668,
+              "index": 2
+            },
+            {
+              "box": {
+                "x": 73,
+                "y": 31,
+                "w": 17,
+                "h": 17
+              },
+              "raw_text": "(/:)",
+              "confidence": 0.6870662569999695,
+              "index": 3
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            26.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998067021369934,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 13,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9990872144699097,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 47,
+                "y": 36,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.9996638298034668,
+              "index": 2
+            },
+            {
+              "box": {
+                "x": 73,
+                "y": 31,
+                "w": 17,
+                "h": 17
+              },
+              "raw_text": "(/:)",
+              "confidence": 0.6870662569999695,
+              "index": 3
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            26.0,
+            5.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 0,
+                "y": 50,
+                "w": 29,
+                "h": 10
+              },
+              "raw_text": "/",
+              "confidence": 0.997389018535614,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 16,
+                "y": 27,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9996633529663086,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9979795813560486,
+              "index": 2
+            },
+            {
+              "box": {
+                "x": 47,
+                "y": 36,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.999739944934845,
+              "index": 3
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 0,
+                "w": 33,
+                "h": 49
+              },
+              "raw_text": "()",
+              "confidence": 0.57984459400177,
+              "index": 4
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            26.5
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 0,
+                "y": 50,
+                "w": 29,
+                "h": 10
+              },
+              "raw_text": "/",
+              "confidence": 0.997389018535614,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 16,
+                "y": 27,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9996633529663086,
+              "index": 1
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "6",
+              "confidence": 0.9979795813560486,
+              "index": 2
+            },
+            {
+              "box": {
+                "x": 47,
+                "y": 36,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "5",
+              "confidence": 0.999739944934845,
+              "index": 3
+            },
+            {
+              "box": {
+                "x": 57,
+                "y": 0,
+                "w": 33,
+                "h": 49
+              },
+              "raw_text": "()",
+              "confidence": 0.57984459400177,
+              "index": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s12",
+      "image": "1822geotiff.tif",
+      "box": [
+        5550,
+        3655,
+        5610,
+        3705
+      ],
+      "expected_depth": 0.8,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "08",
+        "confidence": 0.8550788164138794
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            0.0,
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 17,
+                "w": 12,
+                "h": 18
+              },
+              "raw_text": "0",
+              "confidence": 0.9769128561019897,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9524482488632202,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            0.8
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 17,
+                "w": 12,
+                "h": 18
+              },
+              "raw_text": "0",
+              "confidence": 0.9769128561019897,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9524482488632202,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            0.0,
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 17,
+                "w": 12,
+                "h": 18
+              },
+              "raw_text": "0",
+              "confidence": 0.9769128561019897,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9524482488632202,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            0.8
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 17,
+                "w": 12,
+                "h": 18
+              },
+              "raw_text": "0",
+              "confidence": 0.9769128561019897,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 27,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9524482488632202,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s13",
+      "image": "1822geotiff.tif",
+      "box": [
+        5585,
+        3780,
+        5640,
+        3830
+      ],
+      "expected_depth": 2.9,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "2g",
+        "confidence": 0.9903755187988281
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            2.0,
+            9.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998629093170166,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 21,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.993992030620575,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            2.9
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998629093170166,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 21,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.993992030620575,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            2.0,
+            9.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998629093170166,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 21,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9951613545417786,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            2.9
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 17,
+                "y": 11,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2",
+              "confidence": 0.9998629093170166,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 32,
+                "y": 21,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9951613545417786,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s14",
+      "image": "1822geotiff.tif",
+      "box": [
+        5720,
+        3770,
+        5765,
+        3810
+      ],
+      "expected_depth": 3,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "3",
+        "confidence": 0.88019859790802
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            3.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998552799224854,
+              "index": 0
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            3.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998552799224854,
+              "index": 0
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            3.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998552799224854,
+              "index": 0
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            3.0
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998552799224854,
+              "index": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s15",
+      "image": "1822geotiff.tif",
+      "box": [
+        5840,
+        3770,
+        5905,
+        3820
+      ],
+      "expected_depth": 3.2,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "32",
+        "confidence": 0.882214367389679
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            3.0,
+            2.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 16,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9984732270240784,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 25,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "2",
+              "confidence": 0.9999139308929443,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            3.2
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 16,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9984732270240784,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 25,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "2",
+              "confidence": 0.9999139308929443,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            3.0,
+            2.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 16,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9984732270240784,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 25,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "2",
+              "confidence": 0.9999139308929443,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            3.2
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 16,
+                "y": 16,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9984732270240784,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 25,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "2",
+              "confidence": 0.9999139308929443,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s16",
+      "image": "1822geotiff.tif",
+      "box": [
+        5535,
+        3875,
+        5590,
+        3920
+      ],
+      "expected_depth": 1.8,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "18",
+        "confidence": 0.7766600847244263
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 21,
+                "y": 9,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "/",
+              "confidence": 0.8808286786079407,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 28,
+                "y": 18,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9992033839225769,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 21,
+                "y": 9,
+                "w": 6,
+                "h": 16
+              },
+              "raw_text": "/",
+              "confidence": 0.8808286786079407,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 28,
+                "y": 18,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9992033839225769,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 21,
+                "y": 9,
+                "w": 6,
+                "h": 17
+              },
+              "raw_text": "/",
+              "confidence": 0.9045648574829102,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 28,
+                "y": 18,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9992033839225769,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 21,
+                "y": 9,
+                "w": 6,
+                "h": 17
+              },
+              "raw_text": "/",
+              "confidence": 0.9045648574829102,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 28,
+                "y": 18,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9992033839225769,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s17",
+      "image": "1822geotiff.tif",
+      "box": [
+        5665,
+        3935,
+        5725,
+        3985
+      ],
+      "expected_depth": 2.8,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "28",
+        "confidence": 0.9087562561035156
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2.",
+              "confidence": 0.7265715003013611,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 30,
+                "y": 25,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9991973042488098,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2.",
+              "confidence": 0.7265715003013611,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 30,
+                "y": 25,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9991973042488098,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2.",
+              "confidence": 0.7265715003013611,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 30,
+                "y": 25,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9991973042488098,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            8.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 15,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "2.",
+              "confidence": 0.7265715003013611,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 30,
+                "y": 25,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "8",
+              "confidence": 0.9991973042488098,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s18",
+      "image": "1822geotiff.tif",
+      "box": [
+        5545,
+        4090,
+        5600,
+        4140
+      ],
+      "expected_depth": 4.7,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "47",
+        "confidence": 0.9728649258613586
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            4.0,
+            7.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 7,
+                "y": 10,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9995656609535217,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 23,
+                "y": 20,
+                "w": 10,
+                "h": 14
+              },
+              "raw_text": "7",
+              "confidence": 0.9999603033065796,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            4.7
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 7,
+                "y": 10,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9995656609535217,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 23,
+                "y": 20,
+                "w": 10,
+                "h": 14
+              },
+              "raw_text": "7",
+              "confidence": 0.9999603033065796,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            4.0,
+            7.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 7,
+                "y": 10,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9995656609535217,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 23,
+                "y": 20,
+                "w": 10,
+                "h": 14
+              },
+              "raw_text": "7",
+              "confidence": 0.9999603033065796,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            4.7
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 7,
+                "y": 10,
+                "w": 13,
+                "h": 17
+              },
+              "raw_text": "4",
+              "confidence": 0.9995656609535217,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 23,
+                "y": 20,
+                "w": 10,
+                "h": 14
+              },
+              "raw_text": "7",
+              "confidence": 0.9999603033065796,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s19",
+      "image": "1822geotiff.tif",
+      "box": [
+        6025,
+        4305,
+        6080,
+        4360
+      ],
+      "expected_depth": 3.9,
+      "kind": "sounding",
+      "full_crop_ocr": {
+        "text": "3g",
+        "confidence": 0.991135835647583
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            3.0,
+            9.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 21,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998339414596558,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 31,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9955927729606628,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            3.9
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 21,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998339414596558,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 31,
+                "w": 12,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9955927729606628,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            3.0,
+            9.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 21,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998339414596558,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 31,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9965470433235168,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            3.9
+          ],
+          "correct": true,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 15,
+                "y": 21,
+                "w": 14,
+                "h": 18
+              },
+              "raw_text": "3",
+              "confidence": 0.9998339414596558,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 31,
+                "y": 31,
+                "w": 11,
+                "h": 14
+              },
+              "raw_text": "9",
+              "confidence": 0.9965470433235168,
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s20",
+      "image": "1822geotiff.tif",
+      "box": [
+        5595,
+        3900,
+        5635,
+        3940
+      ],
+      "expected_depth": null,
+      "kind": "contour_label",
+      "full_crop_ocr": {
+        "text": "2-",
+        "confidence": 0.8012230396270752
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            2.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 11,
+                "y": 14,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "2",
+              "confidence": 0.9999406337738037,
+              "index": 0
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            2.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 11,
+                "y": 14,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "2",
+              "confidence": 0.9999406337738037,
+              "index": 0
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            2.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 11,
+                "y": 14,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "2",
+              "confidence": 0.9999406337738037,
+              "index": 0
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            2.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 11,
+                "y": 14,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "2",
+              "confidence": 0.9999406337738037,
+              "index": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "s21",
+      "image": "1822geotiff.tif",
+      "box": [
+        9515,
+        4460,
+        9570,
+        4510
+      ],
+      "expected_depth": null,
+      "kind": "contour_label",
+      "full_crop_ocr": {
+        "text": "-10-",
+        "confidence": 0.8550027012825012
+      },
+      "runs": {
+        "legacy_fixed": {
+          "values": [
+            10.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 13,
+                "y": 16,
+                "w": 7,
+                "h": 16
+              },
+              "raw_text": "1",
+              "confidence": 0.999981164932251,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 24,
+                "y": 15,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "0",
+              "confidence": 0.9909855127334595,
+              "index": 1
+            }
+          ]
+        },
+        "legacy_relative": {
+          "values": [
+            10.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "legacy",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 13,
+                "y": 16,
+                "w": 7,
+                "h": 16
+              },
+              "raw_text": "1",
+              "confidence": 0.999981164932251,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 24,
+                "y": 15,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "0",
+              "confidence": 0.9909855127334595,
+              "index": 1
+            }
+          ]
+        },
+        "black_fixed": {
+          "values": [
+            10.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "fixed",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 13,
+                "y": 16,
+                "w": 8,
+                "h": 17
+              },
+              "raw_text": "1",
+              "confidence": 0.9999774694442749,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 24,
+                "y": 15,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "0",
+              "confidence": 0.9909855127334595,
+              "index": 1
+            }
+          ]
+        },
+        "black_relative": {
+          "values": [
+            10.0
+          ],
+          "correct": false,
+          "config": {
+            "reference_dpi": 600,
+            "dpi": 300.0,
+            "segmentation": "black",
+            "grouping": "relative",
+            "threshold": 120,
+            "blur_size": 5,
+            "kernel_size": 2,
+            "min_w": 3,
+            "max_w": 80,
+            "min_h": 10,
+            "max_h": 100,
+            "tol_x": 30,
+            "tol_y": 6,
+            "decimal_height_ratio": 0.95,
+            "decimal_drop": 0.1,
+            "decimal_max_integer": 31,
+            "min_confidence": 0.35
+          },
+          "digits": [
+            {
+              "box": {
+                "x": 13,
+                "y": 16,
+                "w": 8,
+                "h": 17
+              },
+              "raw_text": "1",
+              "confidence": 0.9999774694442749,
+              "index": 0
+            },
+            {
+              "box": {
+                "x": 24,
+                "y": 15,
+                "w": 11,
+                "h": 17
+              },
+              "raw_text": "0",
+              "confidence": 0.9909855127334595,
+              "index": 1
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

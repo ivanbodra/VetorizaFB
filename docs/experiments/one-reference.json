@@ -1,0 +1,11 @@
+{
+  "scope": "Diagnostic set locating the five soundings in the user's screenshot in the original 21300 GeoTIFF, plus a printed-word negative. Labels manually read by the assistant, not independently reviewed; not full-chart ground truth.",
+  "samples": [
+    {"id":"one01","image":"21300plano.tif","box":[349,3028,440,3096],"expected_depth":10.8,"kind":"sounding"},
+    {"id":"one02","image":"21300plano.tif","box":[1381,3033,1460,3100],"expected_depth":10.1,"kind":"sounding"},
+    {"id":"one03","image":"21300plano.tif","box":[898,3236,946,3291],"expected_depth":11.0,"kind":"sounding"},
+    {"id":"one04","image":"21300plano.tif","box":[571,3521,634,3588],"expected_depth":11.1,"kind":"sounding"},
+    {"id":"one05","image":"21300plano.tif","box":[1346,3502,1436,3569],"expected_depth":10.5,"kind":"sounding"},
+    {"id":"one06","image":"21300plano.tif","box":[3535,750,3740,840],"expected_depth":null,"kind":"printed_word"}
+  ]
+}

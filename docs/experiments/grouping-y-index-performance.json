@@ -1,0 +1,427 @@
+{
+  "scope": "Grouping performance only; timings are environment-specific. Legacy and modern numeric grouping rules are not identical.",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "source_commit": "working tree; identify processing code by source_sha256",
+  "source_sha256": {
+    "legacy/v3_1/ocr_segmented.py": "c4b75982ddafbfc6cb74319aaab5659063df5804cf26d5a915ba0e8656ca00ef",
+    "src/vetorizafb/core.py": "e36ad4f45f9ac58a44d81ca3519d630fec0202177fe4547a572ab1ae8b8cda80"
+  },
+  "repeats": 3,
+  "runs": [
+    {
+      "case": "21300plano.digits.json",
+      "digits": 411,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {
+        "input_sha256": "c46ec9eb137fa907bcf55011b73db4c69b7432770b55823c57223a3ed6213bed",
+        "digits_json_sha256": "30412840437a4af7c0e12b5104619bda0a3afc215c3baf90030d520f99c30eb6"
+      },
+      "modern": {
+        "median_seconds": 0.0029159539999454864,
+        "seconds": [
+          0.0032482819997312617,
+          0.0027323690001139767,
+          0.0029159539999454864
+        ],
+        "groups": 163
+      },
+      "legacy": {
+        "median_seconds": 0.011822122000012314,
+        "seconds": [
+          0.014236322000215296,
+          0.011822122000012314,
+          0.011239917999773752
+        ],
+        "groups": 272
+      }
+    },
+    {
+      "case": "1410geotiff.digits.json",
+      "digits": 9556,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 300.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {
+        "input_sha256": "c222eb9dad7e616e659d8fe588987ca4836b530a681154bef168c605439a4107",
+        "digits_json_sha256": "c26730ca79b11a194fa47612cd6ee228722c6c90490bab2c629f466e078c0c7d"
+      },
+      "modern": {
+        "median_seconds": 0.03854707499976939,
+        "seconds": [
+          0.038497840999298205,
+          0.03854707499976939,
+          0.03914589200030605
+        ],
+        "groups": 3077
+      },
+      "legacy": {
+        "median_seconds": 0.15115106199937145,
+        "seconds": [
+          0.11348697100038407,
+          0.1617064539996136,
+          0.15115106199937145
+        ],
+        "groups": 3801
+      }
+    },
+    {
+      "case": "1822geotiff.digits.json",
+      "digits": 9973,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 300.0,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {
+        "input_sha256": "099ef3c86c31d97932f45787db72763621ce255961ab4d8bd411e93516c146db",
+        "digits_json_sha256": "6cb73c860421be83c5a874e81a1a9a45a165da185f5839b149218106f0d69693"
+      },
+      "modern": {
+        "median_seconds": 0.04738451499997609,
+        "seconds": [
+          0.04738451499997609,
+          0.056768788999761455,
+          0.046565801000724605
+        ],
+        "groups": 2826
+      },
+      "legacy": {
+        "median_seconds": 0.14987742199991771,
+        "seconds": [
+          0.14987742199991771,
+          0.16536692600038805,
+          0.13159558899951662
+        ],
+        "groups": 4214
+      }
+    },
+    {
+      "case": "synthetic_sparse_pairs",
+      "digits": 1000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.012100162999558961,
+        "seconds": [
+          0.014103339000030246,
+          0.012100162999558961,
+          0.011435847000029753
+        ],
+        "groups": 500
+      },
+      "legacy": {
+        "median_seconds": 0.022938623999834817,
+        "seconds": [
+          0.02182824899955449,
+          0.022938623999834817,
+          0.025212927000211494
+        ],
+        "groups": 500
+      }
+    },
+    {
+      "case": "synthetic_same_x_distinct_y",
+      "digits": 1000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.009516727999653085,
+        "seconds": [
+          0.009516727999653085,
+          0.009178569999676256,
+          0.009635076000449772
+        ],
+        "groups": 1000
+      },
+      "legacy": {
+        "median_seconds": 0.2099633729994821,
+        "seconds": [
+          0.23266740000053687,
+          0.18257750599968858,
+          0.2099633729994821
+        ],
+        "groups": 1000
+      }
+    },
+    {
+      "case": "synthetic_sparse_pairs",
+      "digits": 2000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.03243399999973917,
+        "seconds": [
+          0.03139970800020819,
+          0.032514139999875624,
+          0.03243399999973917
+        ],
+        "groups": 1000
+      },
+      "legacy": {
+        "median_seconds": 0.034065982999891276,
+        "seconds": [
+          0.044809697000346205,
+          0.034065982999891276,
+          0.033015531999808445
+        ],
+        "groups": 1000
+      }
+    },
+    {
+      "case": "synthetic_same_x_distinct_y",
+      "digits": 2000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.014405396000256587,
+        "seconds": [
+          0.01850347999970836,
+          0.01289594800073246,
+          0.014405396000256587
+        ],
+        "groups": 2000
+      },
+      "legacy": {
+        "median_seconds": 0.8034887160001745,
+        "seconds": [
+          0.7155503439998938,
+          0.8034887160001745,
+          0.912534222999966
+        ],
+        "groups": 2000
+      }
+    },
+    {
+      "case": "synthetic_sparse_pairs",
+      "digits": 4000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.0748849869996775,
+        "seconds": [
+          0.07593989099950704,
+          0.0748849869996775,
+          0.06822847100011131
+        ],
+        "groups": 2000
+      },
+      "legacy": {
+        "median_seconds": 0.05973893400005181,
+        "seconds": [
+          0.06196364300012647,
+          0.05973893400005181,
+          0.05971337600021798
+        ],
+        "groups": 2000
+      }
+    },
+    {
+      "case": "synthetic_same_x_distinct_y",
+      "digits": 4000,
+      "config": {
+        "reference_dpi": 600,
+        "dpi": 600,
+        "segmentation": "legacy",
+        "grouping": "relative",
+        "threshold": 120,
+        "blur_size": 5,
+        "kernel_size": 2,
+        "min_w": 3,
+        "max_w": 80,
+        "min_h": 10,
+        "max_h": 100,
+        "tol_x": 30,
+        "tol_y": 6,
+        "decimal_height_ratio": 0.95,
+        "decimal_drop": 0.1,
+        "decimal_max_integer": 31,
+        "min_confidence": 0.35,
+        "ocr_batch_size": 64,
+        "crop_padding": 3,
+        "retry_ambiguous": false
+      },
+      "metadata": {},
+      "modern": {
+        "median_seconds": 0.02875007300008292,
+        "seconds": [
+          0.026178344000072684,
+          0.06890397499955725,
+          0.02875007300008292
+        ],
+        "groups": 4000
+      },
+      "legacy": {
+        "median_seconds": 2.716088012,
+        "seconds": [
+          2.7740457620002417,
+          2.6585022609997395,
+          2.716088012
+        ],
+        "groups": 4000
+      }
+    }
+  ]
+}

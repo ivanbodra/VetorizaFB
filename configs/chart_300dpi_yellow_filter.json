@@ -1,0 +1,9 @@
+{
+  "dpi": 300,
+  "segmentation": "legacy",
+  "grouping": "relative",
+  "retry_one": true,
+  "exclude_yellow": true,
+  "yellow_delta": 25,
+  "yellow_min_fraction": 0.6
+}
