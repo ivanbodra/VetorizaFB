@@ -7,13 +7,23 @@ class ScrollablePanel(ttk.Frame):
     def __init__(self,parent):
         super().__init__(parent)
         self.canvas=tk.Canvas(self,highlightthickness=0,borderwidth=0,width=330)
-        scroll=ttk.Scrollbar(self,orient='vertical',command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=scroll.set)
-        scroll.pack(side='right',fill='y');self.canvas.pack(side='left',fill='both',expand=True)
+        self.scroll=ttk.Scrollbar(self,orient='vertical',command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scroll.set)
+        self.canvas.pack(side='left',fill='both',expand=True)
         self.content=ttk.Frame(self.canvas,padding=9)
         window=self.canvas.create_window((0,0),window=self.content,anchor='nw')
-        self.canvas.bind('<Configure>',lambda e:self.canvas.itemconfigure(window,width=e.width))
-        self.content.bind('<Configure>',lambda e:self.canvas.configure(scrollregion=self.canvas.bbox('all')))
+        def resize(event):
+            self.canvas.itemconfigure(window,width=event.width)
+            update_scrollbar()
+        def update_scrollbar(event=None):
+            self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+            if self.content.winfo_reqheight()>self.canvas.winfo_height():
+                if not self.scroll.winfo_manager():self.scroll.pack(side='right',fill='y',before=self.canvas)
+            elif self.scroll.winfo_manager():
+                self.canvas.yview_moveto(0)
+                self.scroll.pack_forget()
+        self.canvas.bind('<Configure>',resize)
+        self.content.bind('<Configure>',update_scrollbar)
 
 
 def number(variable):
