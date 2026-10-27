@@ -253,7 +253,7 @@ class Application:
             self._preview_busy=True;revision=self._preview_revision;session=self.session;roi=self.roi
             def worker():
                 try:self.events.put(('preview',(revision,session,self.preview.classify(session,cfg,roi),cfg,roi),None))
-                except (ValueError,TypeError) as exc:self.events.put(('preview_error',(revision,str(exc)),None))
+                except Exception as exc:self.events.put(('preview_error',(revision,str(exc)),None))
             threading.Thread(target=worker,daemon=True).start()
         except (ValueError,TypeError) as exc:
             self.viewer.preview_boxes=[]
