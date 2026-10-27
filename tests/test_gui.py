@@ -525,7 +525,7 @@ def test_compact_stage_names_and_native_pixel_controls(app):
     labels=[str(w.cget('text')) for w in widgets if isinstance(w,ttk.Label)]
     assert not any('DPI' in text for text in labels)
     combos=[w for w in widgets if isinstance(w,ttk.Combobox)]
-    assert any(tuple(w.cget('values'))==('Original','Editada','Caixas','Dígitos','Sondagens') for w in combos)
+    assert tuple(app.viewer.layer_combo.cget('values'))==('Original','Editada','Caixas')
     assert any(tuple(w.cget('values'))==('Realce','Bruto') for w in combos)
     app.root.geometry('1050x720');app.root.update()
     import tkinter as tk
@@ -534,6 +534,22 @@ def test_compact_stage_names_and_native_pixel_controls(app):
         try:visible.add(app.tabs.index(f'@{x},10'))
         except tk.TclError:pass
     assert visible=={0,1,2,3}
+
+
+def test_preview_is_opt_in_and_digit_layer_requires_ocr(app):
+    assert not app.live_preview.get()
+    assert app._preview_id is None
+    app.fields['min_w'].set('4')
+    assert app._preview_id is None
+    app.run_stage('segment');finish(app)
+    assert app.viewer.layer.get()=='Caixas' and app.viewer.preview_boxes
+    assert 'Dígitos' not in app.viewer.layer_combo.cget('values')
+    app.live_preview.set(True);app.toggle_live_preview()
+    assert app._preview_id is not None
+    app.live_preview.set(False);app.toggle_live_preview()
+    assert app._preview_id is None
+    app.run_stage('ocr');finish(app)
+    assert 'Dígitos' in app.viewer.layer_combo.cget('values')
 
 
 def test_review_header_sort_is_numeric_and_persists_without_mutating_model(app):
