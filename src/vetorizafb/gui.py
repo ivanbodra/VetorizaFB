@@ -25,6 +25,7 @@ from .workflow import ChartSession
 from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
 from .calibration import CalibrationPreview
+from .box_diagnostics import export_box_measurements
 from .branding import apply_icon, asset_photo
 from .ui import Tooltip, rounded_controls
 from .models import default_model_root,discover_models,download_model,ConnectionSettings,save_model_root,inspect_model
@@ -282,7 +283,8 @@ class Application:
         files=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Arquivo',menu=files)
         for label,command in [('Abrir carta (Ctrl+O)',self.choose_chart),('Abrir projeto',self.open_project),
                               ('Salvar projeto (Ctrl+S)',self.save_project),('Fechar projeto',self.close_project),('Carregar parâmetros',self.load_config),
-                              ('Salvar parâmetros',self.save_config),('Sair',self.close)]:
+                              ('Salvar parâmetros',self.save_config),('Exportar medidas das caixas…',self.export_box_measurements),
+                              ('Sair',self.close)]:
             files.add_command(label=label,command=command)
         help_menu=tk.Menu(menu,tearoff=False);menu.add_cascade(label='Ajuda',menu=help_menu)
         help_menu.add_command(label='Manual de uso (F1)',command=self.open_manual)
@@ -1069,6 +1071,30 @@ class Application:
         directory,crs=self.output.get(),self.target_crs.get()
         self.start(lambda:self.session.export(directory,target_crs=crs,accepted_only=accepted_only),
                    lambda meta:messagebox.showinfo('Exportação',f"{meta['soundings']} pontos gravados em {directory}\n{meta['status']}",parent=self.root),cancellable=False)
+
+    def export_box_measurements(self):
+        if self.busy:return
+        if self.session is None:
+            messagebox.showinfo('Medidas das caixas','Abra uma carta e clique em Preparar primeiro.',parent=self.root)
+            return
+        try:ready=self.session.valid_segments(self.config(),self.roi)
+        except (ValueError,TypeError) as exc:
+            messagebox.showerror('Parâmetros',str(exc),parent=self.root)
+            return
+        if not ready:
+            messagebox.showinfo('Medidas das caixas','Clique em Preparar com os parâmetros atuais antes de exportar.',parent=self.root)
+            return
+        destination=filedialog.asksaveasfilename(
+            title='Exportar medidas de todas as caixas',defaultextension='.csv',
+            initialdir=str(self.session.path.parent),
+            initialfile=f'{self.session.path.stem}.medidas-caixas.csv',
+            filetypes=[('Tabela CSV','*.csv')])
+        if not destination:return
+        session=self.session
+        self.start(lambda:export_box_measurements(session,destination),
+                   lambda counts:messagebox.showinfo('Medidas das caixas',
+                       f"{sum(counts.values())} caixas exportadas para {destination}",parent=self.root),
+                   cancellable=False)
 
     def save_project(self,after_save=None):
         if self.busy or not self.session:return
