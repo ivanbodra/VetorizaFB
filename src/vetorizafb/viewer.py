@@ -27,7 +27,6 @@ class ChartViewer(ttk.Frame):
                           ('−',lambda:self.zoom_to(self.scale/1.4)),('+',lambda:self.zoom_to(self.scale*1.4))]:
             button=ttk.Button(bar,text=text,command=cmd,width=3 if text in {'−','+'} else 0)
             button.pack(side='left',padx=2,pady=2)
-            Tooltip(button,{'Ajustar':'Mostrar a carta inteira','100%':'Um pixel da imagem por pixel da tela','−':'Reduzir zoom · roda do mouse','+':'Ampliar zoom · roda do mouse'}[text])
         ttk.Label(bar,textvariable=self.zoom_text,width=6).pack(side='left')
         layer = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=17,
                              values=['Original','Editada','Caixas','Dígitos','Sondagens'])
@@ -51,7 +50,7 @@ class ChartViewer(ttk.Frame):
 
         self.layer.trace_add('write',lambda *args:self.update_details())
         self.mode.trace_add('write',lambda *args:self.update_details())
-        Tooltip(layer,'Visualização. Caixas: verde = aceita, cinza-claro = descartada. Passe o cursor sobre as caixas para inspecionar.')
+        Tooltip(layer,'Caixas: verde = mantida; cinza = descartada.')
 
     def update_details(self):
         if self.layer.get()=='Caixas' or self.mode.get()=='Medir caractere':
