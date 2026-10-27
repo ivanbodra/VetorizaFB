@@ -64,6 +64,7 @@ class Application:
         self.selection_text = tk.StringVar(value='0 selecionados')
         self.show_tooltips=tk.BooleanVar(value=self.load_tooltips_preference())
         Tooltip.set_enabled(root,self.show_tooltips.get())
+        self.live_preview=tk.BooleanVar(value=False)
         self._selection_anchor = self._last_followed = None
         self.fields = {k:tk.BooleanVar(value=v) if isinstance(v,bool) else tk.StringVar(value=str(v))
                        for k,v in asdict(Config()).items()}
@@ -99,8 +100,8 @@ class Application:
             style.configure(name+'.TButton',background=bg,foreground=fg,bordercolor=bg)
             style.map(name+'.TButton',background=[('disabled','#eef1f4'),('pressed',hover),('active',hover)],foreground=[('disabled','#8d9baa')])
         style.configure('TNotebook',background='#f5f8fb',borderwidth=0,tabmargins=0)
-        style.configure('TNotebook.Tab',padding=(7,5),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
-        style.map('TNotebook.Tab',padding=[('selected',(11,6)),('!selected',(7,4))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
+        style.configure('TNotebook.Tab',font=(self.ui_font,9),padding=(4,5),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
+        style.map('TNotebook.Tab',padding=[('selected',(4,6)),('!selected',(2,4))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
         style.configure('TEntry',fieldbackground='white',padding=4,bordercolor='#cbd9e4')
         style.configure('Required.TEntry',fieldbackground='#fff2bf',bordercolor='#d9b650')
         style.configure('TCombobox',fieldbackground='white',background='#e5f1fb',arrowcolor='#17547e',padding=3)
@@ -116,8 +117,8 @@ class Application:
         style.configure('Tooltip.TLabel',background='#17374b',foreground='white',font=(self.ui_font,9))
         self.stage_icons={}
         for state,colour in [('empty','#afbdc8'),('pending','#f1b747'),('ready','#57cba1'),('busy','#5eb5ff')]:
-            im=Image.new('RGBA',(10,10))
-            ImageDraw.Draw(im).ellipse((1,1,8,8),fill=colour)
+            im=Image.new('RGBA',(7,7))
+            ImageDraw.Draw(im).ellipse((1,1,6,6),fill=colour)
             self.stage_icons[state]=ImageTk.PhotoImage(im,master=self.root)
 
     def tip(self,widget,text):
@@ -216,6 +217,12 @@ class Application:
         if self._preview_id:self.root.after_cancel(self._preview_id)
         self._preview_id=self.root.after(180,self.update_preview)
 
+    def toggle_live_preview(self):
+        if self.live_preview.get():self.schedule_preview()
+        elif self._preview_id:
+            self.root.after_cancel(self._preview_id)
+            self._preview_id=None
+
     def update_preview(self):
         if self._preview_id:self.root.after_cancel(self._preview_id)
         self._preview_id=None
@@ -225,7 +232,8 @@ class Application:
             self.viewer.preview_boxes=result
             if self.viewer.layer.get()=='Caixas':
                 kept=sum(not reason for _,reason in result)
-                self.viewer.inspection_text.set(f'{kept} aceitas • {len(result)-kept} descartadas • prévia, ainda não aplicada')
+                state='caixas preparadas' if self.session.valid_segments(self.config(),self.roi) else 'prévia, ainda não aplicada'
+                self.viewer.inspection_text.set(f'{kept} mantidas • {len(result)-kept} descartadas • {state}')
                 self.viewer.render()
         except (ValueError,TypeError) as exc:
             self.viewer.preview_boxes=[]
@@ -245,7 +253,8 @@ class Application:
             values=[max(.01,math.floor(v)-1) if minimum else math.ceil(v)+1 for v in (w,h)]
             low='min_' if minimum else 'max_'
             for key,value in zip(('w','h'),values):self.fields[low+key].set(str(value))
-            self.viewer.layer.set('Caixas');self.update_preview()
+            self.viewer.layer.set('Caixas')
+            if self.live_preview.get():self.update_preview()
         except (ValueError,TypeError) as exc:self.status.set(str(exc))
 
     def build(self):
@@ -276,7 +285,7 @@ class Application:
         self.tip(self.chart_entry,'Digite o caminho e pressione Enter para abrir a carta.')
         ttk.Button(header,text='Abrir…',command=self.choose_chart).grid(row=0,column=2)
         split=ttk.Panedwindow(self.root,orient='horizontal');split.pack(fill='both',expand=True,padx=8)
-        left=ttk.Frame(split,width=355);split.add(left,weight=0)
+        left=ttk.Frame(split,width=365);split.add(left,weight=0)
         self.tabs=ttk.Notebook(left);self.tabs.pack(fill='both',expand=True)
         self.segment_panel=ScrollablePanel(self.tabs);seg=self.segment_panel.content
         ocr,group,export=[ttk.Frame(self.tabs,padding=9) for _ in range(3)]
@@ -289,8 +298,8 @@ class Application:
         seg.columnconfigure(1,weight=1)
         def setting(frame,row,label,key,values=None):
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
-            widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=13) if values else ttk.Entry(frame,textvariable=self.fields[key],width=14)
-            widget.grid(row=row,column=1,sticky='ew',padx=(8,0),pady=2)
+            widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=9) if values else ttk.Entry(frame,textvariable=self.fields[key],width=6)
+            widget.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
             hints={
                 'yellow_delta':'Valor maior inclui tons de amarelo mais suaves.',
                 'threshold':'Aumente para incluir traços mais claros. Valores altos podem acabar incluindo o fundo.',
@@ -303,10 +312,10 @@ class Application:
             ('Desfoque','blur_size',None),('Dilatação','kernel_size',None)]):setting(seg,row,label,key,values)
         def size_range(row,label,minimum,maximum):
             ttk.Label(seg,text=label).grid(row=row,column=0,sticky='w',pady=2)
-            fields=ttk.Frame(seg);fields.grid(row=row,column=1,sticky='ew',padx=(8,0),pady=2)
+            fields=ttk.Frame(seg);fields.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
             fields.columnconfigure(1,weight=1);fields.columnconfigure(3,weight=1)
             ttk.Label(fields,text='Mín.').grid(row=0,column=0,padx=(0,2))
-            ttk.Entry(fields,textvariable=self.fields[minimum],width=5).grid(row=0,column=1,sticky='ew',padx=(0,5))
+            ttk.Entry(fields,textvariable=self.fields[minimum],width=5).grid(row=0,column=1,sticky='ew',padx=(0,3))
             ttk.Label(fields,text='Máx.').grid(row=0,column=2,padx=(0,2))
             ttk.Entry(fields,textvariable=self.fields[maximum],width=5).grid(row=0,column=3,sticky='ew')
         size_range(4,'Largura', 'min_w','max_w')
@@ -315,19 +324,18 @@ class Application:
         ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=7,column=0,columnspan=2,sticky='w',pady=2)
         setting(seg,8,'Sensibilidade','yellow_delta')
         setting(seg,9,'Cobertura (%)','yellow_min_fraction')
-        self.seg_button=ttk.Button(seg,text='Preparar',style='Primary.TButton',command=lambda:self.run_stage('segment'))
-        self.seg_button.grid(row=10,column=0,columnspan=2,sticky='ew',pady=(5,3))
-        auxiliary=ttk.Frame(seg);auxiliary.grid(row=11,column=0,columnspan=2,sticky='ew',pady=2)
-        auxiliary.columnconfigure((0,1),weight=1)
-        ttk.Button(auxiliary,text='Dimensões',command=self.inspect_sizes).grid(row=0,column=0,sticky='ew',padx=(0,3))
-        ttk.Button(auxiliary,text='Carta inteira',command=lambda:self.set_roi(None)).grid(row=0,column=1,sticky='ew',padx=(3,0))
-        ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=12,column=0,columnspan=2,sticky='w',pady=2)
-        ttk.Button(seg,text='Medir caractere',command=self.measure_character).grid(row=13,column=0,columnspan=2,sticky='ew',pady=2)
-        ttk.Label(seg,textvariable=self.measure_text,wraplength=285).grid(row=14,column=0,columnspan=2,sticky='w',pady=2)
-        limits=ttk.Frame(seg);limits.grid(row=15,column=0,columnspan=2,sticky='ew',pady=2)
-        limits.columnconfigure((0,1),weight=1)
-        ttk.Button(limits,text='Definir mínimos',command=lambda:self.use_measurement(True)).grid(row=0,column=0,sticky='ew',padx=(0,3))
-        ttk.Button(limits,text='Definir máximos',command=lambda:self.use_measurement(False)).grid(row=0,column=1,sticky='ew',padx=(3,0))
+        ttk.Checkbutton(seg,text='Prévia automática',variable=self.live_preview,command=self.toggle_live_preview).grid(row=10,column=0,columnspan=2,sticky='w',pady=2)
+        self.seg_button=ttk.Button(seg,text='Preparar',width=14,style='Primary.TButton',command=lambda:self.run_stage('segment'))
+        self.seg_button.grid(row=11,column=0,columnspan=2,sticky='w',pady=(5,3))
+        auxiliary=ttk.Frame(seg);auxiliary.grid(row=12,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Button(auxiliary,text='Dimensões',width=14,command=self.inspect_sizes).grid(row=0,column=0,padx=(0,3))
+        ttk.Button(auxiliary,text='Carta inteira',width=14,command=lambda:self.set_roi(None)).grid(row=0,column=1,padx=(3,0))
+        ttk.Label(seg,textvariable=self.roi_text,wraplength=280).grid(row=13,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Button(seg,text='Medir caractere',width=18,command=self.measure_character).grid(row=14,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Label(seg,textvariable=self.measure_text,wraplength=285).grid(row=15,column=0,columnspan=2,sticky='w',pady=2)
+        limits=ttk.Frame(seg);limits.grid(row=16,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Button(limits,text='Definir mínimos',width=14,command=lambda:self.use_measurement(True)).grid(row=0,column=0,padx=(0,3))
+        ttk.Button(limits,text='Definir máximos',width=14,command=lambda:self.use_measurement(False)).grid(row=0,column=1,padx=(3,0))
         model_panel=ttk.Frame(ocr);model_panel.grid(row=0,column=0,columnspan=2,sticky='ew',pady=(0,10))
         model_panel.columnconfigure(1,weight=1)
         ttk.Label(model_panel,text='Pasta').grid(row=0,column=0,sticky='w',padx=(0,6),pady=4)
@@ -371,8 +379,8 @@ class Application:
         ttk.Button(export,text='Abrir projeto',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
         controls=ttk.Frame(left);controls.pack(side='bottom',fill='x',before=self.tabs)
         self.run_button=ttk.Button(controls,text='Preparar · Reconhecer · Agrupar',style='Primary.TButton',command=lambda:self.run_stage('all'))
-        self.run_button.pack(fill='x',pady=8)
-        self.cancel_button=ttk.Button(controls,text='Cancelar',command=self.cancel.set,state='disabled');self.cancel_button.pack(fill='x')
+        self.run_button.pack(anchor='w',pady=8)
+        self.cancel_button=ttk.Button(controls,text='Cancelar',width=14,command=self.cancel.set,state='disabled');self.cancel_button.pack(anchor='w')
         self.progress_label=tk.StringVar()
         ttk.Label(controls,textvariable=self.progress_label,foreground='#153b50').pack(fill='x')
         self.progress=ttk.Progressbar(controls,mode='determinate');self.progress.pack(fill='x',pady=6)
@@ -469,7 +477,7 @@ class Application:
         # Fit compact toolbar labels to their content rather than Tk's default width.
         def compact(widget):
             for child in widget.winfo_children():
-                if isinstance(child,ttk.Button):child.configure(width=0)
+                if isinstance(child,ttk.Button) and not str(child.cget('width')).strip():child.configure(width=0)
                 compact(child)
         compact(self.root)
 
@@ -525,7 +533,7 @@ class Application:
         return names[index]+': '+info[self.stage_states[index]]+'.'
 
     def refresh_validity(self):
-        if hasattr(self,"viewer"):self.schedule_preview()
+        if hasattr(self,'viewer') and self.live_preview.get():self.schedule_preview()
         if not hasattr(self,'seg_button'):return
         seg=digits=groups=False
         try:
@@ -712,6 +720,7 @@ class Application:
             if stage=='group' or (stage=='all' and not session.valid_groups(cfg,spec,roi)):session.run_grouping(cfg,spec,roi,self.cancel)
         def done(_):
             if session.review is not previous_review:self.review_dirty=False
+            self.viewer.refresh_layers()
             self.viewer.layer.set('Sondagens' if session.review is not None else 'Dígitos' if session.digits is not None else 'Caixas')
             self.update_preview()
             self.viewer.selected_id=None
@@ -1060,6 +1069,7 @@ class Application:
         self.roi_text.set('Área: carta inteira');self.sort_column=None;self.sort_reverse=False
         self._selection_anchor=self._last_followed=None
         self.viewer.session=None;self.viewer.preview_boxes=[];self.viewer.measurement=None
+        self.viewer.refresh_layers()
         self.viewer.selected_id=None;self.viewer.selected_ids=set();self.viewer.roi=None
         self.viewer.canvas.delete('all');self.viewer.photo=None
         self.viewer.layer.set('Original');self.viewer.mode.set('Inspecionar')
@@ -1089,6 +1099,7 @@ class Application:
             self.refresh_models(select=False)
             self.output.set(str(session.path.parent/'results'/session.path.stem));self.viewer.set_session(session)
             self.viewer.layer.set('Sondagens' if session.review else 'Dígitos' if session.digits else 'Caixas')
+            if session.all_boxes is not None:self.update_preview()
             self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Área: carta inteira');self.review_dirty=False
         self.start(lambda:ChartSession.load_project(path,override),done)
 
