@@ -1,5 +1,6 @@
 """Non-mutating box preview with reusable masks and contours."""
 import cv2
+from .area import bounds as area_bounds, polygon_mask
 from .core import Box, segmentation_mask, yellow_background_fraction
 
 MASK_KEYS = ('dpi', 'reference_dpi', 'segmentation', 'exclude_magenta', 'threshold', 'blur_size', 'kernel_size')
@@ -36,8 +37,10 @@ class CalibrationPreview:
             self.mask_key=key;self.contour_key=None
         contour_key=(key,roi)
         if self.contour_key!=contour_key:
-            x,y,w,h=roi or (0,0,self.mask.shape[1],self.mask.shape[0])
+            x,y,w,h=area_bounds(roi,self.mask.shape[1],self.mask.shape[0])
             crop=self.mask[y:y+h,x:x+w].copy()
+            shape=polygon_mask(roi,(x,y,w,h))
+            if shape is not None:crop=cv2.bitwise_and(crop,shape)
             mode=cv2.RETR_CCOMP if session.contour_revision==2 else cv2.RETR_EXTERNAL
             contours,hierarchy=cv2.findContours(crop,mode,cv2.CHAIN_APPROX_SIMPLE)
             self.contours=[Box(a+x,b+y,c,d) for i,contour in enumerate(contours)

@@ -106,6 +106,36 @@ def test_zoom_roi_and_manual_point_tools(app,monkeypatch):
     assert app.viewer.roi==(10,10,40,50) and not app.review_ready()
 
 
+def test_area_gestures_use_image_coordinates_and_escape_cancels_draft(app):
+    from types import SimpleNamespace
+    viewer=app.viewer
+    viewer.mode.set('Selecionar área')
+    viewer.zoom_to(2,30,30)
+    def event(x,y):
+        return SimpleNamespace(x=round((x-viewer.left)*viewer.scale),
+                               y=round((y-viewer.top)*viewer.scale),state=0)
+    viewer.area_shape.set('Polígono')
+    for x,y in ((20,20),(80,20),(20,80)):
+        viewer.press(event(x,y));viewer.release(event(x,y))
+    assert len(viewer._area_points)==3
+    app.clear_point_selection()
+    assert not viewer._area_points and app.roi is None
+    assert viewer.mode.get()=='Selecionar área' and viewer.area_shape.get()=='Polígono'
+    for x,y in ((20,20),(80,20),(20,80)):
+        viewer.press(event(x,y));viewer.release(event(x,y))
+    viewer.finish_polygon(event(20,80))
+    assert app.roi==((20,20),(80,20),(20,80))
+    viewer.area_shape.set('Laço livre')
+    viewer.press(event(25,25))
+    for x,y in ((75,25),(25,75)):
+        viewer.drag(event(x,y))
+    viewer.release(event(25,25))
+    assert app.roi==((25,25),(75,25),(25,75))
+    viewer.area_shape.set('Retângulo')
+    viewer.press(event(20,20));viewer.drag(event(60,60));viewer.release(event(60,60))
+    assert app.roi==(20,20,40,40)
+
+
 def test_save_project_from_gui(app,tmp_path,monkeypatch):
     from vetorizafb.workflow import ChartSession
     app.run_stage('all');finish(app)

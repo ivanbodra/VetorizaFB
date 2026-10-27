@@ -175,8 +175,11 @@ def yellow_background_fraction(rgb,box,config):
     return float(np.count_nonzero(yellow & background)/count)
 
 
-def segment_details(rgb, config, *, return_rejected=False, contour_revision=2):
+def segment_details(rgb, config, *, return_rejected=False, contour_revision=2, area_mask=None):
     mask = segmentation_mask(rgb, config)
+    if area_mask is not None:
+        if area_mask.shape!=mask.shape:raise ValueError('Area mask dimensions do not match image')
+        mask=cv2.bitwise_and(mask,area_mask)
     if contour_revision not in (1,2):raise ValueError('Unknown contour revision')
     # CCOMP places every foreground component at the top level, including
     # digits inside closed chart frames. Children are background holes in

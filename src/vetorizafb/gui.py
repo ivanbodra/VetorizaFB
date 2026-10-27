@@ -26,6 +26,7 @@ from .dialogs import ScrollablePanel,PositionDialog,OffsetDialog
 from . import __version__
 from .calibration import CalibrationPreview, MASK_KEYS
 from .auto_bounds import suggest_bounds
+from .area import is_polygon
 from .box_diagnostics import export_box_measurements
 from .branding import apply_icon, asset_photo
 from .ui import Tooltip, rounded_controls
@@ -169,6 +170,13 @@ class Application:
         self.refresh_review_controls()
         if hasattr(self,'review_menu'):self.review_menu.destroy()
         menu=self.review_menu=tk.Menu(self.root,tearoff=False)
+        if event.widget is self.viewer.canvas and self.viewer.mode.get()=='Selecionar área':
+            shapes=tk.Menu(menu,tearoff=False)
+            for shape in ('Retângulo','Polígono','Laço livre'):
+                shapes.add_radiobutton(label=shape,value=shape,variable=self.viewer.area_shape,
+                                       command=self.viewer.cancel_area)
+            menu.add_cascade(label='Formato da área',menu=shapes)
+            menu.add_separator()
         for key,label,shortcut in [('accepted','Aprovar','Ctrl+A'),('rejected','Excluir','Ctrl+X'),('edit','Editar','Ctrl+E'),('unreviewed','Marcar pendente','')]:
             button=self.review_buttons[key]
             menu.add_command(label=label,accelerator=shortcut,command=button.invoke,state='disabled' if button.instate(['disabled']) else 'normal')
@@ -778,9 +786,12 @@ class Application:
     def set_roi(self,roi):
         if self.busy:
             self.area_mode.set('select' if self.roi else 'whole');return
+        if self.session:
+            try:roi=self.session.validate_roi(roi)
+            except ValueError as exc:self.status.set(str(exc));return
         self.roi=roi;self.viewer.roi=roi
         self.area_mode.set('select' if roi else 'whole')
-        self.roi_text.set(f'Área em pixels: {roi}' if roi else 'Carta inteira')
+        self.roi_text.set(f'Área poligonal: {len(roi)} vértices' if is_polygon(roi) else f'Área em pixels: {roi}' if roi else 'Carta inteira')
         if not roi and self.viewer.mode.get()=='Selecionar área':self.viewer.mode.set('Inspecionar')
         self.refresh_validity();self.viewer.render();self.schedule_preview()
 
@@ -996,6 +1007,8 @@ class Application:
 
     def clear_point_selection(self):
         if self.busy:return
+        if self.viewer.mode.get()=='Selecionar área' and (self.viewer._area_points or self.viewer._press):
+            self.viewer.cancel_area();self.status.set('Seleção de área cancelada.');return
         self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.tree.selection_remove(self.tree.selection());self.tree.focus('')
         self._selection_anchor=None;self.select_point()
@@ -1186,7 +1199,7 @@ class Application:
             self.output.set(str(session.path.parent/'results'/session.path.stem));self.viewer.set_session(session)
             self.viewer.layer.set('Sondagens' if session.review else 'Dígitos' if session.digits else 'Caixas')
             if session.all_boxes is not None:self.update_preview()
-            self.area_mode.set('select' if self.roi else 'whole');self.roi_text.set(f'Área em pixels: {self.roi}' if self.roi else 'Carta inteira');self.review_dirty=False
+            self.area_mode.set('select' if self.roi else 'whole');self.roi_text.set(f'Área poligonal: {len(self.roi)} vértices' if is_polygon(self.roi) else f'Área em pixels: {self.roi}' if self.roi else 'Carta inteira');self.review_dirty=False
         self.start(lambda:ChartSession.load_project(path,override),done)
 
     def save_config(self):
