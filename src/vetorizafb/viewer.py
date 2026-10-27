@@ -17,6 +17,7 @@ class ChartViewer(ttk.Frame):
         self._visible_preview = []
         self.preview_boxes = []
         self.measurement = None
+        self._resize_job=None
         self.show_rejected = tk.BooleanVar(value=True)
         self.inspection_text = tk.StringVar()
         self.layer = tk.StringVar(value='Original')
@@ -38,7 +39,7 @@ class ChartViewer(ttk.Frame):
         self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar área','Medir caractere'} else ''))
         self.canvas.pack(fill='both',expand=True)
         self.canvas.bind('<Motion>',self.hover)
-        self.canvas.bind('<Configure>',lambda e:self.render())
+        self.canvas.bind('<Configure>',self.on_resize)
         self.canvas.bind('<ButtonPress-1>',self.press)
         self.canvas.bind('<B1-Motion>',self.drag)
         self.canvas.bind('<ButtonRelease-1>',self.release)
@@ -61,6 +62,15 @@ class ChartViewer(ttk.Frame):
             self.canvas.create_rectangle((b.x-x1)*self.scale,(b.y-y1)*self.scale,
                 (b.x+b.w-x1)*self.scale,(b.y+b.h-y1)*self.scale,
                 outline='#c4c9ce' if reason else '#008879',width=1,tags='preview')
+
+    def on_resize(self,event=None):
+        if self.session is None:return
+        if self._resize_job:self.after_cancel(self._resize_job)
+        self._resize_job=self.after(80,self.render_after_resize)
+
+    def render_after_resize(self):
+        self._resize_job=None
+        self.render()
 
     def set_session(self,session):
         self.preview_boxes = []; self.measurement = None
