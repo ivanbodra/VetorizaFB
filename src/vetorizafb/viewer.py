@@ -28,10 +28,10 @@ class ChartViewer(ttk.Frame):
             button=ttk.Button(bar,text=text,command=cmd,width=3 if text in {'−','+'} else 0)
             button.pack(side='left',padx=2,pady=2)
         ttk.Label(bar,textvariable=self.zoom_text,width=6).pack(side='left')
-        layer = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=17,
-                             values=['Original','Editada','Caixas','Dígitos','Sondagens'])
-        layer.pack(side='left',padx=4); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
-        ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=17,
+        layer = self.layer_combo = ttk.Combobox(bar,textvariable=self.layer,state='readonly',width=10,
+                             values=['Original','Editada','Caixas'])
+        layer.pack(side='left',padx=3); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
+        ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=16,
                      values=['Inspecionar','Selecionar área','Medir caractere','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
         self.details = details = ttk.Frame(self)
         ttk.Checkbutton(details,text='Mostrar descartadas',variable=self.show_rejected,command=self.render).pack(side='left',padx=5)
@@ -61,7 +61,15 @@ class ChartViewer(ttk.Frame):
         self.preview_boxes = []; self.measurement = None
         self.session, self.roi, self.selected_id = session,session.roi,None
         self.selected_ids=set()
+        self.refresh_layers()
         self.after_idle(self.fit)
+
+    def refresh_layers(self):
+        options=['Original','Editada','Caixas']
+        if self.session is not None and self.session.digits is not None:options.append('Dígitos')
+        if self.session is not None and self.session.review is not None:options.append('Sondagens')
+        self.layer_combo.configure(values=options)
+        if self.layer.get() not in options:self.layer.set(options[-1])
 
     def fit(self):
         if self.session is None:return
@@ -171,7 +179,7 @@ class ChartViewer(ttk.Frame):
                 self._visible_preview.append((b,reason))
                 box((b.x,b.y,b.x+b.w,b.y+b.h),'#c4c9ce' if reason else '#008879')
         if self.measurement:box(self.measurement,'#007c91')
-        if layer == 'Dígitos':
+        if layer == 'Dígitos' and self.session.digits is not None:
             digit_map = {d.index:d for d in self.session.digits or []}
             for i,b in enumerate(self.session.boxes or []):
                 d = digit_map.get(i)
