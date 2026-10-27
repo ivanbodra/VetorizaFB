@@ -609,10 +609,16 @@ the manually entered server and optional Basic credentials.
 
 ## 4.0.4 — preparation controls
 
-Enabling **Prévia** switches to Caixas and prepares the image if contours are
-missing or the mask/area changed. Changing size or color limits then reclassifies
-the existing contours; disabling Prévia stops background classification while
+Enabling **Prévia** switches to Caixas and computes provisional boxes. Mask-changing
+parameters rebuild the image mask in the background; a change of region extracts
+contours from the cached mask; size/color filters reuse contours. The original
+chart image is not rebuilt for these box updates. Disabling Prévia stops background classification while
 **Preparar** still applies the settings explicitly. The size histogram is removed.
 Measurement and min/max shortcuts sit beside the width/height inputs.
 **Carta inteira** and **Selecionar área** choose the region in the preparation
 panel. **Gerar sondagens** prepares, recognizes, and groups without exporting.
+
+In Bruto mode, Desfoque and Dilatação are disabled because the algorithm does
+not use them. The separate gray details strip and idle progress bar are hidden;
+**Descartadas** is available in the image toolbar, and **Medir** sits by the
+size inputs.
