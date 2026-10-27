@@ -3,6 +3,7 @@ import csv
 import os
 from pathlib import Path
 import tempfile
+from .area import bounds as area_bounds
 
 
 HEADERS = (
@@ -25,7 +26,7 @@ def export_box_measurements(session, destination):
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     height, width = session.rgb.shape[:2]
-    rx, ry, rw, rh = session.roi or (0, 0, width, height)
+    rx, ry, rw, rh = area_bounds(session.roi,width,height)
     config = session.config
     scale = config.scale
     kept = set(session.boxes or [])
