@@ -4,7 +4,7 @@ Extract georeferenced sounding candidates from raster nautical charts and review
 them before XYZ export. Historical handwritten hydrographic field sheets are a
 separate future module.
 
-## Current development version: 4.0.3
+## Current development version: 4.0.4
 
 Branch `ocr-modernization` / [PR #1](https://github.com/ivanbodra/VetorizaFB/pull/1).
 The original seven uploaded files remain byte-for-byte preserved under `legacy/`
@@ -64,7 +64,7 @@ py -3.12 -m venv .venv
 
 For an existing clone, preserve local changes, switch to `ocr-modernization`,
 run `git pull --ff-only` and repeat installation into the root `.venv`. The window
-must show **4.0.3**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
+must show **4.0.4**. Linux uses `.venv/bin/python`, `.venv/bin/vetorizafb-gui`
 and a Tk display; use `xvfb-run -a python -m pytest -q` for headless GUI tests.
 CPU PaddleOCR 3.7.0/PaddlePaddle 3.3.1 and OpenCV versions are pinned; supporting
 dependencies have ranges. First use may retrieve weights, or select a matching
