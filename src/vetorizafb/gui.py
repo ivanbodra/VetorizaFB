@@ -65,6 +65,8 @@ class Application:
         self.show_tooltips=tk.BooleanVar(value=self.load_tooltips_preference())
         Tooltip.set_enabled(root,self.show_tooltips.get())
         self.live_preview=tk.BooleanVar(value=False)
+        self._preview_busy=False
+        self._preview_revision=0
         self._selection_anchor = self._last_followed = None
         self.fields = {k:tk.BooleanVar(value=v) if isinstance(v,bool) else tk.StringVar(value=str(v))
                        for k,v in asdict(Config()).items()}
@@ -74,8 +76,9 @@ class Application:
         self.icon_path = apply_icon(root)
         self.set_config(Config())
         self.build()
-        for var in [*self.fields.values(),self.model,self.model_dir]:
-            var.trace_add('write',lambda *args:self.refresh_validity())
+        for key,var in self.fields.items():
+            var.trace_add('write',lambda *args,k=key:self.field_changed(k))
+        for var in (self.model,self.model_dir):var.trace_add('write',lambda *args:self.refresh_validity())
         root.protocol('WM_DELETE_WINDOW',self.close)
         root.bind('<F1>',lambda e:self.open_manual())
         root.bind('<Control-o>',lambda e:self.choose_chart())
@@ -215,42 +218,47 @@ class Application:
 
     def schedule_preview(self):
         if not self.live_preview.get():return
+        self._preview_revision+=1
         if self._preview_id:self.root.after_cancel(self._preview_id)
-        self._preview_id=self.root.after(180,self.update_preview)
+        self._preview_id=self.root.after(300,self.update_preview)
+
+    def field_changed(self,key):
+        if key=='segmentation' and hasattr(self,'blur_entry'):self.update_mode_controls()
+        self.refresh_validity()
+        if key in ('dpi','reference_dpi','segmentation','exclude_magenta','threshold','blur_size','kernel_size',
+                   'min_w','max_w','min_h','max_h','exclude_yellow','yellow_delta','yellow_min_fraction'):
+            self.schedule_preview()
+
+    def update_mode_controls(self):
+        state='disabled' if self.fields['segmentation'].get()=='Bruto' else 'normal'
+        for widget in (self.blur_entry,self.dilation_entry):widget.configure(state=state)
 
     def toggle_live_preview(self):
         if self.live_preview.get():
             self.viewer.layer.set('Caixas')
+            self.viewer.render()
             if not self.session or self.busy:return
-            try:
-                cfg=self.config()
-                needs_mask=(self.session.all_boxes is None or self.session.seg_key is None or
-                    self.roi != self.session.roi or any(getattr(cfg,k)!=getattr(self.session.config,k)
-                    for k in ('dpi','reference_dpi','segmentation','exclude_magenta','threshold','blur_size','kernel_size')))
-            except (ValueError,TypeError):
-                self.update_preview();return
-            if needs_mask:self.run_stage('segment')
-            else:self.update_preview()
-        elif self._preview_id:
-            self.root.after_cancel(self._preview_id)
-            self._preview_id=None
+            self.schedule_preview()
+        else:
+            self._preview_revision+=1
+            if self._preview_id:self.root.after_cancel(self._preview_id);self._preview_id=None
 
     def update_preview(self):
         if self._preview_id:self.root.after_cancel(self._preview_id)
         self._preview_id=None
         if self.busy or not self.session:return
         try:
-            result=self.preview.classify(self.session,self.config(),self.roi)
-            self.viewer.preview_boxes=result
-            if self.viewer.layer.get()=='Caixas':
-                kept=sum(not reason for _,reason in result)
-                state='caixas preparadas' if self.session.valid_segments(self.config(),self.roi) else 'prévia, ainda não aplicada'
-                self.viewer.inspection_text.set(f'{kept} mantidas • {len(result)-kept} descartadas • {state}')
-                self.viewer.render()
+            cfg=self.config()
+            if self._preview_busy:return
+            self._preview_busy=True;revision=self._preview_revision;session=self.session;roi=self.roi
+            def worker():
+                try:self.events.put(('preview',(revision,session,self.preview.classify(session,cfg,roi),cfg,roi),None))
+                except (ValueError,TypeError) as exc:self.events.put(('preview_error',(revision,str(exc)),None))
+            threading.Thread(target=worker,daemon=True).start()
         except (ValueError,TypeError) as exc:
             self.viewer.preview_boxes=[]
             if self.viewer.layer.get()=='Caixas':
-                self.viewer.inspection_text.set(str(exc));self.viewer.render()
+                self.viewer.inspection_text.set(str(exc));self.viewer.render_preview_boxes()
 
     def measure_character(self):
         self.viewer.mode.set('Medir caractere')
@@ -319,9 +327,14 @@ class Application:
                 'yellow_min_fraction':'Percentual de amarelo necessário para descartar a caixa.',
                 'min_confidence':'Escore mínimo para aceitar um dígito.'}
             if key in hints:self.tip(widget,hints[key])
+            return widget
         for row,(label,key,values) in enumerate([
             ('Modo','segmentation',['Realce','Bruto']),('Claridade (0–255)','threshold',None),
-            ('Desfoque','blur_size',None),('Dilatação','kernel_size',None)]):setting(seg,row,label,key,values)
+            ('Desfoque','blur_size',None),('Dilatação','kernel_size',None)]):
+            widget=setting(seg,row,label,key,values)
+            if key=='blur_size':self.blur_entry=widget
+            if key=='kernel_size':self.dilation_entry=widget
+        self.update_mode_controls()
         def size_range(row,label,minimum,maximum):
             ttk.Label(seg,text=label).grid(row=row,column=0,sticky='w',pady=2)
             fields=ttk.Frame(seg);fields.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
@@ -332,7 +345,7 @@ class Application:
         size_range(4,'Largura', 'min_w','max_w')
         size_range(5,'Altura', 'min_h','max_h')
         measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=2,sticky='w',pady=(3,5))
-        ttk.Button(measuring,text='Medir caractere',command=self.measure_character).pack(side='left')
+        ttk.Button(measuring,text='Medir',command=self.measure_character).pack(side='left')
         ttk.Button(measuring,text='Definir mín.',command=lambda:self.use_measurement(True)).pack(side='left',padx=(5,0))
         ttk.Button(measuring,text='Definir máx.',command=lambda:self.use_measurement(False)).pack(side='left',padx=(5,0))
         ttk.Label(seg,textvariable=self.measure_text).grid(row=7,column=0,columnspan=2,sticky='w')
@@ -392,9 +405,9 @@ class Application:
         self.run_button.pack(anchor='w',pady=8)
         self.cancel_button=ttk.Button(controls,text='Cancelar',width=14,command=self.cancel.set,state='disabled');self.cancel_button.pack(anchor='w')
         self.progress_label=tk.StringVar()
-        ttk.Label(controls,textvariable=self.progress_label,foreground='#153b50').pack(fill='x')
-        self.progress=ttk.Progressbar(controls,mode='determinate');self.progress.pack(fill='x',pady=6)
-        summary=ttk.Label(controls,textvariable=self.counts_summary);summary.pack(fill='x',pady=3)
+        self.progress_caption=ttk.Label(controls,textvariable=self.progress_label,foreground='#153b50')
+        self.progress=ttk.Progressbar(controls,mode='determinate')
+        summary=self.counts_summary_label=ttk.Label(controls,textvariable=self.counts_summary);summary.pack(fill='x',pady=3)
         self.tip(summary,lambda:self.counts.get())
         right=ttk.Panedwindow(split,orient='vertical');split.add(right,weight=1)
         self.viewer=ChartViewer(right,self.canvas_action);right.add(self.viewer,weight=3)
@@ -543,7 +556,6 @@ class Application:
         return names[index]+': '+info[self.stage_states[index]]+'.'
 
     def refresh_validity(self):
-        if hasattr(self,'viewer') and self.live_preview.get():self.schedule_preview()
         if not hasattr(self,'seg_button'):return
         seg=digits=groups=False
         try:
@@ -573,6 +585,8 @@ class Application:
         self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.viewer.suspended=True
         self.cancel_button.configure(state='normal' if cancellable else 'disabled')
+        self.progress_caption.pack(fill='x',before=self.counts_summary_label)
+        self.progress.pack(fill='x',pady=6,before=self.counts_summary_label)
         self.progress_label.set('Iniciando…')
         self.progress.configure(mode='indeterminate');self.progress.start(12)
         self.status.set('Processando. Cancelamento é verificado entre lotes e etapas.')
@@ -602,7 +616,23 @@ class Application:
         try:
             while True:
                 kind,value,callback=self.events.get_nowait()
-                if kind=='progress':
+                if kind in ('preview','preview_error'):
+                    self._preview_busy=False
+                    revision=value[0]
+                    if revision!=self._preview_revision:
+                        if self.live_preview.get():self.schedule_preview()
+                        continue
+                    if kind=='preview_error':
+                        self.viewer.preview_boxes=[];self.viewer.inspection_text.set(value[1])
+                    else:
+                        _,session,result,cfg,roi=value
+                        if session is not self.session:continue
+                        self.viewer.preview_boxes=result
+                        kept=sum(not reason for _,reason in result)
+                        state='caixas preparadas' if session.valid_segments(cfg,roi) else 'prévia, ainda não aplicada'
+                        self.viewer.inspection_text.set(f'{kept} mantidas • {len(result)-kept} descartadas • {state}')
+                    self.viewer.render_preview_boxes()
+                elif kind=='progress':
                     current,total,stage=value
                     if total:
                         self.progress.stop();self.progress.configure(mode='determinate',value=100*current/total)
@@ -613,7 +643,7 @@ class Application:
                     self.status.set(label);self.progress_label.set(label)
                 else:
                     self.busy=False;self.progress.stop();self.progress.configure(mode='determinate',value=0)
-                    self.progress_label.set('')
+                    self.progress_label.set('');self.progress.pack_forget();self.progress_caption.pack_forget()
                     self.viewer.suspended=False
                     self.cancel_button.configure(state='disabled')
                     if kind=='ok':
@@ -714,7 +744,7 @@ class Application:
         self.area_mode.set('select' if roi else 'whole')
         self.roi_text.set(f'Área em pixels: {roi}' if roi else 'Carta inteira')
         if not roi and self.viewer.mode.get()=='Selecionar área':self.viewer.mode.set('Inspecionar')
-        self.refresh_validity();self.viewer.render()
+        self.refresh_validity();self.viewer.render();self.schedule_preview()
 
     def select_area(self):
         if self.busy:
