@@ -32,6 +32,14 @@ MUTED = "#647D90"
 BASE = "#F4F7FA"
 EDGE = "#D9E3EB"
 
+ICON_DIR = Path(__file__).resolve().parents[2] / "assets" / "icons"
+
+
+def icon(name):
+    path = ICON_DIR / f"{name}.svg"
+    return QIcon(str(path)) if path.exists() else QIcon()
+
+
 STAGES = [
     ("Preparar", "Ajuste da imagem e segmentação", "⚙"),
     ("Reconhecer", "Leitura dos caracteres", "◎"),
@@ -138,9 +146,12 @@ class Workspace(QMainWindow):
         commands = QHBoxLayout(toolbar)
         commands.setContentsMargins(17, 9, 17, 9)
         commands.setSpacing(7)
-        self.open_btn = self._button("Abrir carta", self.open_chart, QStyle.StandardPixmap.SP_DirOpenIcon)
-        self.open_project_btn = self._button("Abrir projeto", self.open_project, QStyle.StandardPixmap.SP_DialogOpenButton)
-        self.save_btn = self._button("Salvar", self.save_project, QStyle.StandardPixmap.SP_DialogSaveButton)
+        self.open_btn = self._button("Abrir carta", self.open_chart)
+        self.open_btn.setIcon(icon("open-chart"))
+        self.open_project_btn = self._button("Abrir projeto", self.open_project)
+        self.open_project_btn.setIcon(icon("open-project"))
+        self.save_btn = self._button("Salvar", self.save_project)
+        self.save_btn.setIcon(icon("save-project"))
         for b in (self.open_btn, self.open_project_btn, self.save_btn):
             commands.addWidget(b)
         commands.addWidget(self._separator())
@@ -149,12 +160,15 @@ class Workspace(QMainWindow):
         self.mode_buttons = {}
         for key, label in [("pan", "Mover"), ("rectangle", "Retângulo"), ("polygon", "Polígono"), ("lasso", "Laço livre")]:
             b = self._button(label, lambda _checked=False, m=key: self.set_tool(m))
+            b.setIcon(icon({"pan": "pan", "rectangle": "select-rectangle", "polygon": "select-polygon", "lasso": "select-lasso"}[key]))
+            b.setIconSize(QSize(19, 19))
             b.setCheckable(True)
             self.mode_buttons[key] = b
             commands.addWidget(b)
         self.mode_buttons["pan"].setChecked(True)
         commands.addStretch()
         self.execute_btn = self._button("Executar etapa", self.execute, kind="primary")
+        self.execute_btn.setIcon(icon("process"))
         commands.addWidget(self.execute_btn)
         overall.addWidget(toolbar)
 
@@ -172,7 +186,9 @@ class Workspace(QMainWindow):
         nav_label.setObjectName("navLabel")
         nav.addWidget(nav_label)
         for index, (name, description, symbol) in enumerate(STAGES):
-            b = QPushButton(f"  {symbol}     {name}")
+            b = QPushButton(f"   {name}")
+            b.setIcon(icon(["tab-prepare", "tab-recognize", "tab-group", "review", "tab-export"][index]))
+            b.setIconSize(QSize(21, 21))
             b.setObjectName("navItem")
             b.setToolTip(description)
             b.setCheckable(True)
