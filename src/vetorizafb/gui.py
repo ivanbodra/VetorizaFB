@@ -214,6 +214,7 @@ class Application:
         except (OSError,ValueError) as exc:messagebox.showerror('Ícone',str(exc),parent=self.root)
 
     def schedule_preview(self):
+        if not self.live_preview.get():return
         if self._preview_id:self.root.after_cancel(self._preview_id)
         self._preview_id=self.root.after(180,self.update_preview)
 
@@ -324,7 +325,7 @@ class Application:
         ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=7,column=0,columnspan=2,sticky='w',pady=2)
         setting(seg,8,'Sensibilidade','yellow_delta')
         setting(seg,9,'Cobertura (%)','yellow_min_fraction')
-        ttk.Checkbutton(seg,text='Prévia automática',variable=self.live_preview,command=self.toggle_live_preview).grid(row=10,column=0,columnspan=2,sticky='w',pady=2)
+        ttk.Checkbutton(seg,text='Prévia',variable=self.live_preview,command=self.toggle_live_preview).grid(row=10,column=0,columnspan=2,sticky='w',pady=2)
         self.seg_button=ttk.Button(seg,text='Preparar',width=14,style='Primary.TButton',command=lambda:self.run_stage('segment'))
         self.seg_button.grid(row=11,column=0,columnspan=2,sticky='w',pady=(5,3))
         auxiliary=ttk.Frame(seg);auxiliary.grid(row=12,column=0,columnspan=2,sticky='w',pady=2)
