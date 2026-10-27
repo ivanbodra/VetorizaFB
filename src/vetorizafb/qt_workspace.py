@@ -249,7 +249,7 @@ class Workspace(QMainWindow):
         self.table.itemSelectionChanged.connect(self.focus_selected)
         review_layout.addWidget(self.table)
         review_controls = QHBoxLayout()
-        for label, action, color in [("Aprovar", "accept", "approve"), ("Rejeitar", "reject", "reject"), ("Restaurar", "reset", None)]:
+        for label, action, color in [("Aprovar", "accepted", "approve"), ("Rejeitar", "rejected", "reject"), ("Restaurar", "unreviewed", None)]:
             b = self._button(label, lambda _=False, a=action: self.review_action(a), kind=color)
             review_controls.addWidget(b)
         review_controls.addStretch()
@@ -482,7 +482,7 @@ class Workspace(QMainWindow):
     def area_selected(self, pts):
         if self.session is None:
             return
-        roi = tuple((int(x), int(y)) for x, y in pts)
+        roi = tuple((min(self.session.rgb.shape[1] - 1, max(0, int(x))), min(self.session.rgb.shape[0] - 1, max(0, int(y)))) for x, y in pts)
         try:
             self.roi = self.session.validate_roi(roi)
             self.status_label.setText(f"Área selecionada: {len(roi)} vértices")
@@ -501,7 +501,7 @@ class Workspace(QMainWindow):
         self.job_worker.moveToThread(self.job_thread)
         self.job_thread.started.connect(self.job_worker.run)
         self.job_worker.finished.connect(on_done)
-        self.job_worker.failed.connect(lambda detail: QMessageBox.critical(self, "VetorizaFB", detail))
+        self.job_worker.failed.connect(self._task_error)
         self.job_worker.progress.connect(self._progress)
         self.job_worker.finished.connect(self.job_thread.quit)
         self.job_worker.failed.connect(self.job_thread.quit)
@@ -511,6 +511,10 @@ class Workspace(QMainWindow):
         self.job_thread.finished.connect(self.job_thread.deleteLater)
         self.execute_btn.setEnabled(False)
         self.job_thread.start()
+
+    def _task_error(self, detail):
+        self.status_label.setText("Erro na operação. Consulte os detalhes.")
+        QMessageBox.critical(self, "VetorizaFB", detail)
 
     def _progress(self, current, total, stage):
         self.progress.setRange(0, max(total, 1))
@@ -541,6 +545,8 @@ class Workspace(QMainWindow):
         self.fit_chart()
         self._overlay_items = []
         self._load_config(session.config)
+        self.model.setCurrentText(session.model_spec[0])
+        self.model_dir.setText(session.model_spec[1] or "")
         self.draw_overlay()
         self.populate_review()
         self.status_label.setText(f"Carta carregada: {session.path.name}  ·  {width} × {height} px")
@@ -734,7 +740,7 @@ class Workspace(QMainWindow):
         try:
             value = float(self.depth_edit.text().replace(",", "."))
             for point_id in self._selected_ids():
-                self.session.review.change(point_id, "correct", depth=value)
+                self.session.review.change(point_id, "correct_depth", depth=value)
             self.dirty = True
             self.populate_review()
             self.draw_overlay()
