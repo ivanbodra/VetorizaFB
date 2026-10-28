@@ -109,7 +109,7 @@ class Application:
         style.configure('TNotebook',background='#f5f8fb',borderwidth=0,tabmargins=0)
         style.configure('TNotebook.Tab',font=(self.ui_font,9),padding=(4,3),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
         style.map('TNotebook.Tab',padding=[('selected',(4,4)),('!selected',(2,2))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
-        style.configure('TEntry',fieldbackground='white',padding=4,bordercolor='#cbd9e4')
+        style.configure('TEntry',fieldbackground='white',padding=(4,2),bordercolor='#cbd9e4')
         style.configure('Required.TEntry',fieldbackground='#fff2bf',bordercolor='#d9b650')
         style.configure('TCombobox',fieldbackground='white',background='#e5f1fb',arrowcolor='#17547e',padding=3)
         style.map('TCombobox',fieldbackground=[('readonly','white')],foreground=[('readonly','#19364a')])
@@ -360,7 +360,7 @@ class Application:
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
             percent=key=='yellow_min_fraction'
             field=ttk.Frame(frame) if percent else frame
-            widget=ttk.Combobox(field,textvariable=self.fields[key],values=values,state='readonly',width=9) if values else ttk.Entry(field,textvariable=self.fields[key],width=6)
+            widget=ttk.Combobox(field,textvariable=self.fields[key],values=values,state='readonly',width=16 if key=='segmentation' else 9) if values else ttk.Entry(field,textvariable=self.fields[key],width=6)
             if key in ('threshold','yellow_delta','yellow_min_fraction'):
                 limit=100 if key=='yellow_min_fraction' else 255
                 widget.configure(validate='key',validatecommand=(self.root.register(
@@ -386,9 +386,10 @@ class Application:
         self.update_mode_controls()
         def size_range(row,label,minimum,maximum):
             ttk.Label(seg,text=f'{label} Mín.').grid(row=row,column=0,sticky='w',pady=2)
-            ttk.Entry(seg,textvariable=self.fields[minimum],width=6).grid(row=row,column=1,sticky='w',padx=(2,5),pady=1)
-            ttk.Label(seg,text='Máx.').grid(row=row,column=2,sticky='w',pady=2)
-            ttk.Entry(seg,textvariable=self.fields[maximum],width=6).grid(row=row,column=3,sticky='w',padx=(2,0),pady=1)
+            inputs=ttk.Frame(seg);inputs.grid(row=row,column=1,columnspan=3,sticky='w',padx=(2,0),pady=1)
+            ttk.Entry(inputs,textvariable=self.fields[minimum],width=6).pack(side='left')
+            ttk.Label(inputs,text='Máx.').pack(side='left',padx=(8,3))
+            ttk.Entry(inputs,textvariable=self.fields[maximum],width=6).pack(side='left')
         size_range(4,'Largura', 'min_w','max_w')
         size_range(5,'Altura', 'min_h','max_h')
         measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=4,sticky='w',pady=(2,3))
