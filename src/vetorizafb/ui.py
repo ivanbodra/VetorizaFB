@@ -11,26 +11,27 @@ def rounded_controls(style, root):
         return getattr(root,'_rounded_images',[])
     images=[]
 
-    def surface(colour, *, top_only=False):
+    def surface(colour, *, top_only=False, size=20):
         scale=3
-        im=Image.new('RGBA',(24*scale,24*scale))
+        im=Image.new('RGBA',(size*scale,size*scale))
         draw=ImageDraw.Draw(im)
         inset=2*scale if top_only else 0
-        draw.rounded_rectangle((inset,0,24*scale-1-inset,24*scale-1),radius=6*scale,fill=colour)
+        draw.rounded_rectangle((inset,0,size*scale-1-inset,size*scale-1),radius=5*scale,fill=colour)
         if top_only:
-            draw.rectangle((inset,7*scale,24*scale-1-inset,24*scale-1),fill=colour)
-        photo=ImageTk.PhotoImage(im.resize((24,24),Image.Resampling.LANCZOS),master=root)
+            draw.rectangle((inset,6*scale,size*scale-1-inset,size*scale-1),fill=colour)
+        photo=ImageTk.PhotoImage(im.resize((size,size),Image.Resampling.LANCZOS),master=root)
         images.append(photo)
         return photo
 
     def element(name, palette, top_only=False):
-        normal=surface(palette[0],top_only=top_only)
-        selected=surface(palette[1],top_only=top_only)
-        active=surface(palette[2],top_only=top_only)
-        disabled=surface(palette[3],top_only=top_only)
+        size,border=(18,5) if top_only else (20,6)
+        normal=surface(palette[0],top_only=top_only,size=size)
+        selected=surface(palette[1],top_only=top_only,size=size)
+        active=surface(palette[2],top_only=top_only,size=size)
+        disabled=surface(palette[3],top_only=top_only,size=size)
         style.element_create(name,'image',normal,
                              ('disabled',disabled),('selected',selected),
-                             ('pressed',active),('active',active),border=9,sticky='nsew')
+                             ('pressed',active),('active',active),border=border,sticky='nsew')
 
     def replace_border(layout, replacement):
         name, options=layout[0]
