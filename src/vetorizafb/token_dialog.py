@@ -36,7 +36,7 @@ class TokenDialog(tk.Toplevel):
             t=token(d) if s.config.segmentation=='fb' else d.text
             uncertain=t is None or d.score<s.config.min_confidence or (assigned is not None and d.index not in assigned)
             if self.only.get() and not uncertain:continue
-            self.table.insert('','end',iid=str(d.index),values=(d.index,d.raw_text,f'{d.score:.3f}','Incerta / sem grupo' if uncertain else 'Lida',d.method))
+            self.table.insert('','end',iid=str(d.index),values=(d.index,d.selected_text if d.selected_text is not None else d.raw_text,f'{d.score:.3f}','Incerta / sem grupo' if uncertain else 'Lida',d.method))
     def ids(self):return [int(i) for i in self.table.selection()]
     def show_crop(self):
         ids=self.ids()

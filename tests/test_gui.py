@@ -376,6 +376,27 @@ def test_execution_controls_remain_visible_at_minimum_window(app):
         assert widget.winfo_rooty()+widget.winfo_height()<=app.root.winfo_rooty()+app.root.winfo_height()
 
 
+def test_export_tab_hides_global_generation_and_keeps_project_in_file_menu(app):
+    app.tabs.select(3);app.root.update()
+    assert not app.run_button.winfo_ismapped()
+    app.tabs.select(0);app.root.update()
+    assert app.run_button.winfo_ismapped()
+    assert not any(child.winfo_class()=='TButton' and child.cget('text') in ('Abrir projeto','Salvar projeto')
+                   for child in app.tabs.nametowidget(app.tabs.tabs()[3]).winfo_children())
+
+
+def test_numeric_inputs_reject_values_above_the_displayed_limits(app):
+    entries=[w for w in app.segment_panel.content.winfo_children() if w.winfo_class()=='TEntry']
+    matched=False
+    for widget in entries:
+        if widget.cget('textvariable')==str(app.fields['threshold']):
+            matched=True
+            widget.delete(0,'end');widget.insert(0,'255');widget.insert('end','6')
+            assert widget.get()=='255'
+    assert matched
+    app.fields['threshold'].set('120')
+
+
 def test_bundled_identity_works_without_user_icon(app,tmp_path,monkeypatch):
     from pathlib import Path
     from vetorizafb.branding import apply_icon,asset_photo

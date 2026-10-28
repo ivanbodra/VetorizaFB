@@ -99,7 +99,7 @@ class Application:
         tkfont.nametofont('TkTextFont').configure(family=self.ui_font,size=10)
         if 'clam' in style.theme_names():style.theme_use('clam')
         style.configure('.',font=(self.ui_font,10),background='#f5f8fb',foreground='#19364a')
-        style.configure('TButton',padding=(8,3),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9',focusthickness=1,focuscolor='#0a70b5')
+        style.configure('TButton',padding=(6,1),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9',focusthickness=1,focuscolor='#0a70b5')
         style.map('TButton',background=[('disabled','#eef1f4'),('pressed','#c4dfef'),('active','#d2e8f9')],foreground=[('disabled','#8d9baa')],bordercolor=[('disabled','#e0e6ec'),('active','#468eb9')])
         style.configure('TMenubutton',padding=(8,4),borderwidth=1,relief='flat',background='#e5f1fb',foreground='#164f77',bordercolor='#b6d3e9')
         style.map('TMenubutton',background=[('disabled','#eef1f4'),('active','#d2e8f9')],foreground=[('disabled','#8d9baa')])
@@ -107,8 +107,8 @@ class Application:
             style.configure(name+'.TButton',background=bg,foreground=fg,bordercolor=bg)
             style.map(name+'.TButton',background=[('disabled','#eef1f4'),('pressed',hover),('active',hover)],foreground=[('disabled','#8d9baa')])
         style.configure('TNotebook',background='#f5f8fb',borderwidth=0,tabmargins=0)
-        style.configure('TNotebook.Tab',font=(self.ui_font,9),padding=(4,5),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
-        style.map('TNotebook.Tab',padding=[('selected',(4,6)),('!selected',(2,4))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
+        style.configure('TNotebook.Tab',font=(self.ui_font,9),padding=(4,3),background='#e5f1fb',foreground='#17547e',borderwidth=0,lightcolor='#e5f1fb',darkcolor='#e5f1fb')
+        style.map('TNotebook.Tab',padding=[('selected',(4,4)),('!selected',(2,2))],background=[('selected','#153b50'),('active','#cee7f8')],foreground=[('selected','white')],lightcolor=[('selected','#153b50')],darkcolor=[('selected','#153b50')],bordercolor=[('selected','#153b50')])
         style.configure('TEntry',fieldbackground='white',padding=4,bordercolor='#cbd9e4')
         style.configure('Required.TEntry',fieldbackground='#fff2bf',bordercolor='#d9b650')
         style.configure('TCombobox',fieldbackground='white',background='#e5f1fb',arrowcolor='#17547e',padding=3)
@@ -349,10 +349,24 @@ class Application:
         self.tab_tip=self.tip(self.tabs,lambda:self.stage_tooltip())
         self.tabs.bind('<Motion>',self.tab_hover)
         seg.columnconfigure(1,weight=1)
+        def within_limit(text,limit,percent=False):
+            if not text:return True  # Allow a field to be cleared while editing.
+            if percent:
+                if text.count('.')>1 or any(c not in '0123456789.' for c in text):return False
+                if text=='.':return True
+                return float(text)<=limit
+            return text.isascii() and text.isdecimal() and int(text)<=limit
         def setting(frame,row,label,key,values=None):
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
             widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=9) if values else ttk.Entry(frame,textvariable=self.fields[key],width=6)
-            widget.grid(row=row,column=1,sticky='w',padx=(5,0),pady=2)
+            if key in ('threshold','yellow_delta','yellow_min_fraction'):
+                limit=100 if key=='yellow_min_fraction' else 255
+                widget.configure(validate='key',validatecommand=(self.root.register(
+                    lambda text,maximum=limit,pct=key=='yellow_min_fraction':within_limit(text,maximum,pct)),'%P'))
+            if key=='yellow_min_fraction':
+                field=ttk.Frame(frame);field.grid(row=row,column=1,sticky='w',padx=(2,0),pady=1)
+                widget.pack(side='left');ttk.Label(field,text='%').pack(side='left',padx=(3,0))
+            else:widget.grid(row=row,column=1,sticky='w',padx=(2,0),pady=1)
             hints={
                 'yellow_delta':'Valor maior inclui tons de amarelo mais suaves.',
                 'threshold':'Aumente para incluir traços mais claros. Valores altos podem acabar incluindo o fundo.',
@@ -362,7 +376,7 @@ class Application:
             if key in hints:self.tip(widget,hints[key])
             return widget
         for row,(label,key,values) in enumerate([
-            ('Modo','segmentation',['Realce','Bruto','Folha de bordo']),('Claridade (0–255)','threshold',None),
+            ('Modo','segmentation',['Realce','Bruto','Folha de bordo']),('Claridade','threshold',None),
             ('Desfoque','blur_size',None),('Dilatação','kernel_size',None)]):
             widget=setting(seg,row,label,key,values)
             if key=='blur_size':self.blur_entry=widget
@@ -370,25 +384,27 @@ class Application:
         self.update_mode_controls()
         def size_range(row,label,minimum,maximum):
             ttk.Label(seg,text=f'{label} Mín.').grid(row=row,column=0,sticky='w',pady=2)
-            ttk.Entry(seg,textvariable=self.fields[minimum],width=6).grid(row=row,column=1,sticky='w',padx=(5,9),pady=2)
+            ttk.Entry(seg,textvariable=self.fields[minimum],width=6).grid(row=row,column=1,sticky='w',padx=(2,5),pady=1)
             ttk.Label(seg,text='Máx.').grid(row=row,column=2,sticky='w',pady=2)
-            ttk.Entry(seg,textvariable=self.fields[maximum],width=6).grid(row=row,column=3,sticky='w',padx=(5,0),pady=2)
+            ttk.Entry(seg,textvariable=self.fields[maximum],width=6).grid(row=row,column=3,sticky='w',padx=(2,0),pady=1)
         size_range(4,'Largura', 'min_w','max_w')
         size_range(5,'Altura', 'min_h','max_h')
-        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=4,sticky='w',pady=(3,5))
-        ttk.Button(measuring,text='Definir mín.',width=12,command=lambda:self.use_measurement(True)).grid(row=0,column=0,sticky='w',padx=(0,5),pady=(0,3))
-        ttk.Button(measuring,text='Definir máx.',width=12,command=lambda:self.use_measurement(False)).grid(row=0,column=1,sticky='w',pady=(0,3))
-        ttk.Button(measuring,text='Medir',width=12,command=self.measure_character).grid(row=1,column=0,sticky='w',padx=(0,5))
+        measuring=ttk.Frame(seg);measuring.grid(row=6,column=0,columnspan=4,sticky='w',pady=(2,3))
+        ttk.Button(measuring,text='Definir mín.',width=11,command=lambda:self.use_measurement(True)).grid(row=0,column=0,sticky='w',padx=(0,3),pady=(0,2))
+        ttk.Button(measuring,text='Definir máx.',width=11,command=lambda:self.use_measurement(False)).grid(row=0,column=1,sticky='w',pady=(0,2))
+        ttk.Button(measuring,text='Medir',width=11,command=self.measure_character).grid(row=1,column=0,sticky='w',padx=(0,3))
         self.auto_button=ttk.Button(measuring,text='Auto',width=7,command=self.auto_dimensions)
         self.auto_button.grid(row=1,column=1,sticky='w')
-        ttk.Label(seg,textvariable=self.measure_text).grid(row=7,column=0,columnspan=2,sticky='w')
+        self.measure_label=ttk.Label(seg,textvariable=self.measure_text)
+        self.measure_label.grid(row=7,column=0,columnspan=2,sticky='w')
+        self.measure_label.grid_remove()
         ttk.Checkbutton(seg,text='Ignorar traços magenta',variable=self.fields['exclude_magenta']).grid(row=8,column=0,columnspan=2,sticky='w',pady=2)
         ttk.Checkbutton(seg,text='Descartar caixas em terra',variable=self.fields['exclude_yellow']).grid(row=9,column=0,columnspan=2,sticky='w',pady=2)
         setting(seg,10,'Sensibilidade','yellow_delta')
-        setting(seg,11,'Cobertura (%)','yellow_min_fraction')
+        setting(seg,11,'Cobertura','yellow_min_fraction')
         ttk.Checkbutton(seg,text='Prévia',variable=self.live_preview,command=self.toggle_live_preview).grid(row=12,column=0,columnspan=2,sticky='w',pady=2)
-        self.seg_button=ttk.Button(seg,text='Preparar',width=14,style='Primary.TButton',command=lambda:self.run_stage('segment'))
-        self.seg_button.grid(row=13,column=0,columnspan=2,sticky='w',pady=(5,3))
+        self.seg_button=ttk.Button(seg,text='Preparar',width=11,style='Primary.TButton',command=lambda:self.run_stage('segment'))
+        self.seg_button.grid(row=13,column=0,columnspan=2,sticky='w',pady=(2,2))
         area=ttk.Frame(seg);area.grid(row=14,column=0,columnspan=2,sticky='w',pady=2)
         ttk.Radiobutton(area,text='Carta inteira',variable=self.area_mode,value='whole',command=lambda:self.set_roi(None)).pack(side='left')
         ttk.Radiobutton(area,text='Selecionar área',variable=self.area_mode,value='select',command=self.select_area).pack(side='left',padx=(10,0))
@@ -432,17 +448,17 @@ class Application:
         self.export_button.grid(row=4,column=0,columnspan=2,sticky='ew',pady=5)
         self.reviewed_button=ttk.Button(export,text='Exportar aprovados',command=lambda:self.export(True))
         self.reviewed_button.grid(row=5,column=0,columnspan=2,sticky='ew',pady=5)
-        ttk.Button(export,text='Salvar projeto',command=self.save_project).grid(row=6,column=0,columnspan=2,sticky='ew',pady=10)
-        ttk.Button(export,text='Abrir projeto',command=self.open_project).grid(row=7,column=0,columnspan=2,sticky='ew')
         controls=ttk.Frame(left);controls.pack(side='bottom',fill='x',before=self.tabs)
         self.run_button=ttk.Button(controls,text='Gerar sondagens',style='Primary.TButton',command=lambda:self.run_stage('all'))
-        self.run_button.pack(anchor='w',pady=8)
+        self.run_button.pack(anchor='w',pady=(3,2))
         self.cancel_button=ttk.Button(controls,text='Cancelar',width=14,command=self.cancel.set,state='disabled');self.cancel_button.pack(anchor='w')
+        self.tabs.bind('<<NotebookTabChanged>>',self.update_run_button_visibility)
         self.progress_label=tk.StringVar()
         self.progress_caption=ttk.Label(controls,textvariable=self.progress_label,foreground='#153b50')
         self.progress=ttk.Progressbar(controls,mode='determinate')
         summary=self.counts_summary_label=ttk.Label(controls,textvariable=self.counts_summary);summary.pack(fill='x',pady=3)
         self.tip(summary,lambda:self.counts.get())
+        self.update_run_button_visibility()
         right=ttk.Panedwindow(split,orient='vertical');split.add(right,weight=1)
         self.viewer=ChartViewer(right,self.canvas_action);right.add(self.viewer,weight=3)
         bottom=ttk.Frame(right);right.add(bottom,weight=1)
@@ -577,6 +593,12 @@ class Application:
             elif k=='yellow_delta':v=256-v
             if isinstance(v,float):v=format(v,'.15g')
             self.fields[k].set(v)
+
+    def update_run_button_visibility(self,event=None):
+        if not hasattr(self,'run_button'):return
+        if self.tabs.index('current')==3:self.run_button.pack_forget()
+        elif not self.run_button.winfo_manager():
+            self.run_button.pack(anchor='w',pady=(3,2),before=self.cancel_button)
 
     def tab_hover(self,event):
         try:index=self.tabs.index(f'@{event.x},{event.y}')
@@ -1066,6 +1088,7 @@ class Application:
         if action=='measure':
             self.measurement=xy
             self.measure_text.set(f'{xy[0]} × {xy[1]} px')
+            self.measure_label.grid()
             self.viewer.inspection_text.set(self.measure_text.get())
             return
         if action=='roi':self.set_roi(xy);return
@@ -1173,7 +1196,7 @@ class Application:
 
     def clear_project(self):
         self.session=None;self.roi=None;self.review_dirty=False;self.measurement=None
-        self.path.set('');self.output.set('');self.review_note.set('');self.measure_text.set('')
+        self.path.set('');self.output.set('');self.review_note.set('');self.measure_text.set('');self.measure_label.grid_remove()
         self.counts.set('');self.counts_summary.set('');self.filter.set('Todos')
         self.area_mode.set('whole');self.roi_text.set('Carta inteira');self.sort_column=None;self.sort_reverse=False
         self._selection_anchor=self._last_followed=None

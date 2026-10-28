@@ -56,6 +56,18 @@ def test_batch_order_and_raw_text_are_preserved():
     assert [r.index for r in out]==list(range(8))
 
 
+def test_trailing_ocr_dot_uses_single_digit_and_keeps_original_reading():
+    class Reader:
+        def predict(self,crops):return [('8.',.948),('8.4',.97),('..',.9)]
+    boxes=[Box(2+i*20,2,12,20) for i in range(3)]
+    result=recognize(np.full((30,80,3),255,np.uint8),boxes,Reader(),retry=False,retry_one=False)
+    assert result[0].raw_text=='8.' and result[0].text=='8'
+    assert result[0].confidence==result[0].score==.948
+    assert result[0].method=='ocr_trailing_dot'
+    assert result[1].text is None and result[1].raw_text=='8.4'
+    assert result[2].text is None
+
+
 def test_missing_batch_results_fail_explicitly():
     class Reader:
         def predict(self,crops):return []

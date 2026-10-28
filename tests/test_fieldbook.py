@@ -33,3 +33,12 @@ def test_reading_preserves_multi_digit_and_nonnumeric_without_correction():
     a=recognize(np.full((100,100,3),255,np.uint8),[Box(1,1,40,40),Box(50,50,10,14)],Engine())
     assert a[0].raw_text=='35' and a[0].text is None
     assert a[1].raw_text=='S'
+
+
+def test_fieldbook_token_accepts_trailing_dot_without_losing_raw_text():
+    from vetorizafb.fieldbook import token
+    class Engine:
+        def predict(self,crops):return [('8.',.94)]
+    result=recognize(np.full((60,60,3),255,np.uint8),[Box(10,10,20,30)],Engine())
+    assert result[0].raw_text=='8.' and result[0].text=='8'
+    assert token(result[0])=='8' and result[0].score==.94

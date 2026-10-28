@@ -2,7 +2,7 @@
 import re
 import cv2
 import numpy as np
-from .core import Digit, Sounding, check_cancel
+from .core import Digit, Sounding, check_cancel, normalize_trailing_dot
 
 
 def mask(rgb, config):
@@ -14,7 +14,7 @@ def mask(rgb, config):
 
 
 def token(d):
-    t=d.raw_text.strip()
+    t=(d.selected_text if d.selected_text is not None else d.raw_text).strip()
     return t if re.fullmatch(r'[0-9]{1,3}',t) else None
 
 
@@ -28,7 +28,7 @@ def recognize(rgb,boxes,engine,batch_size=64,pad=3,*,progress=None,cancel=None,*
         if len(readings)!=len(chunk):raise ValueError('Quantidade inesperada de leituras')
         digits.extend(Digit(b,str(t),float(s),start+i,method='fb_token') for i,(b,(t,s)) in enumerate(zip(chunk,readings)))
         if progress:progress(min(start+batch_size,len(boxes)),len(boxes))
-    return digits
+    return normalize_trailing_dot(digits)
 
 
 def group(digits,config):

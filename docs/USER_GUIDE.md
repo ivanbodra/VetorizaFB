@@ -639,3 +639,9 @@ Na aba Preparar, **Auto** estima os limites de largura e altura a partir dos con
 ## Seleção de área: retângulo, polígono e laço livre
 
 Ative **Selecionar área** e clique com o botão direito sobre a carta para escolher o formato. **Retângulo** é o padrão e usa arrastar; **Polígono** usa cliques para os vértices e duplo clique para concluir; **Laço livre** usa arrastar com o botão esquerdo pressionado e termina ao soltar. O contorno aparece enquanto é traçado. **Esc** descarta o desenho em curso. O formato escolhido permanece ativo. Os vértices são armazenados em pixels originais, e as caixas fora da máscara são excluídas antes do OCR. Projetos antigos com área retangular continuam válidos.
+
+## Ajustes de leitura e espaço da interface
+
+Uma leitura OCR com exatamente um dígito e um ponto final (por exemplo, `8.`) usa somente o dígito no agrupamento. O texto bruto, a confiança e o método de normalização permanecem registrados para inspeção; `8.4` e outros textos não são alterados. Em Revisar leituras, a tabela mostra o valor usado.
+
+Na aba Exportar, o botão global Gerar sondagens não ocupa espaço; ele reaparece nas outras abas. Abrir e Salvar projeto ficam no menu Arquivo. As abas e os botões ocupam menos altura. Em Preparar, Claridade aceita de 0 a 255, Sensibilidade até 255, e Cobertura até 100 com o símbolo `%` junto ao campo. O valor ainda é verificado na configuração antes do processamento.
