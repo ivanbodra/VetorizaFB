@@ -358,13 +358,15 @@ class Application:
             return text.isascii() and text.isdecimal() and int(text)<=limit
         def setting(frame,row,label,key,values=None):
             ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',pady=2)
-            widget=ttk.Combobox(frame,textvariable=self.fields[key],values=values,state='readonly',width=9) if values else ttk.Entry(frame,textvariable=self.fields[key],width=6)
+            percent=key=='yellow_min_fraction'
+            field=ttk.Frame(frame) if percent else frame
+            widget=ttk.Combobox(field,textvariable=self.fields[key],values=values,state='readonly',width=9) if values else ttk.Entry(field,textvariable=self.fields[key],width=6)
             if key in ('threshold','yellow_delta','yellow_min_fraction'):
                 limit=100 if key=='yellow_min_fraction' else 255
                 widget.configure(validate='key',validatecommand=(self.root.register(
                     lambda text,maximum=limit,pct=key=='yellow_min_fraction':within_limit(text,maximum,pct)),'%P'))
-            if key=='yellow_min_fraction':
-                field=ttk.Frame(frame);field.grid(row=row,column=1,sticky='w',padx=(2,0),pady=1)
+            if percent:
+                field.grid(row=row,column=1,sticky='w',padx=(2,0),pady=1)
                 widget.pack(side='left');ttk.Label(field,text='%').pack(side='left',padx=(3,0))
             else:widget.grid(row=row,column=1,sticky='w',padx=(2,0),pady=1)
             hints={
