@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from heapq import merge
 from itertools import islice
 import math
+import re
 
 import cv2
 import numpy as np
@@ -52,6 +53,16 @@ class Digit:
     @property
     def score(self):
         return self.confidence if self.selected_confidence is None else self.selected_confidence
+
+
+def normalize_trailing_dot(digits):
+    """Use an OCR digit followed by a stray dot without erasing the raw reading."""
+    for digit in digits:
+        if digit.text is None and re.fullmatch(r'[0-9]\.',digit.raw_text.strip()):
+            digit.selected_text=digit.raw_text.strip()[0]
+            digit.selected_confidence=digit.confidence
+            digit.method=f'{digit.method}_trailing_dot'
+    return digits
 
 
 @dataclass
@@ -354,7 +365,7 @@ def recognize(rgb, boxes, engine, batch_size=64, pad=3, *, retry=False, retry_on
                     d.selected_text,d.selected_confidence,d.method='1',conf,'ocr_one_isolated'
             if progress:progress(min(start+batch_size,len(remaining)),len(remaining),'OCR: isolar possíveis 1')
     check_cancel(cancel)
-    return out
+    return normalize_trailing_dot(out)
 
 
 def group(digits, config):
