@@ -27,7 +27,7 @@ def recognize(rgb,boxes,engine,batch_size=64,pad=3,*,progress=None,cancel=None,*
         readings=engine.predict(crops)
         if len(readings)!=len(chunk):raise ValueError('Quantidade inesperada de leituras')
         digits.extend(Digit(b,str(t),float(s),start+i,method='fb_token') for i,(b,(t,s)) in enumerate(zip(chunk,readings)))
-        if progress:progress(min(start+batch_size,len(boxes)),len(boxes))
+        if progress:progress(min(start+batch_size,len(boxes)),len(boxes),'OCR: folha de bordo')
     return normalize_trailing_dot(digits)
 
 
