@@ -250,6 +250,48 @@ class Application:
             self.group_mode_combo.configure(state='disabled' if fb else 'readonly',
                                             values=['FB'] if fb else ['relative','fixed'])
             self.decimal_max_entry.configure(state='disabled' if fb else 'normal')
+            if hasattr(self,'fb_distance_entry'):
+                self.fb_distance_entry.configure(state='normal' if fb else 'disabled')
+                self.fb_advanced_button.configure(state='normal' if fb else 'disabled')
+
+    def configure_fb_grouping(self):
+        if self.busy or self.fields['segmentation'].get()!='Folha de bordo':return
+        window=tk.Toplevel(self.root);window.title('Ajustes de agrupamento FB')
+        window.transient(self.root);window.resizable(False,False)
+        body=ttk.Frame(window,padding=12);body.pack(fill='both',expand=True)
+        values={}
+        options=[
+            ('Semelhança de altura','fb_integer_height_ratio','0 < valor ≤ 1. Razão mínima entre a menor e a maior altura dos algarismos do inteiro.'),
+            ('Sobreposição','fb_overlap','0 ≤ valor < 1. Sobreposição horizontal máxima como fração da menor largura.'),
+            ('Sobreposição vertical do decimal','fb_decimal_top_overlap','Valor ≥ 0. Quanto o topo do decimal pode subir acima da base do inteiro, como fração da altura do inteiro.'),
+            ('Limite inferior do decimal','fb_decimal_max_gap','Valor ≥ 0. Distância máxima da base do inteiro até o topo do decimal, como fração da altura do inteiro.'),
+            ('Recuo do decimal','fb_decimal_left','Valor ≥ 0. Recuo horizontal permitido antes da borda direita do inteiro, como fração da altura; limitado à largura da última caixa.'),
+            ('Margem de ambiguidade','fb_ambiguity_margin','Valor ≥ 0. Diferença mínima entre os escores geométricos dos candidatos. Aumentar mantém mais casos para revisão.'),
+            ('Altura dos componentes pequenos','fb_small_ratio','0 < valor ≤ 1. Altura relativa abaixo da qual um componente próximo e rebaixado pode ficar para revisão.')]
+        for row,(label,key,hint) in enumerate(options):
+            ttk.Label(body,text=label).grid(row=row,column=0,sticky='w',padx=(0,10),pady=3)
+            var=tk.StringVar(window,value=self.fields[key].get());values[key]=var
+            entry=ttk.Entry(body,textvariable=var,width=7);entry.grid(row=row,column=1,sticky='w',pady=3)
+            self.tip(entry,hint)
+        keep=tk.BooleanVar(window,value=self.fields['fb_keep_small'].get())
+        check=ttk.Checkbutton(body,text='Gerar candidatos para componentes pequenos isolados',variable=keep)
+        check.grid(row=7,column=0,columnspan=2,sticky='w',pady=6)
+        self.tip(check,'Marcado: permite candidatos pequenos sem decimal associado. Desmarcado: mantém os casos próximos de inteiros maiores para revisão.')
+        ttk.Label(body,text='Proporções: 0.25 = 25%. Use ponto decimal.').grid(row=8,column=0,columnspan=2,sticky='w',pady=5)
+        def apply():
+            try:
+                changes={key:float(var.get()) for key,var in values.items()}
+                changes['fb_keep_small']=keep.get()
+                Config(**dict(asdict(self.config()),**changes))
+            except (ValueError,TypeError) as exc:
+                messagebox.showerror('Parâmetros FB',str(exc),parent=window);return
+            for key,value in changes.items():self.fields[key].set(value)
+            window.destroy()
+        bar=ttk.Frame(body);bar.grid(row=9,column=0,columnspan=2,sticky='e',pady=(8,0))
+        ttk.Button(bar,text='Aplicar',command=apply).pack(side='left',padx=4)
+        ttk.Button(bar,text='Cancelar',command=window.destroy).pack(side='left')
+        window.bind('<Escape>',lambda e:window.destroy())
+        window.bind('<Return>',lambda e:apply())
 
     def toggle_live_preview(self):
         if self.live_preview.get():
@@ -382,6 +424,10 @@ class Application:
                 'segmentation':'Realce suaviza e amplia os traços; Bruto usa os pixels escuros diretamente.',
                 'yellow_min_fraction':'Percentual de amarelo necessário para descartar a caixa.',
                 'decimal_height_ratio':'Altura máxima do algarismo decimal em relação à altura da parte inteira.',
+                'tol_x':'Em FB: espaço máximo entre bordas dos algarismos do inteiro, em pixels da carta.',
+                'tol_y':'Em FB: diferença máxima entre as bases dos algarismos do inteiro, em pixels da carta.',
+                'decimal_drop':'Rebaixamento mínimo do centro do decimal, como fração da altura do inteiro.',
+                'fb_decimal_distance':'Afastamento horizontal máximo após o inteiro, como fração da altura do inteiro.',
                 'min_confidence':'Escore mínimo para aceitar um dígito.'}
             if key in hints:self.tip(widget,hints[key])
             return widget
@@ -446,14 +492,18 @@ class Application:
         ttk.Button(ocr,text='Revisar leituras…',command=self.review_tokens).grid(row=13,column=0,columnspan=2,sticky='ew',pady=4)
         for row,(label,key,values) in enumerate([
             ('Modo','grouping',['relative','fixed','FB']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
-            ('Altura proporcional','decimal_height_ratio',None),('Queda decimal','decimal_drop',None),
-            ('Inteiro máximo p/ decimal','decimal_max_integer',None),('Confiança mínima','min_confidence',None)]):
+            ('Altura proporcional','decimal_height_ratio',None),('Desnível do decimal','decimal_drop',None),
+            ('Distância do decimal','fb_decimal_distance',None),
+            ('Inteiro máx. com decimal','decimal_max_integer',None),('Confiança mín.','min_confidence',None)]):
             widget=setting(group,row,label,key,values)
             if key=='grouping':self.group_mode_combo=widget
             if key=='decimal_max_integer':self.decimal_max_entry=widget
+            if key=='fb_decimal_distance':self.fb_distance_entry=widget
+        self.fb_advanced_button=ttk.Button(group,text='Ajustes FB…',command=self.configure_fb_grouping)
+        self.fb_advanced_button.grid(row=8,column=0,columnspan=2,sticky='w',pady=3)
         self.update_mode_controls()
         self.group_button=ttk.Button(group,text='Agrupar',style='Primary.TButton',command=lambda:self.run_stage('group'))
-        self.group_button.grid(row=8,column=0,columnspan=2,sticky='ew',pady=10)
+        self.group_button.grid(row=9,column=0,columnspan=2,sticky='ew',pady=10)
         ttk.Label(export,text='Pasta de saída').grid(row=0,column=0,columnspan=2,sticky='w')
         ttk.Entry(export,textvariable=self.output).grid(row=1,column=0,columnspan=2,sticky='ew',pady=5)
         ttk.Button(export,text='Selecionar saída',command=lambda:self.output.set(filedialog.askdirectory() or self.output.get())).grid(row=2,column=0,columnspan=2,sticky='ew')

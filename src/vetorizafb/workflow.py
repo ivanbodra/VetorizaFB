@@ -17,7 +17,10 @@ from .area import bounds as area_bounds, is_polygon, polygon_mask, inside
 SEGMENT_KEYS = ('reference_dpi','dpi','segmentation','threshold','blur_size','kernel_size',
                 'min_w','max_w','min_h','max_h','exclude_yellow','exclude_magenta','yellow_delta','yellow_min_fraction')
 GROUP_KEYS = ('reference_dpi','dpi','grouping','tol_x','tol_y','decimal_height_ratio',
-              'decimal_drop','decimal_max_integer','min_confidence')
+              'decimal_drop','decimal_max_integer','min_confidence',
+              'fb_decimal_distance','fb_integer_height_ratio','fb_overlap',
+              'fb_decimal_top_overlap','fb_decimal_max_gap','fb_decimal_left',
+              'fb_ambiguity_margin','fb_small_ratio','fb_keep_small')
 
 
 def signature(config, keys):

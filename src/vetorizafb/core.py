@@ -97,6 +97,16 @@ class Config:
     decimal_height_ratio: float = .95
     decimal_drop: float = .10
     decimal_max_integer: float = 31
+    # FB geometry ratios are local and independent of chart resolution.
+    fb_decimal_distance: float = .45
+    fb_integer_height_ratio: float = .75
+    fb_overlap: float = .15
+    fb_decimal_top_overlap: float = .25
+    fb_decimal_max_gap: float = .30
+    fb_decimal_left: float = .65
+    fb_ambiguity_margin: float = .20
+    fb_small_ratio: float = .60
+    fb_keep_small: bool = False
     min_confidence: float = .35
     ocr_batch_size: int = 64
     crop_padding: int = 3
@@ -108,7 +118,10 @@ class Config:
     yellow_min_fraction: float = .6
 
     def __post_init__(self):
-        numeric = [self.reference_dpi, self.dpi, self.tol_x, self.tol_y,
+        fb_ratios = ('fb_decimal_distance','fb_integer_height_ratio','fb_overlap',
+                     'fb_decimal_top_overlap','fb_decimal_max_gap','fb_decimal_left',
+                     'fb_ambiguity_margin','fb_small_ratio')
+        numeric = [getattr(self,key) for key in fb_ratios] + [self.reference_dpi, self.dpi, self.tol_x, self.tol_y,
                    self.decimal_height_ratio, self.decimal_drop,
                    self.decimal_max_integer, self.min_confidence,
                    self.threshold, self.blur_size, self.kernel_size,
@@ -116,6 +129,13 @@ class Config:
                    self.ocr_batch_size, self.crop_padding,self.yellow_delta,self.yellow_min_fraction]
         if not all(math.isfinite(float(v)) for v in numeric):
             raise ValueError("Configuration values must be finite")
+        if not 0 < self.fb_integer_height_ratio <= 1 or not 0 < self.fb_small_ratio <= 1:
+            raise ValueError('FB: as proporções de altura devem ser maiores que 0 e até 1')
+        if not 0 <= self.fb_overlap < 1:
+            raise ValueError('FB: sobreposição deve ser maior ou igual a 0 e menor que 1')
+        for key in ('fb_decimal_distance','fb_decimal_top_overlap','fb_decimal_max_gap',
+                    'fb_decimal_left','fb_ambiguity_margin'):
+            if getattr(self,key)<0:raise ValueError(f'FB: {key} deve ser maior ou igual a 0')
         if self.reference_dpi <= 0 or self.dpi <= 0:
             raise ValueError("DPI must be positive")
         if not 0 <= self.threshold <= 255 or self.blur_size < 1 or self.kernel_size < 1:
@@ -137,7 +157,7 @@ class Config:
             raise ValueError("Invalid OCR batch size/padding")
         if not 1<=self.yellow_delta<=255 or not 0<self.yellow_min_fraction<=1:
             raise ValueError('Invalid yellow-background threshold/fraction')
-        for key in ('retry_ambiguous','retry_one','exclude_yellow','exclude_magenta'):
+        for key in ('retry_ambiguous','retry_one','exclude_yellow','exclude_magenta','fb_keep_small'):
             if not isinstance(getattr(self,key),bool):raise ValueError(f"{key} must be boolean")
 
     @property

@@ -57,7 +57,7 @@ def test_fieldbook_token_accepts_trailing_dot_without_losing_raw_text():
 def test_real_project_35_8_with_touching_boxes_and_different_tops(ratio):
     digits=[d(2985,1032,26,57,'3',1404),d(3011,1029,24,59,'5',1418),
             d(3039,1091,14,25,'8',1429)]
-    config=replace(cfg(),decimal_height_ratio=ratio,decimal_drop=.4,tol_x=60,tol_y=10)
+    config=replace(cfg(),decimal_height_ratio=ratio,decimal_drop=.4,tol_x=12,tol_y=10)
     for readings in (digits,list(reversed(digits))):
         result=group(readings,config)
         assert len(result)==1 and result[0].depth==35.8
@@ -69,7 +69,7 @@ def test_real_project_annotations_do_not_suppress_40_8_and_41():
             d(2868,1948,15,31,'8',1336),d(2871,1982,13,16,'2',1341),
             d(2886,1890,28,64,'4',1352),d(2923,1890,5,63,'1',1376),
             d(2887,1985,10,14,'2',1353),d(2907,1991,15,8,'2',1366)]
-    result=group(digits,replace(cfg(),decimal_drop=.4,tol_x=60,tol_y=10))
+    result=group(digits,replace(cfg(),decimal_drop=.4,tol_x=12,tol_y=10))
     assert any(s.depth==40.8 and s.digit_ids==[1302,1321,1336] for s in result)
     assert any(s.depth==41 and s.digit_ids==[1352,1376] for s in result)
 
@@ -100,7 +100,7 @@ def test_adjacent_33_soundings_do_not_form_333(reverse):
             d(3345,155,4,25,'l',1592),d(3356,88,28,67,'3',1599),
             d(3382,88,26,66,'3',1615),d(3406,150,15,24,'3',1624)]
     if reverse:digits.reverse()
-    result=group(digits,replace(cfg(),tol_x=60,tol_y=10,decimal_drop=.4))
+    result=group(digits,replace(cfg(),tol_x=12,tol_y=10,decimal_drop=.4))
     assert [(s.depth,s.digit_ids) for s in result]==[(33,[1568,1581]),(33.3,[1599,1615,1624])]
 
 
@@ -111,7 +111,7 @@ def test_small_annotation_fragments_stay_available_without_isolated_soundings():
             d(2886,1890,28,64,'4',1352),d(2923,1890,5,63,'1',1376),
             d(2887,1985,10,14,'2',1353),d(2907,1991,15,8,'2',1366)]
     notes={}
-    result=fb_group(digits,replace(cfg(),decimal_drop=.4,tol_x=60,tol_y=10),diagnostics=notes)
+    result=fb_group(digits,replace(cfg(),decimal_drop=.4,tol_x=12,tol_y=10),diagnostics=notes)
     assert sorted(s.depth for s in result)==[40.8,41]
     assert all(notes[i]!='Incluída em sondagem' for i in (1341,1353,1366))
 
@@ -123,3 +123,63 @@ def test_isolated_small_sounding_without_larger_neighbour_is_kept():
 def test_three_digit_integer_with_close_spacing_is_kept():
     digits=[d(10,10,15,40,'1',0),d(27,10,15,40,'2',1),d(44,10,15,40,'3',2)]
     assert [s.depth for s in group(digits,cfg())]==[123]
+
+
+@pytest.mark.parametrize('ratio',[.6,.95])
+def test_real_project_31_4_and_31_9_with_user_spacing(ratio):
+    digits=[d(2957,91,26,62,'3',1394),d(2994,90,7,59,'1',1407),d(3003,160,17,29,'4',1415),
+            d(3048,102,27,60,'3',1435),d(3079,97,7,63,'1',1454),d(3095,150,14,25,'9',1462)]
+    config=replace(cfg(),tol_x=12,tol_y=10,decimal_drop=.4,decimal_height_ratio=ratio)
+    result=group(digits,config)
+    assert [(s.depth,s.digit_ids) for s in result]==[(31.4,[1394,1407,1415]),(31.9,[1435,1454,1462])]
+
+
+def test_horizontal_distance_has_no_hidden_height_cap():
+    digits=[d(10,10,15,40,'3',0),d(45,10,15,40,'5',1)]
+    assert [s.depth for s in group(digits,replace(cfg(),tol_x=20))]==[35]
+    assert [s.depth for s in group(digits,replace(cfg(),tol_x=19))]==[3,5]
+
+
+def test_decimal_height_has_no_hidden_75_percent_cap():
+    digits=[d(10,10,30,40,'35',0),d(42,45,10,32,'8',1)]
+    assert group(digits,replace(cfg(),decimal_height_ratio=.85))[0].depth==35.8
+    assert all(s.depth!=35.8 for s in group(digits,replace(cfg(),decimal_height_ratio=.75)))
+
+
+def test_decimal_horizontal_and_vertical_limits_are_configurable():
+    digits=[d(10,10,30,40,'35',0),d(52,44,10,16,'8',1)]
+    assert group(digits,replace(cfg(),fb_decimal_distance=.5))[0].depth==35.8
+    assert all(s.depth!=35.8 for s in group(digits,replace(cfg(),fb_decimal_distance=.2)))
+    digits=[d(10,10,30,40,'35',0),d(40,64,10,16,'8',1)]
+    assert group(digits,replace(cfg(),fb_decimal_max_gap=.4))[0].depth==35.8
+    assert all(s.depth!=35.8 for s in group(digits,replace(cfg(),fb_decimal_max_gap=.2)))
+
+
+def test_decimal_top_overlap_is_configurable():
+    digits=[d(10,10,30,40,'35',0),d(40,40,10,20,'8',1)]
+    assert group(digits,replace(cfg(),fb_decimal_top_overlap=.25))[0].depth==35.8
+    assert all(s.depth!=35.8 for s in group(digits,replace(cfg(),fb_decimal_top_overlap=.1)))
+
+
+def test_integer_height_and_overlap_are_configurable():
+    digits=[d(10,10,20,40,'3',0),d(30,24,15,26,'5',1)]
+    assert group(digits,replace(cfg(),fb_integer_height_ratio=.6))[0].depth==35
+    assert all(s.depth!=35 for s in group(digits,replace(cfg(),fb_integer_height_ratio=.8)))
+    digits=[d(10,10,20,40,'3',0),d(26,10,20,40,'5',1)]
+    assert group(digits,replace(cfg(),fb_overlap=.25))[0].depth==35
+    assert all(s.depth!=35 for s in group(digits,replace(cfg(),fb_overlap=.1)))
+
+
+def test_keep_small_switch_preserves_annotation_candidates_for_review():
+    digits=[d(10,10,30,60,'40',0),d(20,98,10,15,'2',1)]
+    assert [s.depth for s in group(digits,cfg())]==[40]
+    assert sorted(s.depth for s in group(digits,replace(cfg(),fb_keep_small=True)))==[2,40]
+
+
+@pytest.mark.parametrize('key,value',[
+    ('fb_integer_height_ratio',0),('fb_integer_height_ratio',1.1),
+    ('fb_overlap',1),('fb_decimal_distance',-1),('fb_decimal_top_overlap',float('nan')),
+    ('fb_decimal_max_gap',-1),('fb_decimal_left',-1),('fb_ambiguity_margin',-1),
+    ('fb_small_ratio',0),('fb_keep_small','yes')])
+def test_fb_parameter_validation(key,value):
+    with pytest.raises(ValueError):replace(cfg(),**{key:value})

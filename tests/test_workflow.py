@@ -314,3 +314,33 @@ def test_restore_noop_and_manual_points_are_protected(session):
     point=review.add_manual(20,30,4.5);before=deepcopy(review.item(point))
     with pytest.raises(ValueError,match='no original'):review.change(point,'restore_both')
     assert review.item(point)==before
+
+
+@pytest.mark.parametrize('key,value',[
+    ('fb_decimal_distance',.7),('fb_integer_height_ratio',.8),('fb_overlap',.2),
+    ('fb_decimal_top_overlap',.3),('fb_decimal_max_gap',.5),('fb_decimal_left',.8),
+    ('fb_ambiguity_margin',.3),('fb_small_ratio',.5),('fb_keep_small',True)])
+def test_fb_settings_invalidate_grouping_only_and_round_trip(session,tmp_path,key,value):
+    cfg=ready(session)
+    changed=replace(cfg,**{key:value})
+    assert session.valid_segments(changed)
+    assert session.valid_digits(changed,SPEC)
+    assert not session.valid_groups(changed,SPEC)
+    old_digits=session.digits
+    session.run_grouping(changed,SPEC)
+    assert session.digits is old_digits
+    path=tmp_path/'fb-settings.vfproject.json'
+    session.save_project(path)
+    loaded=ChartSession.load_project(path)
+    assert getattr(loaded.config,key)==value
+
+
+def test_older_project_without_fb_settings_loads_defaults(session,tmp_path):
+    ready(session)
+    path=tmp_path/'old.vfproject.json';session.save_project(path)
+    data=json.loads(path.read_text())
+    data['config']={k:v for k,v in data['config'].items() if not k.startswith('fb_')}
+    path.write_text(json.dumps(data))
+    loaded=ChartSession.load_project(path)
+    assert loaded.config.fb_decimal_distance==Config().fb_decimal_distance
+    assert loaded.config.fb_keep_small is False

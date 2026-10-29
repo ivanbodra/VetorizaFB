@@ -55,8 +55,8 @@ def group(digits,config,*,diagnostics=None):
             if b.x<=a.x:continue
             h=min(a.h,b.h);gap=b.x-(a.x+a.w)
             # Compare neighbours locally; a short decimal cannot join an integer.
-            if (min(a.h,b.h)/max(a.h,b.h)>=.75
-                    and -min(a.w,b.w)*.15<=gap<=min(x_limit,h*.18)
+            if (min(a.h,b.h)/max(a.h,b.h)>=config.fb_integer_height_ratio
+                    and -min(a.w,b.w)*config.fb_overlap<=gap<=x_limit
                     and abs(b.y+b.h-a.y-a.h)<=y_limit
                     and sum(len(token(p)) for p in parts)+len(token(e))<=3):
                 parts.append(e);used.add(e.index)
@@ -71,13 +71,13 @@ def group(digits,config,*,diagnostics=None):
         h,_,_,_,bottom,cy=geometry[i]
         last=parts[-1].box;right=last.x+last.w
         # A joined multi-digit token may contain the decimal's horizontal anchor.
-        left=right-min(last.w,h*.65)
+        left=right-min(last.w,h*config.fb_decimal_left)
         for j,tail in enumerate(principals):
             if i==j or len(tail)!=1 or len(token(tail[0]))!=1:continue
             d=tail[0];b=d.box;cx,ty=b.center
-            if (b.h<h*.75 and b.h<=h*config.decimal_height_ratio
-                    and left<=cx<=right+min(x_limit,h*.45)
-                    and bottom-h*.15<=b.y<=bottom+h*.30
+            if (b.h<=h*config.decimal_height_ratio
+                    and left<=cx<=right+h*config.fb_decimal_distance
+                    and bottom-h*config.fb_decimal_top_overlap<=b.y<=bottom+h*config.fb_decimal_max_gap
                     and ty>=cy+h*config.decimal_drop):
                 score=abs(cx-(right+h*.1))/h+abs(b.y-bottom)/h
                 links.setdefault(i,[]).append((score,j))
@@ -86,7 +86,7 @@ def group(digits,config,*,diagnostics=None):
     # Select only geometrically separated winners, independently of iteration order.
     def winner(options):
         ordered=sorted(options)
-        if len(ordered)>1 and ordered[1][0]-ordered[0][0]<.20:return None
+        if len(ordered)>1 and ordered[1][0]-ordered[0][0]<config.fb_ambiguity_margin:return None
         return ordered[0][1] if ordered else None
     matches={};ambiguous=set()
     for i,options in links.items():
@@ -98,13 +98,13 @@ def group(digits,config,*,diagnostics=None):
     # sounding. Retain it for review instead of exporting annotation fragments.
     small_nearby=set()
     for i,parts in enumerate(principals):
-        if i in tails or i in links:continue
+        if config.fb_keep_small or i in tails or i in links:continue
         h,left,right,top,_,_=geometry[i]
         cx=(left+right)/2
         for j,other in enumerate(principals):
             if i==j:continue
             reference,left,right,_,bottom,_=geometry[j]
-            if h>=reference*.60:continue
+            if h>=reference*config.fb_small_ratio:continue
             if left-reference*.15<=cx<=right+reference*.65 and bottom-reference*.15<=top<=bottom+reference:
                 small_nearby.add(i)
                 break
