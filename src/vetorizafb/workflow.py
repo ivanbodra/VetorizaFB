@@ -39,6 +39,7 @@ class ChartSession:
         self.roi = None
         self.seg_key = self.ocr_key = self.group_key = None
         self.timings = {}
+        self.grouping_diagnostics = {}
         self.model_spec = ('PP-OCRv6_small_rec', None, 'cpu')
         self._engine = None
         self._engine_spec = None
@@ -126,9 +127,15 @@ class ChartSession:
             raise ValueError("Leituras ausentes ou parâmetros OCR mudaram. Execute a etapa 2.")
         check_cancel(cancel)
         start = time.perf_counter()
-        review = ReviewSet([s for s in group(self.digits,config) if inside(roi,s.pixel_x,s.pixel_y)])
+        diagnostics={}
+        if config.grouping=='fb':
+            from .fieldbook import group as fb_group
+            soundings=fb_group(self.digits,config,diagnostics=diagnostics)
+        else:soundings=group(self.digits,config)
+        review = ReviewSet([s for s in soundings if inside(roi,s.pixel_x,s.pixel_y)])
         check_cancel(cancel)
         self.review = review
+        self.grouping_diagnostics = diagnostics
         self.group_key = (self.ocr_key,signature(config,GROUP_KEYS))
         self.config = Config(**asdict(config))
         self.timings['group'] = time.perf_counter()-start

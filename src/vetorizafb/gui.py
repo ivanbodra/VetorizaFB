@@ -243,6 +243,13 @@ class Application:
     def update_mode_controls(self):
         state='normal' if self.fields['segmentation'].get()=='Realce' else 'disabled'
         for widget in (self.blur_entry,self.dilation_entry):widget.configure(state=state)
+        if hasattr(self,'group_mode_combo'):
+            fb=self.fields['segmentation'].get()=='Folha de bordo'
+            if fb:self.fields['grouping'].set('fb')
+            elif self.fields['grouping'].get()=='fb':self.fields['grouping'].set('relative')
+            self.group_mode_combo.configure(state='disabled' if fb else 'readonly',
+                                            values=['fb'] if fb else ['relative','fixed'])
+            self.decimal_max_entry.configure(state='disabled' if fb else 'normal')
 
     def toggle_live_preview(self):
         if self.live_preview.get():
@@ -439,7 +446,11 @@ class Application:
         for row,(label,key,values) in enumerate([
             ('Modo','grouping',['relative','fixed','fb']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
             ('Razão altura decimal','decimal_height_ratio',None),('Queda decimal','decimal_drop',None),
-            ('Inteiro máximo p/ decimal','decimal_max_integer',None),('Confiança mínima','min_confidence',None)]):setting(group,row,label,key,values)
+            ('Inteiro máximo p/ decimal','decimal_max_integer',None),('Confiança mínima','min_confidence',None)]):
+            widget=setting(group,row,label,key,values)
+            if key=='grouping':self.group_mode_combo=widget
+            if key=='decimal_max_integer':self.decimal_max_entry=widget
+        self.update_mode_controls()
         self.group_button=ttk.Button(group,text='Agrupar',style='Primary.TButton',command=lambda:self.run_stage('group'))
         self.group_button.grid(row=8,column=0,columnspan=2,sticky='ew',pady=10)
         ttk.Label(export,text='Pasta de saída').grid(row=0,column=0,columnspan=2,sticky='w')

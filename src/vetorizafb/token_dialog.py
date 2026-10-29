@@ -21,7 +21,7 @@ class TokenDialog(tk.Toplevel):
         self.image=ttk.Label(self,anchor='center');self.image.pack(fill='x',pady=8)
         body=ttk.Frame(self);body.pack(fill='both',expand=True,padx=8)
         self.table=ttk.Treeview(body,columns=('id','text','score','state','method'),show='headings',selectmode='extended')
-        for key,label in zip(self.table['columns'],('ID','Leitura','Confiança','Estado','Método')):
+        for key,label in zip(self.table['columns'],('ID','Leitura','Confiança','Estado / motivo','Método')):
             self.table.heading(key,text=label);self.table.column(key,width=110,stretch=True)
         scroll=ttk.Scrollbar(body,orient='vertical',command=self.table.yview);self.table.configure(yscrollcommand=scroll.set)
         scroll.pack(side='right',fill='y');self.table.pack(fill='both',expand=True)
@@ -36,7 +36,9 @@ class TokenDialog(tk.Toplevel):
             t=token(d) if s.config.segmentation=='fb' else d.text
             uncertain=t is None or d.score<s.config.min_confidence or (assigned is not None and d.index not in assigned)
             if self.only.get() and not uncertain:continue
-            self.table.insert('','end',iid=str(d.index),values=(d.index,d.selected_text if d.selected_text is not None else d.raw_text,f'{d.score:.3f}','Incerta / sem grupo' if uncertain else 'Lida',d.method))
+            notes=getattr(s,'grouping_diagnostics',{}) if s.review else {}
+            state=notes.get(d.index,'Incerta / sem grupo') if uncertain else 'Lida'
+            self.table.insert('','end',iid=str(d.index),values=(d.index,d.selected_text if d.selected_text is not None else d.raw_text,f'{d.score:.3f}',state,d.method))
     def ids(self):return [int(i) for i in self.table.selection()]
     def show_crop(self):
         ids=self.ids()

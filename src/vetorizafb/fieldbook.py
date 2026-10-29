@@ -31,53 +31,86 @@ def recognize(rgb,boxes,engine,batch_size=64,pad=3,*,progress=None,cancel=None,*
     return normalize_trailing_dot(digits)
 
 
-def group(digits,config):
-    """Associate principal tokens with smaller lower digits; ambiguous links abstain.
+def group(digits,config,*,diagnostics=None):
+    """Build local integer chains, then match smaller lowered decimal tokens.
 
-    Principal neighbouring fragments may concatenate only with a narrow gap and
-    aligned baseline. A decimal is optional; numeric depth never resolves layout.
+    Values never resolve geometry. Ambiguous matches remain ungrouped.
+    Distances use source pixels, including the configured DPI scale.
     """
-    usable=[d for d in digits if token(d) is not None and d.score>=config.min_confidence]
+    notes=diagnostics if diagnostics is not None else {}
+    usable=sorted([d for d in digits if token(d) is not None and d.score>=config.min_confidence],
+                  key=lambda d:(d.box.x,d.box.y,d.index))
+    for d in digits:
+        notes[d.index]='Leitura inválida ou abaixo da confiança mínima'
     if not usable:return []
-    h=float(np.percentile([d.box.h for d in usable],75))
-    large=sorted([d for d in usable if d.box.h>=h*config.decimal_height_ratio],key=lambda d:(d.box.y,d.box.x))
-    small=[d for d in usable if d.box.h<h*config.decimal_height_ratio and len(token(d))==1]
+    x_limit=config.tol_x*config.scale
+    y_limit=config.tol_y*config.scale
     used=set();principals=[]
-    for d in large:
+    for d in usable:
         if d.index in used:continue
         parts=[d];used.add(d.index)
-        for e in sorted(large,key=lambda a:a.box.x):
+        for e in usable:
             if e.index in used:continue
-            last=parts[-1].box;b=e.box
-            gap=b.x-(last.x+last.w)
-            if 0<=gap<=min(config.tol_x*.25,h*.18) and abs((b.y+b.h)-(last.y+last.h))<=h*.18:
-                if sum(len(token(p)) for p in parts)+len(token(e))<=3:
-                    parts.append(e);used.add(e.index)
+            a=parts[-1].box;b=e.box
+            if b.x<=a.x:continue
+            h=min(a.h,b.h);gap=b.x-(a.x+a.w)
+            # Compare neighbours locally; a short decimal cannot join an integer.
+            if (min(a.h,b.h)/max(a.h,b.h)>=.75
+                    and -min(a.w,b.w)*.15<=gap<=min(x_limit,h*.35)
+                    and abs(b.y+b.h-a.y-a.h)<=y_limit
+                    and sum(len(token(p)) for p in parts)+len(token(e))<=3):
+                parts.append(e);used.add(e.index)
         principals.append(parts)
+
     links={};reverse={}
     for i,parts in enumerate(principals):
-        x=min(p.box.x for p in parts);right=max(p.box.x+p.box.w for p in parts)
-        bottom=max(p.box.y+p.box.h for p in parts);top=min(p.box.y for p in parts)
-        for d in small:
-            b=d.box;cx,cy=b.center
-            if x-h*.15<=cx<=right+h*.45 and bottom-h*.15<=b.y<=bottom+h*.65 and cy>(top+bottom)/2+h*config.decimal_drop:
-                links.setdefault(i,[]).append(d);reverse.setdefault(d.index,[]).append(i)
+        h=float(np.median([d.box.h for d in parts]))
+        bottom=float(np.median([d.box.y+d.box.h for d in parts]))
+        cy=float(np.mean([d.box.center[1] for d in parts]))
+        last=parts[-1].box;right=last.x+last.w
+        # A joined multi-digit token may contain the decimal's horizontal anchor.
+        left=right-min(last.w,h*.65)
+        for j,tail in enumerate(principals):
+            if i==j or len(tail)!=1 or len(token(tail[0]))!=1:continue
+            d=tail[0];b=d.box;cx,ty=b.center
+            if (b.h<h*.75 and b.h<=h*config.decimal_height_ratio
+                    and left<=cx<=right+min(x_limit,h*.45)
+                    and bottom-h*.15<=b.y<=bottom+h*.30
+                    and ty>=cy+h*config.decimal_drop):
+                score=abs(cx-(right+h*.1))/h+abs(b.y-bottom)/h
+                links.setdefault(i,[]).append((score,j))
+                reverse.setdefault(j,[]).append((score,i))
+
+    # Select only geometrically separated winners, independently of iteration order.
+    def winner(options):
+        ordered=sorted(options)
+        if len(ordered)>1 and ordered[1][0]-ordered[0][0]<.20:return None
+        return ordered[0][1] if ordered else None
+    matches={};ambiguous=set()
+    for i,options in links.items():
+        j=winner(options)
+        if j is not None and winner(reverse[j])==i:matches[i]=j
+        else:ambiguous.add(i)
+    tails=set(reverse)
     result=[]
     for i,parts in enumerate(principals):
-        tails=links.get(i,[]);flags=['fb_anchor_unverified']
-        if len(tails)>1 or any(len(reverse[d.index])>1 for d in tails):
-            # Do not output a plausible but incomplete integer as a depth.
-            continue
-        integer=''.join(token(d) for d in sorted(parts,key=lambda d:d.box.x))
-        depth=int(integer)
-        if tails:depth+=int(token(tails[0]))/10
-        else:flags.append('fb_no_decimetre')
-        main=list(parts);all_parts=main+tails
+        if i in tails:
+            for d in parts:notes[d.index]='Candidato a decimal sem associação definida'
+        if i in ambiguous:
+            for d in parts:notes[d.index]='Associação decimal ambígua'
+        if i in tails or i in ambiguous:continue
+        decimal=principals[matches[i]] if i in matches else []
+        integer=''.join(token(d) for d in parts)
+        depth=int(integer)+(int(token(decimal[0]))/10 if decimal else 0)
+        all_parts=parts+decimal
         x=min(d.box.x for d in all_parts);y=min(d.box.y for d in all_parts)
         right=max(d.box.x+d.box.w for d in all_parts);bottom=max(d.box.y+d.box.h for d in all_parts)
-        # Provisional anchor: principal text centre, independent of decimal size.
-        mx=(min(d.box.x for d in main)+max(d.box.x+d.box.w for d in main))/2
-        my=(min(d.box.y for d in main)+max(d.box.y+d.box.h for d in main))/2
+        mx=(min(d.box.x for d in parts)+max(d.box.x+d.box.w for d in parts))/2
+        my=(min(d.box.y for d in parts)+max(d.box.y+d.box.h for d in parts))/2
+        flags=['fb_anchor_unverified']
+        if not decimal:flags.append('fb_no_decimetre')
         result.append(Sounding(mx,my,depth,min(d.score for d in all_parts),(x,y,right,bottom),
-            [d.index for d in all_parts],'fb_subscript' if tails else 'fb_integer',flags=flags))
+            [d.index for d in all_parts],'fb_subscript' if decimal else 'fb_integer',flags=flags))
+    for sounding in result:
+        for index in sounding.digit_ids:notes[index]='Incluída em sondagem'
     return result
