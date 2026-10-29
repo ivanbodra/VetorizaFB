@@ -35,6 +35,15 @@ def test_reading_preserves_multi_digit_and_nonnumeric_without_correction():
     assert a[1].raw_text=='S'
 
 
+def test_fieldbook_recognition_reports_progress_with_stage():
+    class Engine:
+        def predict(self,crops):return [('3',.9) for _ in crops]
+    updates=[]
+    recognize(np.full((60,60,3),255,np.uint8),[Box(10,10,20,30)],Engine(),
+              progress=lambda current,total,stage:updates.append((current,total,stage)))
+    assert updates==[(1,1,'OCR: folha de bordo')]
+
+
 def test_fieldbook_token_accepts_trailing_dot_without_losing_raw_text():
     from vetorizafb.fieldbook import token
     class Engine:
