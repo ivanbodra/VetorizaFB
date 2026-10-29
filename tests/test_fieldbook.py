@@ -91,3 +91,35 @@ def test_ambiguous_decimal_has_diagnostic_and_no_invented_integer():
     digits=[d(10,10,40,40,'35',0),d(40,53,8,14,'8',1),d(42,53,8,14,'9',2)]
     assert fb_group(digits,cfg(),diagnostics=notes)==[]
     assert notes[0]=='Associação decimal ambígua'
+
+
+@pytest.mark.parametrize('reverse',[False,True])
+def test_adjacent_33_soundings_do_not_form_333(reverse):
+    # Exact boxes from the reported FB project, including the OCR letter l.
+    digits=[d(3288,85,29,66,'3',1568),d(3318,84,25,67,'3',1581),
+            d(3345,155,4,25,'l',1592),d(3356,88,28,67,'3',1599),
+            d(3382,88,26,66,'3',1615),d(3406,150,15,24,'3',1624)]
+    if reverse:digits.reverse()
+    result=group(digits,replace(cfg(),tol_x=60,tol_y=10,decimal_drop=.4))
+    assert [(s.depth,s.digit_ids) for s in result]==[(33,[1568,1581]),(33.3,[1599,1615,1624])]
+
+
+def test_small_annotation_fragments_stay_available_without_isolated_soundings():
+    from vetorizafb.fieldbook import group as fb_group
+    digits=[d(2798,1889,31,63,'4',1302),d(2839,1890,22,61,'0',1321),
+            d(2868,1948,15,31,'8',1336),d(2871,1982,13,16,'2',1341),
+            d(2886,1890,28,64,'4',1352),d(2923,1890,5,63,'1',1376),
+            d(2887,1985,10,14,'2',1353),d(2907,1991,15,8,'2',1366)]
+    notes={}
+    result=fb_group(digits,replace(cfg(),decimal_drop=.4,tol_x=60,tol_y=10),diagnostics=notes)
+    assert sorted(s.depth for s in result)==[40.8,41]
+    assert all(notes[i]!='Incluída em sondagem' for i in (1341,1353,1366))
+
+
+def test_isolated_small_sounding_without_larger_neighbour_is_kept():
+    assert [s.depth for s in group([d(10,10,10,20,'5',0)],cfg())]==[5]
+
+
+def test_three_digit_integer_with_close_spacing_is_kept():
+    digits=[d(10,10,15,40,'1',0),d(27,10,15,40,'2',1),d(44,10,15,40,'3',2)]
+    assert [s.depth for s in group(digits,cfg())]==[123]

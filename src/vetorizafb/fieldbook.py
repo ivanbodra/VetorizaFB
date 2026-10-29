@@ -56,17 +56,19 @@ def group(digits,config,*,diagnostics=None):
             h=min(a.h,b.h);gap=b.x-(a.x+a.w)
             # Compare neighbours locally; a short decimal cannot join an integer.
             if (min(a.h,b.h)/max(a.h,b.h)>=.75
-                    and -min(a.w,b.w)*.15<=gap<=min(x_limit,h*.35)
+                    and -min(a.w,b.w)*.15<=gap<=min(x_limit,h*.18)
                     and abs(b.y+b.h-a.y-a.h)<=y_limit
                     and sum(len(token(p)) for p in parts)+len(token(e))<=3):
                 parts.append(e);used.add(e.index)
         principals.append(parts)
 
+    geometry=[(float(np.median([d.box.h for d in parts])),
+               min(d.box.x for d in parts),max(d.box.x+d.box.w for d in parts),
+               min(d.box.y for d in parts),float(np.median([d.box.y+d.box.h for d in parts])),
+               float(np.mean([d.box.center[1] for d in parts]))) for parts in principals]
     links={};reverse={}
     for i,parts in enumerate(principals):
-        h=float(np.median([d.box.h for d in parts]))
-        bottom=float(np.median([d.box.y+d.box.h for d in parts]))
-        cy=float(np.mean([d.box.center[1] for d in parts]))
+        h,_,_,_,bottom,cy=geometry[i]
         last=parts[-1].box;right=last.x+last.w
         # A joined multi-digit token may contain the decimal's horizontal anchor.
         left=right-min(last.w,h*.65)
@@ -92,13 +94,29 @@ def group(digits,config,*,diagnostics=None):
         if j is not None and winner(reverse[j])==i:matches[i]=j
         else:ambiguous.add(i)
     tails=set(reverse)
+    # A small nearby component is not sufficient evidence for an independent
+    # sounding. Retain it for review instead of exporting annotation fragments.
+    small_nearby=set()
+    for i,parts in enumerate(principals):
+        if i in tails or i in links:continue
+        h,left,right,top,_,_=geometry[i]
+        cx=(left+right)/2
+        for j,other in enumerate(principals):
+            if i==j:continue
+            reference,left,right,_,bottom,_=geometry[j]
+            if h>=reference*.60:continue
+            if left-reference*.15<=cx<=right+reference*.65 and bottom-reference*.15<=top<=bottom+reference:
+                small_nearby.add(i)
+                break
     result=[]
     for i,parts in enumerate(principals):
         if i in tails:
             for d in parts:notes[d.index]='Candidato a decimal sem associação definida'
         if i in ambiguous:
             for d in parts:notes[d.index]='Associação decimal ambígua'
-        if i in tails or i in ambiguous:continue
+        if i in small_nearby:
+            for d in parts:notes[d.index]='Componente pequeno próximo de sondagem; revisar'
+        if i in tails or i in ambiguous or i in small_nearby:continue
         decimal=principals[matches[i]] if i in matches else []
         integer=''.join(token(d) for d in parts)
         depth=int(integer)+(int(token(decimal[0]))/10 if decimal else 0)
