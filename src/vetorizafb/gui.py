@@ -245,10 +245,10 @@ class Application:
         for widget in (self.blur_entry,self.dilation_entry):widget.configure(state=state)
         if hasattr(self,'group_mode_combo'):
             fb=self.fields['segmentation'].get()=='Folha de bordo'
-            if fb:self.fields['grouping'].set('fb')
-            elif self.fields['grouping'].get()=='fb':self.fields['grouping'].set('relative')
+            if fb:self.fields['grouping'].set('FB')
+            elif self.fields['grouping'].get() in ('fb','FB'):self.fields['grouping'].set('relative')
             self.group_mode_combo.configure(state='disabled' if fb else 'readonly',
-                                            values=['fb'] if fb else ['relative','fixed'])
+                                            values=['FB'] if fb else ['relative','fixed'])
             self.decimal_max_entry.configure(state='disabled' if fb else 'normal')
 
     def toggle_live_preview(self):
@@ -381,6 +381,7 @@ class Application:
                 'threshold':'Aumente para incluir traços mais claros. Valores altos podem acabar incluindo o fundo.',
                 'segmentation':'Realce suaviza e amplia os traços; Bruto usa os pixels escuros diretamente.',
                 'yellow_min_fraction':'Percentual de amarelo necessário para descartar a caixa.',
+                'decimal_height_ratio':'Altura máxima do algarismo decimal em relação à altura da parte inteira.',
                 'min_confidence':'Escore mínimo para aceitar um dígito.'}
             if key in hints:self.tip(widget,hints[key])
             return widget
@@ -444,8 +445,8 @@ class Application:
         self.ocr_button.grid(row=12,column=0,columnspan=2,sticky='ew',pady=8)
         ttk.Button(ocr,text='Revisar leituras…',command=self.review_tokens).grid(row=13,column=0,columnspan=2,sticky='ew',pady=4)
         for row,(label,key,values) in enumerate([
-            ('Modo','grouping',['relative','fixed','fb']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
-            ('Razão altura decimal','decimal_height_ratio',None),('Queda decimal','decimal_drop',None),
+            ('Modo','grouping',['relative','fixed','FB']),('Distância X','tol_x',None),('Tolerância Y','tol_y',None),
+            ('Altura proporcional','decimal_height_ratio',None),('Queda decimal','decimal_drop',None),
             ('Inteiro máximo p/ decimal','decimal_max_integer',None),('Confiança mínima','min_confidence',None)]):
             widget=setting(group,row,label,key,values)
             if key=='grouping':self.group_mode_combo=widget
@@ -591,6 +592,7 @@ class Application:
             data[key]=float(data[key])/scale
             if data[key].is_integer():data[key]=int(data[key])
         data['segmentation']={'Realce':'legacy','Bruto':'black','Folha de bordo':'fb'}.get(data['segmentation'],data['segmentation'])
+        if data['grouping']=='FB':data['grouping']='fb'
         if data['segmentation']=='fb':data['grouping']='fb'
         elif data['grouping']=='fb':data['grouping']='relative'
         data['yellow_min_fraction']/=100
@@ -603,6 +605,7 @@ class Application:
         for k,v in asdict(config).items():
             if k in ('min_w','max_w','min_h','max_h','blur_size','kernel_size','tol_x','tol_y'):v=v*config.scale
             elif k=='segmentation':v={'legacy':'Realce','black':'Bruto','fb':'Folha de bordo'}[v]
+            elif k=='grouping' and v=='fb':v='FB'
             elif k=='yellow_min_fraction':v=v*100
             elif k=='yellow_delta':v=256-v
             if isinstance(v,float):v=format(v,'.15g')
