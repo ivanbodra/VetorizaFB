@@ -21,7 +21,7 @@ def test_integer_height_excludes_lowered_decimal():
 @pytest.mark.parametrize('height', [2, 60, 500])
 def test_label_stays_inside_viewport(height):
     image = Image.new('RGB', (120, 50), 'black')
-    draw_label(ImageDraw.Draw(image), image.size, (119, 0), '31.9', 'orange', height)
+    draw_label(ImageDraw.Draw(image), image.size, (119, 0), '31.9', 'orange', height, 120)
     bounds = image.getbbox()
     assert bounds is not None
     assert bounds[0] < 100 and bounds[1] == 0
@@ -64,3 +64,16 @@ def test_measure_click_uses_exact_component_box():
     ChartViewer.release(viewer,SimpleNamespace(x=24,y=24,state=0))
     assert viewer.measurement==(20,20,30,45)
     assert calls==[('measure',(10,25))]
+
+
+def test_labels_hide_below_minimum_text_width_and_have_no_white_outline():
+    from vetorizafb.viewer import label_font
+    image=Image.new('RGB',(120,50),'black')
+    draw=ImageDraw.Draw(image)
+    bounds=draw.textbbox((0,0),'8',font=label_font(12))
+    width=bounds[2]-bounds[0]
+    draw_label(draw,image.size,(10,25),'8','green',30,width-.1)
+    assert image.getbbox() is None
+    draw_label(draw,image.size,(10,25),'8','green',30,width)
+    assert image.getbbox() is not None
+    assert not np.asarray(image)[:, :, [0, 2]].any()

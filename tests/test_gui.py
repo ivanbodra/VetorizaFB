@@ -347,7 +347,7 @@ def test_measurement_uses_native_pixels_independent_of_zoom(app):
 def test_manual_about_and_preview_toggle(app,monkeypatch):
     from pathlib import Path
     from vetorizafb import __version__
-    assert __version__=='4.1.2' and '4.1.2' in app.root.title()
+    assert __version__=='4.1.3' and '4.1.3' in app.root.title()
     urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
     app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
     popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()

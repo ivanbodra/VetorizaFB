@@ -23,15 +23,16 @@ def label_font(size):
         return ImageFont.load_default()
 
 
-def draw_label(draw, image_size, position, text, colour, screen_height):
-    font = label_font(max(12, min(24, round(screen_height * .25))))
+def draw_label(draw, image_size, position, text, colour, screen_height, screen_width):
     text = str(text)
-    left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
+    minimum = draw.textbbox((0, 0), text, font=label_font(12))
+    if screen_width < minimum[2]-minimum[0]:return
+    font = label_font(max(12, min(24, round(screen_height * .25))))
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
     x, y = position
     x = max(0, min(x, image_size[0] - (right-left)))
     y = max(0, min(y - (bottom-top) - 3, image_size[1] - (bottom-top)))
-    draw.text((x-left, y-top), text, font=font, fill=colour,
-              stroke_width=1, stroke_fill='white')
+    draw.text((x-left, y-top), text, font=font, fill=colour)
 
 
 def integer_height(sounding, digit_map):
@@ -292,7 +293,8 @@ class ChartViewer(ttk.Frame):
             draw.rectangle((*point(a,b),*point(c,d)),outline=colour,width=1)
             if label is not None:
                 draw_label(draw,image.size,point(a,b),label,colour,
-                           (d-b if label_height is None else label_height)*self.scale)
+                           (d-b if label_height is None else label_height)*self.scale,
+                           (c-a)*self.scale)
         layer = self.layer.get()
         if self.measurement:box(self.measurement,'#007c91')
         if layer == 'Dígitos' and self.session.digits is not None:
