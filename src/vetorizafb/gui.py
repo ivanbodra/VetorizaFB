@@ -1391,11 +1391,20 @@ class Application:
     def close(self):
         if self.busy:
             self.cancel.set();messagebox.showinfo('Processando','Cancelamento solicitado. Aguarde o lote/etapa antes de fechar.');return
-        if self.confirm_replace():
-            self._closed=True
-            for tip in self.tooltips:tip.hide()
-            if self._preview_id:self.root.after_cancel(self._preview_id)
-            self.root.after_cancel(self._poll_id);self.root.destroy()
+        if self.session is not None:
+            answer=messagebox.askyesnocancel('Fechar VetorizaFB','Deseja salvar o projeto antes de fechar?',parent=self.root)
+            if answer is None:return
+            if answer:
+                # The save runs in a worker; close only after its success callback.
+                self.save_project(after_save=lambda:self.root.after_idle(self._destroy))
+                return
+        self._destroy()
+
+    def _destroy(self):
+        self._closed=True
+        for tip in self.tooltips:tip.hide()
+        if self._preview_id:self.root.after_cancel(self._preview_id)
+        self.root.after_cancel(self._poll_id);self.root.destroy()
 
 
 def main():
