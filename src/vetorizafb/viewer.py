@@ -277,14 +277,26 @@ class ChartViewer(ttk.Frame):
         self.top = max(0,min(self.top,max(0,h-ch/self.scale)))
         x1,y1 = math.floor(self.left),math.floor(self.top)
         x2,y2 = min(w,math.ceil(self.left+cw/self.scale)),min(h,math.ceil(self.top+ch/self.scale))
-        image = Image.fromarray(self.session.rgb[y1:y2,x1:x2])
-        if self.layer.get() == 'Editada' and self.session.mask is not None:
+        output_size=(max(1,round((x2-x1)*self.scale)),max(1,round((y2-y1)*self.scale)))
+        display=getattr(self.session,'display',None)
+        edited=self.layer.get() == 'Editada' and self.session.mask is not None
+        if edited:
+            image=Image.new('RGB',output_size,'#343c42')
+        elif display is not None and display.pixels is self.session.rgb:
+            image=display.render((x1,y1,x2,y2),self.scale)
+        else:
+            image=Image.fromarray(self.session.rgb[y1:y2,x1:x2]).resize(output_size,Image.Resampling.BILINEAR)
+        if edited:
             rx,ry,rw,rh = area_bounds(self.session.roi,w,h)
-            image = Image.new('RGB',image.size,'#343c42')
             ax,ay,bx,by = max(x1,rx),max(y1,ry),min(x2,rx+rw),min(y2,ry+rh)
             if bx>ax and by>ay:
-                image.paste(Image.fromarray(self.session.mask[ay-ry:by-ry,ax-rx:bx-rx]).convert('RGB'),(ax-x1,ay-y1))
-        image = image.resize((max(1,round((x2-x1)*self.scale)),max(1,round((y2-y1)*self.scale))),Image.Resampling.BILINEAR)
+                display=getattr(self.session,'mask_display',None)
+                if display is not None and display.pixels is self.session.mask:
+                    patch=display.render((ax-rx,ay-ry,bx-rx,by-ry),self.scale)
+                else:
+                    patch=Image.fromarray(self.session.mask[ay-ry:by-ry,ax-rx:bx-rx]).resize(
+                        (max(1,round((bx-ax)*self.scale)),max(1,round((by-ay)*self.scale))),Image.Resampling.BILINEAR)
+                image.paste(patch.convert('RGB'),(round((ax-x1)*self.scale),round((ay-y1)*self.scale)))
         draw = ImageDraw.Draw(image)
         def point(x,y):return ((x-x1)*self.scale,(y-y1)*self.scale)
         def box(bounds,colour,label=None,label_height=None):

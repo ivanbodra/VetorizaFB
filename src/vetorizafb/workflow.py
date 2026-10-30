@@ -28,12 +28,15 @@ def signature(config, keys):
 
 
 class ChartSession:
-    def __init__(self, path):
+    def __init__(self, path, display_size=(1600,1000)):
         self.path = Path(path).resolve()
         self.rgb, self.affine, self.crs, self.dpi = read_chart(self.path)
         if self.crs is None:
             raise ValueError("A carta não possui CRS. Corrija o georreferenciamento antes de extrair.")
         self.input_hash = sha256(self.path)
+        from .display import DisplayPyramid
+        self.display = DisplayPyramid(self.rgb,display_size)
+        self.mask_display = None
         self.config = Config(dpi=self.dpi or 600)
         self.boxes = self.all_boxes = self.digits = self.review = None
         self.excluded_boxes = set()
@@ -91,6 +94,8 @@ class ChartSession:
                                             area_mask=polygon_mask(roi,(x,y,w,h)))
         check_cancel(cancel)
         self.mask = mask
+        from .display import DisplayPyramid
+        self.mask_display = DisplayPyramid(mask,self.display.viewport)
         self.all_boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in all_boxes]
         self.boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in boxes]
         self.excluded_boxes.clear()
@@ -270,4 +275,7 @@ class ChartSession:
                 if not 0<=s['pixel_x']<=session.rgb.shape[1] or not 0<=s['pixel_y']<=session.rgb.shape[0]:
                     raise ValueError("Ponto fora da imagem no projeto")
             session.group_key = (session.ocr_key,signature(config,GROUP_KEYS))
+        if session.mask is not None:
+            from .display import DisplayPyramid
+            session.mask_display=DisplayPyramid(session.mask,session.display.viewport)
         return session

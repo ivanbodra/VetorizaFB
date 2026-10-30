@@ -746,6 +746,12 @@ class Application:
         try:
             while True:
                 kind,value,callback=self.events.get_nowait()
+                if kind=='chart_preview':
+                    self.viewer.photo=ImageTk.PhotoImage(value)
+                    self.viewer.canvas.delete('all')
+                    self.viewer.canvas.create_image(0,0,image=self.viewer.photo,anchor='nw')
+                    self.status.set('Prévia da carta. Carregando os pixels originais…')
+                    continue
                 if kind in ('auto_dimensions','auto_dimensions_error'):
                     self._auto_busy=False;self.auto_button.configure(state='normal')
                     if kind=='auto_dimensions_error':self.status.set(value)
@@ -819,7 +825,16 @@ class Application:
             self.set_config(session.config);self.viewer.set_session(session)
             self.output.set(str(session.path.parent/'results'/session.path.stem))
             self.area_mode.set('whole');self.roi_text.set('Carta inteira')
-        self.start(lambda:ChartSession(path),done)
+        viewport=(max(1,self.viewer.canvas.winfo_width()),max(1,self.viewer.canvas.winfo_height()))
+        def load():
+            from .display import read_preview
+            try:
+                preview=read_preview(path,viewport)
+                if preview is not None:self.events.put(('chart_preview',preview,None))
+            except Exception:
+                pass  # A preview failure must not prevent the normal loading path.
+            return ChartSession(path,display_size=viewport)
+        self.start(load,done)
 
     def choose_model(self):
         if self.busy:return
