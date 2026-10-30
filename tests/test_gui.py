@@ -109,7 +109,7 @@ def test_zoom_roi_and_manual_point_tools(app,monkeypatch):
 def test_area_gestures_use_image_coordinates_and_escape_cancels_draft(app):
     from types import SimpleNamespace
     viewer=app.viewer
-    viewer.mode.set('Selecionar área')
+    viewer.layer.set('Original');viewer.mode.set('Selecionar')
     viewer.zoom_to(2,30,30)
     def event(x,y):
         return SimpleNamespace(x=round((x-viewer.left)*viewer.scale),
@@ -120,7 +120,7 @@ def test_area_gestures_use_image_coordinates_and_escape_cancels_draft(app):
     assert len(viewer._area_points)==3
     app.clear_point_selection()
     assert not viewer._area_points and app.roi is None
-    assert viewer.mode.get()=='Selecionar área' and viewer.area_shape.get()=='Polígono'
+    assert viewer.mode.get()=='Selecionar' and viewer.area_shape.get()=='Polígono'
     for x,y in ((20,20),(80,20),(20,80)):
         viewer.press(event(x,y));viewer.release(event(x,y))
     viewer.finish_polygon(event(20,80))

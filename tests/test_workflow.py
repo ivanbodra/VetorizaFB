@@ -50,6 +50,8 @@ def test_excluded_boxes_survive_save_and_recompute_grouping(session,tmp_path):
     loaded=ChartSession.load_project(destination)
     assert loaded.excluded_boxes=={0}
     assert loaded.valid_groups(cfg,SPEC)
+    assert loaded.restore_boxes({0})==1
+    assert not loaded.excluded_boxes and not loaded.valid_groups(cfg,SPEC)
     loaded.segment(cfg)
     assert not loaded.excluded_boxes
 

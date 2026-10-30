@@ -160,6 +160,14 @@ class ChartSession:
             self.timings.pop('group',None)
         return len(newly)
 
+    def restore_boxes(self, indices):
+        restored=self.excluded_boxes.intersection(indices)
+        if restored:
+            self.excluded_boxes.difference_update(restored)
+            self.review=self.group_key=None
+            self.timings.pop('group',None)
+        return len(restored)
+
     def verify_source(self):
         if sha256(self.path) != self.input_hash:
             raise ValueError("A carta foi modificada no disco. Reabra e reprocesse a entrada.")

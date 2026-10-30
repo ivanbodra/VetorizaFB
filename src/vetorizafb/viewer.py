@@ -73,10 +73,10 @@ class ChartViewer(ttk.Frame):
                              values=['Original','Editada','Caixas'])
         layer.pack(side='left',padx=3); layer.bind('<<ComboboxSelected>>',lambda e:self.render())
         ttk.Combobox(bar,textvariable=self.mode,state='readonly',width=21,
-                     values=['Inspecionar','Selecionar área','Selecionar para excluir','Medir caractere','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
+                     values=['Inspecionar','Selecionar','Medir caractere','Inserir ponto','Mover selecionado']).pack(side='left',padx=4)
         ttk.Checkbutton(bar,text='Descartadas',variable=self.show_rejected,command=self.render_preview_boxes).pack(side='left',padx=5)
         self.canvas = tk.Canvas(self,bg='#e2eaf0',highlightthickness=0)
-        self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar área','Selecionar para excluir','Medir caractere'} else ''))
+        self.mode.trace_add('write',lambda *args:self.canvas.configure(cursor='crosshair' if self.mode.get() in {'Inserir ponto','Mover selecionado','Selecionar','Medir caractere'} else ''))
         self.canvas.pack(fill='both',expand=True)
         self.canvas.bind('<Motion>',self.hover)
         self.canvas.bind('<Configure>',self.on_resize)
@@ -184,7 +184,7 @@ class ChartViewer(ttk.Frame):
         self._area_points=[];self._press=None;self.canvas.delete('selection')
 
     def finish_polygon(self,event):
-        if self.session is None or self.mode.get() not in {'Selecionar área','Selecionar para excluir'} or self.area_shape.get()!='Polígono':return
+        if self.session is None or self.mode.get() not in {'Selecionar'} or self.area_shape.get()!='Polígono':return
         point=self.image_point(event.x,event.y)
         if not self._area_points or self._area_points[-1]!=point:self._area_points.append(point)
         self.commit_area();return 'break'
@@ -192,13 +192,13 @@ class ChartViewer(ttk.Frame):
     def commit_area(self):
         points=tuple(dict.fromkeys(self._area_points))
         if len(points)>=3:
-            self.on_action('roi' if self.mode.get()=='Selecionar área' else 'select_area',points)
+            self.on_action('roi' if self.layer.get() in {'Original','Editada'} else 'select_area',points)
             self.cancel_area()
         else:self.cancel_area()
 
     def press(self,event):
         self.canvas.focus_set();self._press = event.x,event.y,self.left,self.top
-        if self.session is not None and self.mode.get() in {'Selecionar área','Selecionar para excluir'}:
+        if self.session is not None and self.mode.get() in {'Selecionar'}:
             shape=self.area_shape.get()
             if shape=='Polígono':
                 point=self.image_point(event.x,event.y)
@@ -209,12 +209,12 @@ class ChartViewer(ttk.Frame):
     def drag(self,event):
         if not self._press:return
         x,y,left,top = self._press
-        if self.mode.get() in {'Selecionar área','Selecionar para excluir'} and self.area_shape.get()=='Polígono':return
-        if self.mode.get() in {'Selecionar área','Selecionar para excluir'} and self.area_shape.get()=='Laço livre':
+        if self.mode.get() in {'Selecionar'} and self.area_shape.get()=='Polígono':return
+        if self.mode.get() in {'Selecionar'} and self.area_shape.get()=='Laço livre':
             point=self.image_point(event.x,event.y)
             if point!=self._area_points[-1]:self._area_points.append(point)
             self.draw_area_draft();return
-        if self.mode.get() in {'Selecionar área','Selecionar para excluir','Medir caractere'}:
+        if self.mode.get() in {'Selecionar','Medir caractere'}:
             self.canvas.delete('selection')
             self.canvas.create_rectangle(x,y,event.x,event.y,outline='#00d5ff',width=2,tags='selection')
         elif self.mode.get() == 'Inspecionar':
@@ -226,12 +226,12 @@ class ChartViewer(ttk.Frame):
         sx,sy,left,top = self._press; self._press = None
         px,py = self.pixel(event.x,event.y)
         h,w = self.session.rgb.shape[:2]
-        if self.mode.get() in {'Selecionar área','Selecionar para excluir'} and self.area_shape.get()=='Polígono':return
-        if self.mode.get() in {'Selecionar área','Selecionar para excluir'} and self.area_shape.get()=='Laço livre':
+        if self.mode.get() in {'Selecionar'} and self.area_shape.get()=='Polígono':return
+        if self.mode.get() in {'Selecionar'} and self.area_shape.get()=='Laço livre':
             point=self.image_point(event.x,event.y)
             if not self._area_points or self._area_points[-1]!=point:self._area_points.append(point)
             self.commit_area();return
-        if self.mode.get() in {'Selecionar área','Selecionar para excluir','Medir caractere'}:
+        if self.mode.get() in {'Selecionar','Medir caractere'}:
             ax,ay = left+sx/self.scale,top+sy/self.scale
             x1,y1 = max(0,math.floor(min(ax,px))),max(0,math.floor(min(ay,py)))
             x2,y2 = min(w,math.ceil(max(ax,px))),min(h,math.ceil(max(ay,py)))
@@ -248,7 +248,7 @@ class ChartViewer(ttk.Frame):
             if x2>x1 and y2>y1:
                 if self.mode.get() == 'Medir caractere':
                     self.measurement=(x1,y1,x2,y2);self.on_action('measure',(x2-x1,y2-y1));self.render()
-                else:self.on_action('roi' if self.mode.get()=='Selecionar área' else 'select_area',(x1,y1,x2-x1,y2-y1))
+                else:self.on_action('roi' if self.layer.get() in {'Original','Editada'} else 'select_area',(x1,y1,x2-x1,y2-y1))
         elif math.hypot(event.x-sx,event.y-sy)<5 and 0<=px<w and 0<=py<h:
             action=self.mode.get()
             if action=='Inspecionar':
@@ -257,7 +257,7 @@ class ChartViewer(ttk.Frame):
             self.on_action(action,(px,py))
 
     def hover(self,event):
-        if self.mode.get() in {'Selecionar área','Selecionar para excluir'} and self.area_shape.get()=='Polígono' and self._area_points:
+        if self.mode.get() in {'Selecionar'} and self.area_shape.get()=='Polígono' and self._area_points:
             self.draw_area_draft(self.image_point(event.x,event.y));return
         if self.layer.get() != 'Caixas' or self._press:return
         x,y=self.pixel(event.x,event.y)
@@ -315,7 +315,9 @@ class ChartViewer(ttk.Frame):
                 d = digit_map.get(i)
                 from .fieldbook import token
                 text=(token(d) if self.session.config.segmentation=='fb' else d.text) if d else None
-                if i in self.session.excluded_boxes:continue
+                if i in self.session.excluded_boxes:
+                    if i in self.selected_box_ids:box((b.x,b.y,b.x+b.w,b.y+b.h),'#005bff')
+                    continue
                 box((b.x,b.y,b.x+b.w,b.y+b.h),'#005bff' if i in self.selected_box_ids else '#ffb020' if text is None else '#00b000',text or '?')
         if layer == 'Sondagens' and self.session.review is not None:
             digit_map = {d.index:d for d in self.session.digits or []}

@@ -171,7 +171,7 @@ class Application:
         self.refresh_review_controls()
         if hasattr(self,'review_menu'):self.review_menu.destroy()
         menu=self.review_menu=tk.Menu(self.root,tearoff=False)
-        if getattr(event,'widget',None) is self.viewer.canvas and self.viewer.mode.get() in {'Selecionar área','Selecionar para excluir'}:
+        if getattr(event,'widget',None) is self.viewer.canvas and self.viewer.mode.get() in {'Selecionar'}:
             shapes=tk.Menu(menu,tearoff=False)
             for shape in ('Retângulo','Polígono','Laço livre'):
                 shapes.add_radiobutton(label=shape,value=shape,variable=self.viewer.area_shape,
@@ -181,6 +181,8 @@ class Application:
         if getattr(event,'widget',None) is self.viewer.canvas and self.viewer.layer.get() in {'Caixas','Dígitos'}:
             menu.add_command(label='Excluir caixas selecionadas',accelerator='Delete',command=self.delete_selection,
                              state='normal' if self.viewer.selected_box_ids else 'disabled')
+            menu.add_command(label='Reincluir caixas excluídas selecionadas',command=self.restore_selection,
+                             state='normal' if self.session and self.viewer.selected_box_ids & self.session.excluded_boxes else 'disabled')
             menu.add_separator()
         for key,label,shortcut in [('accepted','Aprovar','Ctrl+A'),('rejected','Excluir','Delete'),('edit','Editar','Ctrl+E'),('unreviewed','Marcar pendente','')]:
             button=self.review_buttons[key]
@@ -469,7 +471,7 @@ class Application:
         self.seg_button.grid(row=13,column=0,columnspan=2,sticky='w',pady=(2,2))
         area=ttk.Frame(seg);area.grid(row=14,column=0,columnspan=2,sticky='w',pady=2)
         ttk.Radiobutton(area,text='Carta inteira',variable=self.area_mode,value='whole',command=lambda:self.set_roi(None)).pack(side='left')
-        ttk.Radiobutton(area,text='Selecionar área',variable=self.area_mode,value='select',command=self.select_area).pack(side='left',padx=(10,0))
+        ttk.Radiobutton(area,text='Selecionar área de processamento',variable=self.area_mode,value='select',command=self.select_area).pack(side='left',padx=(10,0))
         model_panel=ttk.Frame(ocr);model_panel.grid(row=0,column=0,columnspan=2,sticky='ew',pady=(0,10))
         model_panel.columnconfigure(1,weight=1)
         ttk.Label(model_panel,text='Pasta').grid(row=0,column=0,sticky='w',padx=(0,6),pady=4)
@@ -904,13 +906,13 @@ class Application:
         self.roi=roi;self.viewer.roi=roi
         self.area_mode.set('select' if roi else 'whole')
         self.roi_text.set(f'Área poligonal: {len(roi)} vértices' if is_polygon(roi) else f'Área em pixels: {roi}' if roi else 'Carta inteira')
-        if not roi and self.viewer.mode.get()=='Selecionar área':self.viewer.mode.set('Inspecionar')
+        if not roi and self.viewer.mode.get()=='Selecionar':self.viewer.mode.set('Inspecionar')
         self.refresh_validity();self.viewer.render();self.schedule_preview()
 
     def select_area(self):
         if self.busy:
             self.area_mode.set('select' if self.roi else 'whole');return
-        self.viewer.mode.set('Selecionar área')
+        self.viewer.layer.set('Original');self.viewer.mode.set('Selecionar');self.viewer.render()
         self.status.set('Arraste na carta para selecionar a área.')
 
     def run_stage(self,stage):
@@ -1031,6 +1033,17 @@ class Application:
         self.refresh_points();self.refresh_validity();self.viewer.refresh_layers();self.viewer.render()
         self.status.set(f'{count} caixas excluídas. Execute Agrupar novamente para atualizar as sondagens.')
 
+    def restore_selection(self):
+        if self.busy or not self.session or not self.viewer.selected_box_ids:return
+        if self.session.review is not None and not messagebox.askyesno('Reincluir caixas',
+                'Reincluir estas caixas exige refazer o agrupamento e descarta a revisão atual. Continuar?',parent=self.root):return
+        count=self.session.restore_boxes(self.viewer.selected_box_ids)
+        self.viewer.selected_box_ids.clear()
+        if not count:return
+        self.review_dirty=True
+        self.refresh_points();self.refresh_validity();self.viewer.refresh_layers();self.viewer.render()
+        self.status.set(f'{count} caixas reincluídas. Execute Agrupar novamente.')
+
     def can_restore(self,part):
         if not self.session or self.session.review is None:return False
         keys={'depth':('depth',),'position':('pixel_x','pixel_y'),'both':('depth','pixel_x','pixel_y')}[part]
@@ -1141,7 +1154,7 @@ class Application:
 
     def clear_point_selection(self):
         if self.busy:return
-        if self.viewer.mode.get() in {'Selecionar área','Selecionar para excluir'} and (self.viewer._area_points or self.viewer._press):
+        if self.viewer.mode.get() in {'Selecionar'} and (self.viewer._area_points or self.viewer._press):
             self.viewer.cancel_area();self.status.set('Seleção de área cancelada.');return
         self.viewer.mode.set('Inspecionar');self._one_shot_mode=False
         self.tree.selection_remove(self.tree.selection());self.tree.focus('')
@@ -1213,8 +1226,8 @@ class Application:
                 self.select_point();self.status.set(f'{len(ids)} sondagens selecionadas. Delete marca como excluídas.')
             elif self.viewer.layer.get() in {'Caixas','Dígitos'} and self.session.boxes:
                 self.viewer.selected_box_ids={i for i,b in enumerate(self.session.boxes)
-                    if i not in self.session.excluded_boxes and inside_area(xy,*b.center)}
-                self.viewer.render();self.status.set(f'{len(self.viewer.selected_box_ids)} caixas selecionadas. Delete as exclui do processamento.')
+                    if inside_area(xy,*b.center)}
+                self.viewer.render();self.status.set(f'{len(self.viewer.selected_box_ids)} caixas selecionadas. Delete exclui; o menu permite reincluir caixas excluídas.')
             return
         if action in {'Inserir ponto','Mover selecionado'}:
             if not self.review_ready():return
