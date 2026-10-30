@@ -809,7 +809,7 @@ class Application:
         if not self._closed:self._poll_id=self.root.after(80,self.poll)
 
     def confirm_replace(self):
-        return not self.review_dirty or messagebox.askyesno('Preservar revisão','Há decisões de revisão não salvas. Salve o projeto para preservá-las. Deseja substituir/fechar esta revisão mesmo assim?',parent=self.root)
+        return not self.review_dirty or messagebox.askyesno('Alterações não salvas','Há alterações não salvas no projeto. Deseja descartá-las e substituir ou fechar o projeto?',parent=self.root)
 
     def choose_chart(self):
         if self.busy:return
@@ -919,7 +919,12 @@ class Application:
             cfg=self.config();spec=self.model_spec()
             if stage=='ocr' or (stage=='all' and not self.session.valid_digits(cfg,spec,self.roi)):spec=self.require_local_model(spec)
         except ValueError as exc:messagebox.showerror('Parâmetros',str(exc));return
-        if not self.confirm_replace():return
+        if (self.review_dirty and self.session.review is not None and
+                (stage in {'segment','ocr','group'} or
+                 (stage=='all' and not self.session.valid_groups(cfg,spec,self.roi))) and
+                not messagebox.askyesno('Refazer etapa',
+                    'Refazer esta etapa substituirá a revisão atual e descartará as alterações feitas nela. Continuar?',
+                    parent=self.root)):return
         if spec[1] and spec[1]!=self.model_dir.get():self.model_dir.set(spec[1])
         session,roi=self.session,self.roi
         previous_review=session.review
