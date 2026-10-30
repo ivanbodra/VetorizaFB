@@ -1,10 +1,45 @@
 """Render only the visible viewport, retaining original pixel coordinates."""
 import math
+from functools import lru_cache
+from statistics import median
 import tkinter as tk
 from tkinter import ttk
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageDraw, ImageFont, ImageTk
 from .ui import Tooltip
 from .area import is_polygon, bounds as area_bounds
+
+
+@lru_cache(maxsize=13)
+def label_font(size):
+    # Arial is available on Windows; Pillow also resolves DejaVu on Linux.
+    for name in ('arial.ttf', 'DejaVuSans.ttf'):
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            pass
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:  # Pillow 10.0 compatibility
+        return ImageFont.load_default()
+
+
+def draw_label(draw, image_size, position, text, colour, screen_height):
+    font = label_font(max(12, min(24, round(screen_height * .25))))
+    text = str(text)
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
+    x, y = position
+    x = max(0, min(x, image_size[0] - (right-left)))
+    y = max(0, min(y - (bottom-top) - 3, image_size[1] - (bottom-top)))
+    draw.text((x-left, y-top), text, font=font, fill=colour,
+              stroke_width=1, stroke_fill='white')
+
+
+def integer_height(sounding, digit_map):
+    ids = sounding.get('digit_ids', [])
+    if sounding.get('interpretation') in {'fb_subscript', 'subscript_decimal'}:
+        ids = ids[:-1]
+    heights = [digit_map[i].box.h for i in ids if i in digit_map]
+    return median(heights) if heights else sounding['bounds'][3]-sounding['bounds'][1]
 
 
 class ChartViewer(ttk.Frame):
@@ -232,12 +267,13 @@ class ChartViewer(ttk.Frame):
         image = image.resize((max(1,round((x2-x1)*self.scale)),max(1,round((y2-y1)*self.scale))),Image.Resampling.BILINEAR)
         draw = ImageDraw.Draw(image)
         def point(x,y):return ((x-x1)*self.scale,(y-y1)*self.scale)
-        def box(bounds,colour,label=None):
+        def box(bounds,colour,label=None,label_height=None):
             a,b,c,d = bounds
             if c<x1 or a>x2 or d<y1 or b>y2:return
             draw.rectangle((*point(a,b),*point(c,d)),outline=colour,width=1)
-            if label is not None and self.scale>=.45:
-                draw.text(point(a,max(0,b-12/self.scale)),str(label),fill=colour)
+            if label is not None:
+                draw_label(draw,image.size,point(a,b),label,colour,
+                           (d-b if label_height is None else label_height)*self.scale)
         layer = self.layer.get()
         if self.measurement:box(self.measurement,'#007c91')
         if layer == 'Dígitos' and self.session.digits is not None:
@@ -248,17 +284,19 @@ class ChartViewer(ttk.Frame):
                 text=(token(d) if self.session.config.segmentation=='fb' else d.text) if d else None
                 box((b.x,b.y,b.x+b.w,b.y+b.h),'#ffb020' if text is None else '#00b000',text or '?')
         if layer == 'Sondagens' and self.session.review is not None:
+            digit_map = {d.index:d for d in self.session.digits or []}
             for item in self.session.review.items:
                 s = item['current']
                 colour = {'unreviewed':'#f08000','accepted':'#00a000','rejected':'#df2040'}[item['status']]
                 if item['id'] in self.selected_ids:colour = '#0068df'
                 if item['id'] == self.selected_id:colour = '#005bff'
-                box(s['bounds'],colour)
+                box(s['bounds'],colour,f"{s['depth']:g}",integer_height(s,digit_map))
                 px,py = point(s['pixel_x'],s['pixel_y'])
-                if -20<=px<=cw+20 and -20<=py<=ch+20:
+                selected = item['id']==self.selected_id or item['id'] in self.selected_ids
+                marker_visible = (s['bounds'][3]-s['bounds'][1])*self.scale >= 20 or selected
+                if marker_visible and -20<=px<=cw+20 and -20<=py<=ch+20:
                     draw.ellipse((px-3,py-3,px+3,py+3),outline=colour,width=2)
                     if item['id']==self.selected_id:draw.ellipse((px-7,py-7,px+7,py+7),outline=colour,width=2)
-                    if self.scale>=.45:draw.text((px+5,py-15),f"{s['depth']:g}",fill=colour)
         if self.roi:
             if is_polygon(self.roi):draw.line([point(x,y) for x,y in (*self.roi,self.roi[0])],fill='#0068ff',width=2)
             else:

@@ -1,4 +1,4 @@
-# VetorizaFB 4.1.0
+# VetorizaFB 4.1.1
 
 Classic version 4 interface with field-sheet preparation, multi-digit FB tokens,
 lower-decimetre grouping and reading/box review.
