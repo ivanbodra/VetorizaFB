@@ -38,6 +38,22 @@ def ready(session):
     return cfg
 
 
+def test_excluded_boxes_survive_save_and_recompute_grouping(session,tmp_path):
+    cfg=ready(session)
+    assert len(session.boxes)==2
+    assert session.exclude_boxes({0})==1
+    assert session.valid_digits(cfg,SPEC) and not session.valid_groups(cfg,SPEC)
+    session.run_grouping(cfg,SPEC)
+    assert all(0 not in item['current']['digit_ids'] for item in session.review.items)
+    destination=tmp_path/'exclusions.vfproject.json'
+    session.save_project(destination)
+    loaded=ChartSession.load_project(destination)
+    assert loaded.excluded_boxes=={0}
+    assert loaded.valid_groups(cfg,SPEC)
+    loaded.segment(cfg)
+    assert not loaded.excluded_boxes
+
+
 def test_stage_changes_invalidate_only_required_work(session):
     cfg=ready(session)
     assert session.valid_groups(cfg,SPEC)

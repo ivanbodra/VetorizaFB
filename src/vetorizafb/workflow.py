@@ -36,6 +36,7 @@ class ChartSession:
         self.input_hash = sha256(self.path)
         self.config = Config(dpi=self.dpi or 600)
         self.boxes = self.all_boxes = self.digits = self.review = None
+        self.excluded_boxes = set()
         self.mask = None
         self.color_rejected=[]
         self.contour_revision=2
@@ -92,6 +93,7 @@ class ChartSession:
         self.mask = mask
         self.all_boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in all_boxes]
         self.boxes = [Box(b.x+x,b.y+y,b.w,b.h) for b in boxes]
+        self.excluded_boxes.clear()
         self.color_rejected=[Box(b.x+x,b.y+y,b.w,b.h) for b in rejected]
         self.roi = roi
         self.contour_revision=2
@@ -133,8 +135,8 @@ class ChartSession:
         diagnostics={}
         if config.grouping=='fb':
             from .fieldbook import group as fb_group
-            soundings=fb_group(self.digits,config,diagnostics=diagnostics)
-        else:soundings=group(self.digits,config)
+            soundings=fb_group([d for d in self.digits if d.index not in self.excluded_boxes],config,diagnostics=diagnostics)
+        else:soundings=group([d for d in self.digits if d.index not in self.excluded_boxes],config)
         review = ReviewSet([s for s in soundings if inside(roi,s.pixel_x,s.pixel_y)])
         check_cancel(cancel)
         self.review = review
@@ -142,6 +144,16 @@ class ChartSession:
         self.group_key = (self.ocr_key,signature(config,GROUP_KEYS))
         self.config = Config(**asdict(config))
         self.timings['group'] = time.perf_counter()-start
+
+    def exclude_boxes(self, indices):
+        if self.boxes is None or any(type(i) is not int or i<0 or i>=len(self.boxes) for i in indices):
+            raise ValueError('Seleção de caixas inválida')
+        newly=set(indices)-self.excluded_boxes
+        if newly:
+            self.excluded_boxes.update(newly)
+            self.review=self.group_key=None
+            self.timings.pop('group',None)
+        return len(newly)
 
     def verify_source(self):
         if sha256(self.path) != self.input_hash:
@@ -202,6 +214,7 @@ class ChartSession:
                 'roi':self.roi,'model_spec':self.model_spec,'timings':self.timings,
                 'contour_revision':self.contour_revision,
                 'boxes':None if self.boxes is None else [asdict(b) for b in self.boxes],
+                'excluded_boxes':sorted(self.excluded_boxes),
                 'digits':None if self.digits is None else [asdict(d) for d in self.digits],
                 'review':None if self.review is None else self.review.items}
         from . import __version__
@@ -228,6 +241,10 @@ class ChartSession:
         session.timings = data['timings']
         if data['boxes'] is not None:
             session.boxes = [Box(**b) for b in data['boxes']]
+            exclusions=data.get('excluded_boxes',[])
+            if (not isinstance(exclusions,list) or any(type(i) is not int or i<0 or i>=len(session.boxes) for i in exclusions)):
+                raise ValueError('Caixas excluídas inválidas no projeto')
+            session.excluded_boxes=set(exclusions)
             for b in session.boxes:
                 if min(b.x,b.y)<0 or min(b.w,b.h)<1 or b.x+b.w>session.rgb.shape[1] or b.y+b.h>session.rgb.shape[0]:
                     raise ValueError("Caixa fora da imagem no projeto")

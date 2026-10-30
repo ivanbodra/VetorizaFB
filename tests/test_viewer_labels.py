@@ -49,3 +49,18 @@ def test_small_sounding_has_label_and_only_selected_marker(monkeypatch, selected
     assert len(labels) == 1
     assert labels[0][3] == '31.9'
     assert len(markers) == expected_markers
+
+
+def test_measure_click_uses_exact_component_box():
+    calls=[]
+    box=Box(20, 20, 10, 25)
+    viewer=SimpleNamespace(session=SimpleNamespace(rgb=np.zeros((100,100,3),np.uint8),all_boxes=[box]),
+        _press=(24, 24, 0, 0), left=0, top=0, scale=1,
+        mode=SimpleNamespace(get=lambda:'Medir caractere'),
+        area_shape=SimpleNamespace(get=lambda:'Retângulo'),
+        canvas=SimpleNamespace(delete=lambda *args:None),
+        pixel=lambda x,y:(x,y), _visible_preview=[(box,None)],
+        on_action=lambda *args:calls.append(args), render=lambda:None)
+    ChartViewer.release(viewer,SimpleNamespace(x=24,y=24,state=0))
+    assert viewer.measurement==(20,20,30,45)
+    assert calls==[('measure',(10,25))]

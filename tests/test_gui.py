@@ -190,7 +190,7 @@ def test_keyboard_batch_approval_exclusion_edit_and_filtered_selection(app,monke
     key(app,'<Control-a>')
     assert app.session.review.counts['accepted']==4
     assert all(i['history'][-1]['note']=='Conferido na carta' for i in app.session.review.items)
-    app.clear_point_selection();app.navigate_review(1);key(app,'<Control-x>')
+    app.clear_point_selection();app.navigate_review(1);key(app,'<Delete>')
     assert app.session.review.item(0)['status']=='rejected'
     monkeypatch.setattr('vetorizafb.gui.simpledialog.askfloat',lambda *a,**k:10.1)
     key(app,'<Down>');key(app,'<Control-e>')
@@ -208,14 +208,14 @@ def test_pending_filter_advances_and_text_fields_keep_their_keys(app):
     app.filter.set('Pendentes');app.refresh_points();key(app,'<Down>')
     key(app,'<Control-a>')
     assert app.tree.selection()==('1',) and app.viewer.selected_id==1
-    key(app,'<Control-x>');assert app.tree.selection()==('2',)
+    key(app,'<Delete>');assert app.tree.selection()==('2',)
     before=app.session.review.counts.copy()
     app.review_note.set('Editar esta nota')
     key(app,'<Control-a>',app.note_entry)
     key(app,'<Left>',app.note_entry)
     assert app.session.review.counts==before and app.tree.selection()==('2',)
     app.fields['threshold'].set('100')
-    key(app,'<Control-a>');key(app,'<Control-x>')
+    key(app,'<Control-a>');key(app,'<Delete>')
     assert app.session.review.counts==before
 
 
@@ -341,13 +341,13 @@ def test_measurement_uses_native_pixels_independent_of_zoom(app):
     app.canvas_action('measure',(10,25))
     assert app.measure_text.get()=='10 × 25 px'
     app.use_measurement(True)
-    assert app.fields['min_w'].get()=='9' and app.fields['min_h'].get()=='24'
+    assert app.fields['min_w'].get()=='19' and app.fields['min_h'].get()=='49'
 
 
 def test_manual_about_and_preview_toggle(app,monkeypatch):
     from pathlib import Path
     from vetorizafb import __version__
-    assert __version__=='4.1.1' and '4.1.1' in app.root.title()
+    assert __version__=='4.1.2' and '4.1.2' in app.root.title()
     urls=[];monkeypatch.setattr('vetorizafb.gui.webbrowser.open',lambda url:urls.append(url) or True)
     app.open_manual();assert urls[0].startswith('file:') and urls[0].endswith('manual_ptbr.html')
     popup=app.about();app.root.update();assert popup.winfo_exists();popup.destroy()

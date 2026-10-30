@@ -140,7 +140,7 @@ class Config:
             raise ValueError("DPI must be positive")
         if not 0 <= self.threshold <= 255 or self.blur_size < 1 or self.kernel_size < 1:
             raise ValueError("Invalid threshold/blur/kernel")
-        if not (0 < self.min_w < self.max_w and 0 < self.min_h < self.max_h):
+        if not (0 <= self.min_w < self.max_w and 0 <= self.min_h < self.max_h):
             raise ValueError("Invalid box dimensions")
         if self.tol_x <= 0 or self.tol_y < 0 or not 0 < self.decimal_height_ratio <= 1:
             raise ValueError("Invalid grouping geometry")
