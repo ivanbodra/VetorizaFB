@@ -41,7 +41,7 @@ class Digit:
         for value in (self.confidence,self.selected_confidence):
             if value is not None and (not math.isfinite(float(value)) or not 0<=value<=1):
                 raise ValueError("Invalid OCR confidence")
-        if not isinstance(self.raw_text,str) or (self.selected_text is not None and (len(self.selected_text)!=1 or self.selected_text not in '0123456789')):
+        if not isinstance(self.raw_text,str) or (self.selected_text is not None and re.fullmatch(r'[0-9]{1,3}',self.selected_text) is None):
             raise ValueError("Invalid OCR text/selection")
 
     @property

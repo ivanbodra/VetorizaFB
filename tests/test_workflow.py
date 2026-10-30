@@ -344,3 +344,24 @@ def test_older_project_without_fb_settings_loads_defaults(session,tmp_path):
     loaded=ChartSession.load_project(path)
     assert loaded.config.fb_decimal_distance==Config().fb_decimal_distance
     assert loaded.config.fb_keep_small is False
+
+
+def test_fb_retry_options_reach_reader_and_multidigit_result_survives_project(session,tmp_path):
+    from vetorizafb.core import Box
+    from vetorizafb.fieldbook import token
+    cfg=Config(segmentation='fb',grouping='fb',retry_ambiguous=True,retry_one=False)
+    session.segment(cfg)
+    session.boxes=[Box(20,20,10,25)]
+    class Engine:
+        def __init__(self):self.calls=0
+        def predict(self,crops):
+            self.calls+=1
+            return [('S',.5)] if self.calls==1 else [('35',.95)]
+    engine=Engine()
+    session.run_ocr(cfg,SPEC,engine=engine)
+    assert engine.calls==2 and token(session.digits[0])=='35'
+    assert session.digits[0].raw_text=='S'
+    path=tmp_path/'fb-retry.vfproject.json';session.save_project(path)
+    loaded=ChartSession.load_project(path)
+    assert token(loaded.digits[0])=='35' and loaded.digits[0].raw_text=='S'
+    assert loaded.digits[0].alternatives==session.digits[0].alternatives

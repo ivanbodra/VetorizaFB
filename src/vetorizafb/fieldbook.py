@@ -1,8 +1,9 @@
 """Field-sheet tokens and layout. No neighbouring depths or reference XYZ used."""
 import re
+import math
 import cv2
 import numpy as np
-from .core import Digit, Sounding, check_cancel, normalize_trailing_dot
+from .core import Digit, Sounding, check_cancel, normalize_trailing_dot, isolated_one_crop
 
 
 def mask(rgb, config):
@@ -18,17 +19,76 @@ def token(d):
     return t if re.fullmatch(r'[0-9]{1,3}',t) else None
 
 
-def recognize(rgb,boxes,engine,batch_size=64,pad=3,*,progress=None,cancel=None,**kwargs):
+def recognize(rgb,boxes,engine,batch_size=64,pad=3,*,retry=False,retry_one=False,
+              min_confidence=.35,progress=None,cancel=None):
+    if batch_size<1 or pad<0:raise ValueError('Lote e margem de recorte inválidos')
+    if not math.isfinite(min_confidence) or not 0<=min_confidence<=1:
+        raise ValueError('Confiança mínima inválida')
     digits=[]
+    h,w=rgb.shape[:2]
+    def crop(box,margin):
+        if min(box.x,box.y)<0 or box.x+box.w>w or box.y+box.h>h:
+            raise ValueError('Caixa fora da imagem')
+        return rgb[max(0,box.y-margin):min(h,box.y+box.h+margin),
+                   max(0,box.x-margin):min(w,box.x+box.w+margin)].copy()
+    def predict(crops):
+        readings=engine.predict(crops)
+        if len(readings)!=len(crops):raise ValueError('Quantidade inesperada de leituras')
+        checked=[]
+        for text,score in readings:
+            score=float(score)
+            if not math.isfinite(score) or not 0<=score<=1:raise ValueError('Confiança OCR inválida')
+            checked.append((str(text),score))
+        return checked
     for start in range(0,len(boxes),batch_size):
         check_cancel(cancel)
         chunk=boxes[start:start+batch_size]
-        crops=[rgb[max(0,b.y-pad):min(rgb.shape[0],b.y+b.h+pad),max(0,b.x-pad):min(rgb.shape[1],b.x+b.w+pad)].copy() for b in chunk]
-        readings=engine.predict(crops)
-        if len(readings)!=len(chunk):raise ValueError('Quantidade inesperada de leituras')
-        digits.extend(Digit(b,str(t),float(s),start+i,method='fb_token') for i,(b,(t,s)) in enumerate(zip(chunk,readings)))
-        if progress:progress(min(start+batch_size,len(boxes)),len(boxes),'OCR: folha de bordo')
-    return normalize_trailing_dot(digits)
+        readings=predict([crop(b,pad) for b in chunk])
+        digits.extend(Digit(b,t,s,start+i,method='fb_token') for i,(b,(t,s)) in enumerate(zip(chunk,readings)))
+        if progress:progress(min(start+len(chunk),len(boxes)),len(boxes),'OCR: folha de bordo')
+    normalize_trailing_dot(digits)
+    # Narrow strokes only select candidates for a real model retry, never a value.
+    ones={d.index for d in digits if retry_one and d.box.w/d.box.h<=.65
+          and (token(d) is None or d.score<min_confidence)
+          and d.raw_text.strip() in {'','I','i','l','|','!','1','1.'}}
+    def unresolved(d):
+        return (d.index in ones and (token(d) is None or d.score<min_confidence)
+                or retry and (token(d) is None or d.score<min_confidence))
+    def attempt(subset,prepare,method,stage,only_one=False):
+        for start in range(0,len(subset),batch_size):
+            check_cancel(cancel)
+            batch=subset[start:start+batch_size]
+            pairs=[(d,prepare(d)) for d in batch]
+            pairs=[(d,c) for d,c in pairs if c is not None]
+            if pairs:
+                readings=predict([c for _,c in pairs])
+                for (d,_),(raw,score) in zip(pairs,readings):
+                    d.alternatives.append(dict(text=raw,confidence=score,method=method))
+                    text=raw.strip()
+                    if re.fullmatch(r'[0-9]\.',text):text=text[0]
+                    directed=only_one or d.index in ones
+                    eligible=(text=='1' and score>=max(.8,min_confidence) if directed else
+                              re.fullmatch(r'[0-9]{1,3}',text) is not None and score>=min_confidence)
+                    if eligible and (token(d) is None or score>d.score):
+                        d.selected_text,d.selected_confidence=text,score
+                        d.method='fb_one_retry' if directed else 'fb_retry'
+            if progress:progress(min(start+len(batch),len(subset)),len(subset),stage)
+    def binary(d):
+        gray=cv2.cvtColor(crop(d.box,pad),cv2.COLOR_RGB2GRAY)
+        _,bw=cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        bw=cv2.copyMakeBorder(bw,6,6,6,6,cv2.BORDER_CONSTANT,value=255)
+        return cv2.cvtColor(cv2.resize(bw,None,fx=2,fy=2,interpolation=cv2.INTER_CUBIC),cv2.COLOR_GRAY2RGB)
+    def tight(d):
+        c=cv2.copyMakeBorder(crop(d.box,0),8,8,8,8,cv2.BORDER_CONSTANT,value=(255,255,255))
+        return cv2.resize(c,None,fx=2,fy=2,interpolation=cv2.INTER_CUBIC)
+    if retry or retry_one:
+        attempt([d for d in digits if unresolved(d)],binary,'fb_binary_padded_2x','OCR FB: reler leituras')
+        attempt([d for d in digits if unresolved(d)],tight,'fb_tight_padded_2x','OCR FB: reler recortes')
+        attempt([d for d in digits if d.index in ones and unresolved(d)],
+                lambda d:isolated_one_crop(rgb,d.box,pad),'fb_isolated_one_2x',
+                'OCR FB: isolar possíveis 1',only_one=True)
+    check_cancel(cancel)
+    return digits
 
 
 def group(digits,config,*,diagnostics=None):
